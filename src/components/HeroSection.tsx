@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Newsletter } from 'lucide-react';
+import { Bell } from 'lucide-react';
 
 const HeroSection = () => {
   const [email, setEmail] = useState('');
@@ -30,7 +30,7 @@ const HeroSection = () => {
       <div className="container grid lg:grid-cols-2 gap-12 items-center">
         <div className="space-y-6 max-w-lg animate-fade-in">
           <div className="flex items-center gap-2 text-purple-500 font-medium">
-            <Newsletter size={20} />
+            <Bell size={20} />
             <span>Weekly newsletter</span>
           </div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">

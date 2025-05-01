@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Mail, Calendar, Inbox, MessageSquare, Newspaper, Trending, Globe, Award } from 'lucide-react';
+import { Mail, Calendar, Inbox, MessageSquare, Newspaper, TrendingUp, Globe, Award } from 'lucide-react';
 
 const benefits = [
   {
@@ -9,7 +9,7 @@ const benefits = [
     description: "آخر التطورات والاتجاهات في عالم التكنولوجيا والابتكار."
   },
   {
-    icon: <Trending className="h-10 w-10 text-blue-600" />,
+    icon: <TrendingUp className="h-10 w-10 text-blue-600" />,
     title: "تحليل الأسواق",
     description: "تحليلات عميقة للأسواق المالية واتجاهات الاستثمار الرئيسية."
   },

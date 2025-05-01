@@ -25,7 +25,7 @@ const CallToAction = () => {
   };
 
   return (
-    <section className="section bg-gradient-to-br from-purple-500 to-purple-700 text-white">
+    <section className="section bg-gradient-to-br from-blue-600 to-blue-800 text-white">
       <div className="container">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to elevate your thinking?</h2>
@@ -44,7 +44,7 @@ const CallToAction = () => {
             />
             <Button 
               type="submit"
-              className="bg-white text-purple-700 hover:bg-purple-50 py-6 px-8 font-medium" 
+              className="bg-white text-blue-700 hover:bg-blue-50 py-6 px-8 font-medium" 
               disabled={isLoading}
             >
               {isLoading ? "Subscribing..." : "Subscribe Now"}

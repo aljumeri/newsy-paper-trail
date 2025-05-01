@@ -26,10 +26,10 @@ const HeroSection = () => {
   };
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-purple-50 to-white pt-20 pb-16 md:pt-32 md:pb-24">
+    <section className="relative overflow-hidden bg-gradient-to-b from-blue-50 to-white pt-20 pb-16 md:pt-32 md:pb-24">
       <div className="container grid lg:grid-cols-2 gap-12 items-center">
         <div className="space-y-6 max-w-lg animate-fade-in">
-          <div className="flex items-center gap-2 text-purple-500 font-medium">
+          <div className="flex items-center gap-2 text-blue-600 font-medium">
             <Bell size={20} />
             <span>Weekly newsletter</span>
           </div>
@@ -51,7 +51,7 @@ const HeroSection = () => {
             />
             <Button 
               type="submit"
-              className="bg-purple-500 hover:bg-purple-600 text-white py-6 px-8" 
+              className="bg-blue-600 hover:bg-blue-700 text-white py-6 px-8" 
               disabled={isLoading}
             >
               {isLoading ? "Subscribing..." : "Subscribe"}
@@ -65,8 +65,8 @@ const HeroSection = () => {
         
         <div className="hidden lg:flex justify-end animate-fade-in">
           <div className="relative">
-            <div className="absolute -left-10 -top-10 w-20 h-20 bg-purple-200/50 rounded-full"></div>
-            <div className="absolute -right-5 -bottom-5 w-32 h-32 bg-purple-100/80 rounded-full"></div>
+            <div className="absolute -left-10 -top-10 w-20 h-20 bg-blue-200/50 rounded-full"></div>
+            <div className="absolute -right-5 -bottom-5 w-32 h-32 bg-blue-100/80 rounded-full"></div>
             <img 
               src="https://images.unsplash.com/photo-1586339949916-3e9457bef6d3?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80" 
               alt="Newsletter preview" 
@@ -77,8 +77,8 @@ const HeroSection = () => {
       </div>
       
       {/* Decorative elements */}
-      <div className="absolute top-1/3 left-0 w-40 h-40 bg-purple-200/30 rounded-full blur-3xl -z-10"></div>
-      <div className="absolute bottom-0 right-0 w-60 h-60 bg-purple-100/50 rounded-full blur-3xl -z-10"></div>
+      <div className="absolute top-1/3 left-0 w-40 h-40 bg-blue-200/30 rounded-full blur-3xl -z-10"></div>
+      <div className="absolute bottom-0 right-0 w-60 h-60 bg-blue-100/50 rounded-full blur-3xl -z-10"></div>
     </section>
   );
 };

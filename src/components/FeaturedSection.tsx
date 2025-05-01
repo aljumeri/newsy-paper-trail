@@ -57,7 +57,7 @@ const FeaturedSection = () => {
                 <p className="text-neutral-600">{issue.excerpt}</p>
               </CardContent>
               <CardFooter className="pt-2 pb-5">
-                <Button variant="outline" className="hover:bg-purple-50 border-purple-200 text-purple-700 hover:text-purple-800">
+                <Button variant="outline" className="hover:bg-blue-50 border-blue-200 text-blue-700 hover:text-blue-800">
                   Read Issue
                 </Button>
               </CardFooter>
@@ -66,7 +66,7 @@ const FeaturedSection = () => {
         </div>
         
         <div className="text-center mt-12">
-          <Button variant="link" className="text-purple-600 hover:text-purple-700 text-lg">
+          <Button variant="link" className="text-blue-600 hover:text-blue-700 text-lg">
             View All Archives →
           </Button>
         </div>

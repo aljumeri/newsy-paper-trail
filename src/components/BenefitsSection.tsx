@@ -4,22 +4,22 @@ import { Mail, Calendar, Inbox, MessageSquare } from 'lucide-react';
 
 const benefits = [
   {
-    icon: <Mail className="h-10 w-10 text-purple-500" />,
+    icon: <Mail className="h-10 w-10 text-blue-600" />,
     title: "Curated Insights",
     description: "Every edition is carefully researched and crafted to deliver maximum value in minimum time."
   },
   {
-    icon: <Calendar className="h-10 w-10 text-purple-500" />,
+    icon: <Calendar className="h-10 w-10 text-blue-600" />,
     title: "Weekly Delivery",
     description: "Receive our newsletter every Tuesday morning, perfect timing to shape your strategic thinking for the week."
   },
   {
-    icon: <Inbox className="h-10 w-10 text-purple-500" />,
+    icon: <Inbox className="h-10 w-10 text-blue-600" />,
     title: "Exclusive Content",
     description: "Gain access to interviews and analysis you won't find anywhere else, from industry leaders and innovators."
   },
   {
-    icon: <MessageSquare className="h-10 w-10 text-purple-500" />,
+    icon: <MessageSquare className="h-10 w-10 text-blue-600" />,
     title: "Join the Conversation",
     description: "Subscribers can participate in our private community discussions and monthly Q&A sessions."
   }
@@ -27,7 +27,7 @@ const benefits = [
 
 const BenefitsSection = () => {
   return (
-    <section className="section bg-purple-50">
+    <section className="section bg-blue-50">
       <div className="container">
         <div className="text-center mb-16 max-w-3xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Why Subscribe?</h2>

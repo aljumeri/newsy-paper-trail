@@ -48,7 +48,7 @@ const TestimonialsSection = () => {
                 <div className="flex flex-col h-full">
                   <div className="mb-4">
                     <svg 
-                      className="h-8 w-8 text-purple-300" 
+                      className="h-8 w-8 text-blue-300" 
                       fill="currentColor" 
                       viewBox="0 0 24 24"
                     >

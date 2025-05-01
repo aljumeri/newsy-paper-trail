@@ -16,24 +16,24 @@
     --popover: 0 0% 100%;
     --popover-foreground: 221 39% 11%;
 
-    --primary: 260 84% 55%;
-    --primary-foreground: 270 4% 98%;
+    --primary: 214 84% 55%;
+    --primary-foreground: 210 4% 98%;
 
-    --secondary: 260 20% 96%;
+    --secondary: 210 20% 96%;
     --secondary-foreground: 221 39% 11%;
 
-    --muted: 260 20% 96%;
+    --muted: 210 20% 96%;
     --muted-foreground: 220 9% 46%;
 
-    --accent: 260 20% 96%;
+    --accent: 210 20% 96%;
     --accent-foreground: 221 39% 11%;
 
     --destructive: 0 84% 60%;
-    --destructive-foreground: 270 4% 98%;
+    --destructive-foreground: 210 4% 98%;
 
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 260 84% 62%;
+    --ring: 214 84% 62%;
 
     --radius: 0.5rem;
 
@@ -49,32 +49,32 @@
 
   .dark {
     --background: 221 39% 11%;
-    --foreground: 270 4% 98%;
+    --foreground: 210 4% 98%;
 
     --card: 221 39% 11%;
-    --card-foreground: 270 4% 98%;
+    --card-foreground: 210 4% 98%;
 
     --popover: 221 39% 11%;
-    --popover-foreground: 270 4% 98%;
+    --popover-foreground: 210 4% 98%;
 
-    --primary: 260 84% 62%;
+    --primary: 214 84% 62%;
     --primary-foreground: 221 39% 11%;
 
     --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 270 4% 98%;
+    --secondary-foreground: 210 4% 98%;
 
     --muted: 240 3.7% 15.9%;
     --muted-foreground: 240 5% 64.9%;
 
     --accent: 240 3.7% 15.9%;
-    --accent-foreground: 270 4% 98%;
+    --accent-foreground: 210 4% 98%;
 
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 270 4% 98%;
+    --destructive-foreground: 210 4% 98%;
 
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
-    --ring: 260 84% 62%;
+    --ring: 214 84% 62%;
   }
 }
 
@@ -102,6 +102,6 @@
   }
 
   .btn-subscribe {
-    @apply bg-purple-500 hover:bg-purple-600 text-white font-medium py-2 px-5 rounded-md transition-colors;
+    @apply bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-5 rounded-md transition-colors;
   }
 }

@@ -1,0 +1,271 @@
+
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from "@/integrations/supabase/client";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { User } from '@supabase/supabase-js';
+
+const AdminDashboard = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [subscribers, setSubscribers] = useState<any[]>([]);
+  const [newsletters, setNewsletters] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      
+      if (!data.session) {
+        navigate('/admin');
+        return;
+      }
+      
+      // Verify if the user is an admin
+      const { data: adminData, error: adminError } = await supabase
+        .from('admin_users')
+        .select('id')
+        .eq('id', data.session.user.id)
+        .single();
+      
+      if (adminError || !adminData) {
+        await supabase.auth.signOut();
+        navigate('/admin');
+        return;
+      }
+      
+      setUser(data.session.user);
+      
+      // Load subscribers and newsletters
+      await fetchData();
+    };
+    
+    checkSession();
+    
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_OUT') {
+        navigate('/admin');
+      }
+    });
+    
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [navigate]);
+  
+  const fetchData = async () => {
+    setLoading(true);
+    
+    try {
+      // Fetch subscribers
+      const { data: subscribersData, error: subscribersError } = await supabase
+        .from('subscribers')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (subscribersError) throw subscribersError;
+      setSubscribers(subscribersData || []);
+      
+      // Fetch newsletters
+      const { data: newslettersData, error: newslettersError } = await supabase
+        .from('newsletters')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (newslettersError) throw newslettersError;
+      setNewsletters(newslettersData || []);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast({
+        title: "خطأ في جلب البيانات",
+        description: "حدث خطأ أثناء تحميل البيانات",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate('/admin');
+  };
+  
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('ar-SA', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-lg">جارٍ التحميل...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white shadow">
+        <div className="container py-4 flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold">لوحة تحكم المسؤول</h1>
+            <p className="text-sm text-gray-500">مرحبًا، {user?.email}</p>
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/admin/compose')}
+            >
+              إنشاء نشرة إخبارية جديدة
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={handleSignOut}
+            >
+              تسجيل الخروج
+            </Button>
+          </div>
+        </div>
+      </div>
+      
+      <div className="container py-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>المشتركين</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{subscribers.length}</div>
+              <p className="text-gray-500">إجمالي عدد المشتركين في النشرة الإخبارية</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>النشرات الإخبارية</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{newsletters.length}</div>
+              <p className="text-gray-500">إجمالي عدد النشرات الإخبارية المنشورة</p>
+            </CardContent>
+          </Card>
+        </div>
+        
+        <Tabs defaultValue="subscribers">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="subscribers">المشتركين</TabsTrigger>
+            <TabsTrigger value="newsletters">النشرات الإخبارية</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="subscribers">
+            <Card>
+              <CardHeader>
+                <CardTitle>قائمة المشتركين</CardTitle>
+              </CardHeader>
+              <CardContent className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-right py-3 px-4">البريد الإلكتروني</th>
+                      <th className="text-right py-3 px-4">تاريخ الاشتراك</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {subscribers.length > 0 ? (
+                      subscribers.map((subscriber) => (
+                        <tr key={subscriber.id} className="border-b hover:bg-gray-50">
+                          <td className="py-3 px-4">{subscriber.email}</td>
+                          <td className="py-3 px-4">{formatDate(subscriber.created_at)}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={2} className="py-4 text-center">
+                          لا يوجد مشتركين بعد.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="newsletters">
+            <Card>
+              <CardHeader>
+                <CardTitle>النشرات الإخبارية</CardTitle>
+              </CardHeader>
+              <CardContent className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-right py-3 px-4">العنوان</th>
+                      <th className="text-right py-3 px-4">تاريخ الإنشاء</th>
+                      <th className="text-right py-3 px-4">تاريخ الإرسال</th>
+                      <th className="text-right py-3 px-4">الإجراءات</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {newsletters.length > 0 ? (
+                      newsletters.map((newsletter) => (
+                        <tr key={newsletter.id} className="border-b hover:bg-gray-50">
+                          <td className="py-3 px-4">{newsletter.subject}</td>
+                          <td className="py-3 px-4">{formatDate(newsletter.created_at)}</td>
+                          <td className="py-3 px-4">
+                            {newsletter.sent_at ? formatDate(newsletter.sent_at) : 'لم يتم الإرسال بعد'}
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex gap-2">
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => navigate(`/admin/edit/${newsletter.id}`)}
+                              >
+                                تعديل
+                              </Button>
+                              {!newsletter.sent_at && (
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => navigate(`/admin/send/${newsletter.id}`)}
+                                >
+                                  إرسال
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={4} className="py-4 text-center">
+                          لم يتم إنشاء أي نشرة إخبارية بعد.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+};
+
+export default AdminDashboard;

@@ -3,25 +3,49 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from "@/integrations/supabase/client";
 
 const CallToAction = () => {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleSubscribe = (e: React.FormEvent) => {
+  const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const { error } = await supabase
+        .from('subscribers')
+        .insert([{ email }]);
+
+      if (error) {
+        if (error.code === '23505') {
+          toast({
+            title: "البريد الإلكتروني موجود بالفعل",
+            description: "أنت مشترك بالفعل في نشرتنا الإخبارية.",
+            variant: "destructive"
+          });
+        } else {
+          throw error;
+        }
+      } else {
+        toast({
+          title: "تم بنجاح!",
+          description: "لقد تم اشتراكك في نشرتنا الإخبارية.",
+        });
+        setEmail('');
+      }
+    } catch (error) {
+      console.error("Error subscribing:", error);
       toast({
-        title: "تم بنجاح!",
-        description: "لقد تم اشتراكك في نشرتنا الإخبارية.",
+        title: "حدث خطأ",
+        description: "يرجى المحاولة مرة أخرى لاحقًا.",
+        variant: "destructive"
       });
+    } finally {
       setIsLoading(false);
-      setEmail('');
-    }, 1000);
+    }
   };
 
   return (

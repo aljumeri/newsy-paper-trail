@@ -17,6 +17,8 @@ const AdminLogin = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  console.log("AdminLogin component rendering");
+
   // Simplified session check
   useEffect(() => {
     console.log("AdminLogin: Component mounted, checking session...");

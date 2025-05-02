@@ -26,9 +26,11 @@ const AuthTabs: React.FC<AuthTabsProps> = ({
   isLoading,
   authError
 }) => {
+  console.log("AuthTabs rendering, email:", email ? "present" : "empty");
+  
   return (
     <>
-      <AuthErrorAlert error={authError} />
+      {authError && <AuthErrorAlert error={authError} />}
       <Tabs defaultValue="login" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-4">
           <TabsTrigger value="login">تسجيل الدخول</TabsTrigger>

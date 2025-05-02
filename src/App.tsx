@@ -32,6 +32,8 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
+  console.log("App component rendering with routes");
+  
   // Add global error handler for uncaught promise rejections
   useEffect(() => {
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {

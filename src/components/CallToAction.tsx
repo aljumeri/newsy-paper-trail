@@ -28,7 +28,7 @@ const CallToAction = () => {
     <section className="section bg-gradient-to-br from-blue-600 to-blue-800 text-white">
       <div className="container">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">هل أنت مستعد للارتقاء بتفكيرك؟</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 whitespace-nowrap">هل أنت مستعد للارتقاء بتفكيرك؟</h2>
           <p className="text-xl opacity-90 mb-8 max-w-2xl mx-auto">
             انضم إلى مجتمعنا من المحترفين ذوي التفكير المستقبلي واستلم رؤى أسبوعية مباشرة في بريدك الوارد.
           </p>

@@ -33,7 +33,7 @@ const HeroSection = () => {
             <Bell size={20} />
             <span>نشرة أسبوعية</span>
           </div>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight whitespace-nowrap">
             نشرة سولو للذكاء الاصطناعي
           </h1>
           <p className="text-lg text-neutral-600">

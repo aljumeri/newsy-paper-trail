@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -17,30 +16,53 @@ const ComposeNewsletter = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Enhanced session check with better error handling
   useEffect(() => {
     const checkSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      
-      if (!data.session) {
-        navigate('/admin');
-        return;
-      }
-      
-      // Verify if the user is an admin
-      const { data: adminData, error: adminError } = await supabase
-        .from('admin_users')
-        .select('id')
-        .eq('id', data.session.user.id)
-        .single();
-      
-      if (adminError || !adminData) {
-        await supabase.auth.signOut();
+      try {
+        console.log("ComposeNewsletter: Checking session...");
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Session check error:", error);
+          toast({
+            title: "خطأ في التحقق من الجلسة",
+            description: "يرجى تسجيل الدخول مرة أخرى",
+            variant: "destructive"
+          });
+          navigate('/admin');
+          return;
+        }
+        
+        if (!data.session) {
+          console.log("ComposeNewsletter: No active session found, redirecting to login");
+          navigate('/admin');
+          return;
+        }
+        
+        console.log("ComposeNewsletter: Valid session found for user:", data.session.user.email);
+      } catch (err) {
+        console.error("Unexpected error checking session:", err);
         navigate('/admin');
       }
     };
     
     checkSession();
-  }, [navigate]);
+    
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state changed in ComposeNewsletter:", event, session?.user?.email);
+      
+      if (event === 'SIGNED_OUT' || !session) {
+        navigate('/admin');
+      }
+    });
+    
+    // Clean up subscription when component unmounts
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate, toast]);
 
   const handleSaveNewsletter = async () => {
     if (!subject.trim() || !content.trim()) {
@@ -56,7 +78,9 @@ const ComposeNewsletter = () => {
     
     try {
       const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) throw new Error("User not authenticated");
+      if (!sessionData.session) {
+        throw new Error("User not authenticated");
+      }
       
       const { data, error } = await supabase
         .from('newsletters')

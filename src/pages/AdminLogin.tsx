@@ -20,15 +20,21 @@ const AdminLogin = () => {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        console.log("Checking session status...");
-        const { data } = await supabase.auth.getSession();
-        console.log("Session data:", data);
+        console.log("AdminLogin: Checking session status...");
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Session check error:", error);
+          return;
+        }
+        
+        console.log("AdminLogin: Session data:", data);
         
         if (data.session) {
-          console.log("Valid session found, navigating to dashboard");
+          console.log("AdminLogin: Valid session found, navigating to dashboard");
           navigate('/admin/dashboard', { replace: true });
         } else {
-          console.log("No active session found");
+          console.log("AdminLogin: No active session found");
         }
       } catch (error) {
         console.error('Session check error:', error);
@@ -93,16 +99,6 @@ const AdminLogin = () => {
       console.log("Registration successful:", data);
       
       if (data.user) {
-        // Manually add user to admin_users table
-        console.log("Adding user to admin_users table:", data.user.id);
-        const { error: insertError } = await supabase
-          .from('admin_users')
-          .insert([{ id: data.user.id }]);
-          
-        if (insertError) {
-          console.error("Error adding to admin_users:", insertError);
-        }
-        
         // Immediately sign in after registration
         try {
           const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
@@ -24,6 +24,7 @@ const useAdminDashboardData = (user: User | null) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const isUnmounted = useRef(false);
 
   useEffect(() => {
     if (!user) {
@@ -32,7 +33,8 @@ const useAdminDashboardData = (user: User | null) => {
       return;
     }
     
-    let isMounted = true;
+    // Setup unmount flag for cleanup
+    isUnmounted.current = false;
     
     const fetchData = async () => {
       console.log("Starting to fetch admin dashboard data...");
@@ -49,10 +51,10 @@ const useAdminDashboardData = (user: User | null) => {
         
         if (subscribersError) {
           console.error('Error fetching subscribers:', subscribersError);
-          if (isMounted) {
+          if (!isUnmounted.current) {
             setError(subscribersError.message);
           }
-        } else if (isMounted && subscribersData) {
+        } else if (!isUnmounted.current && subscribersData) {
           console.log("Fetched subscribers:", subscribersData?.length || 0);
           // Fix: Ensure we're handling the type correctly
           setSubscribers(subscribersData as Subscriber[]);
@@ -67,10 +69,10 @@ const useAdminDashboardData = (user: User | null) => {
         
         if (newslettersError) {
           console.error('Error fetching newsletters:', newslettersError);
-          if (isMounted) {
+          if (!isUnmounted.current) {
             setError(prev => prev || newslettersError.message);
           }
-        } else if (isMounted && newslettersData) {
+        } else if (!isUnmounted.current && newslettersData) {
           console.log("Fetched newsletters:", newslettersData?.length || 0);
           // Fix: Ensure we're handling the type correctly
           setNewsletters(newslettersData as Newsletter[]);
@@ -78,11 +80,11 @@ const useAdminDashboardData = (user: User | null) => {
         
       } catch (error: any) {
         console.error('Error fetching data:', error);
-        if (isMounted) {
+        if (!isUnmounted.current) {
           setError(error.message || "Unknown error occurred");
         }
       } finally {
-        if (isMounted) {
+        if (!isUnmounted.current) {
           setLoading(false);
         }
       }
@@ -91,7 +93,7 @@ const useAdminDashboardData = (user: User | null) => {
     fetchData();
     
     return () => {
-      isMounted = false;
+      isUnmounted.current = true;
     };
   }, [user, toast]);
 

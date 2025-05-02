@@ -13,7 +13,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import ComposeNewsletter from "./pages/ComposeNewsletter";
 import EditNewsletter from "./pages/EditNewsletter";
 import SendNewsletter from "./pages/SendNewsletter";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 // Configure QueryClient with error handling
@@ -34,6 +34,7 @@ const queryClient = new QueryClient({
 
 const App = () => {
   console.log("App component rendering with routes");
+  const unsubscribeRef = useRef<() => void | undefined>();
   
   useEffect(() => {
     // Initial auth setup
@@ -62,7 +63,12 @@ const App = () => {
       console.log("App: Auth state changed:", event, session ? `Session present (expires: ${new Date(session.expires_at * 1000).toLocaleString()})` : "No session");
     });
     
-    // Global error handler
+    // Store the unsubscribe function
+    unsubscribeRef.current = () => {
+      subscription.unsubscribe();
+    };
+    
+    // Global error handler for promises
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
       console.error('Unhandled promise rejection in App:', event.reason);
       event.preventDefault();
@@ -72,7 +78,9 @@ const App = () => {
     
     // Cleanup
     return () => {
-      subscription.unsubscribe();
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+      }
       window.removeEventListener('unhandledrejection', handleUnhandledRejection);
     };
   }, []);

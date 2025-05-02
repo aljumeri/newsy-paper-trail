@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,17 +11,19 @@ const useAdminAuth = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const isUnmounted = useRef(false);
 
   useEffect(() => {
     console.log("Starting auth check in useAdminAuth...");
     
-    let isMounted = true;
+    // Setup unmount flag for cleanup
+    isUnmounted.current = false;
     
-    // Set up a simple auth state listener first
+    // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
       console.log("Auth state changed:", event);
       
-      if (!isMounted) return;
+      if (isUnmounted.current) return;
       
       if (event === 'SIGNED_OUT') {
         console.log("User signed out");
@@ -34,42 +36,44 @@ const useAdminAuth = () => {
       }
     });
     
-    // Then check for existing session - use a synchronous approach
-    const checkSession = () => {
-      console.log("Checking session status...");
-      
-      supabase.auth.getSession()
-        .then(({ data, error }) => {
-          if (!isMounted) return;
-          
-          if (error) {
-            console.error("Session check error:", error);
-            setLoading(false);
-            return;
-          }
-          
-          console.log("Session check result:", data.session ? "Session found" : "No session");
-          
-          if (data.session) {
-            setUser(data.session.user);
-            setSession(data.session);
-          }
-          
+    // Check for existing session
+    const checkSession = async () => {
+      try {
+        console.log("Checking session status...");
+        
+        if (isUnmounted.current) return;
+        
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (isUnmounted.current) return;
+        
+        if (error) {
+          console.error("Session check error:", error);
           setLoading(false);
-        })
-        .catch(error => {
-          if (!isMounted) return;
-          console.error("Error checking session:", error);
-          setLoading(false);
-        });
+          return;
+        }
+        
+        console.log("Session check result:", data.session ? "Session found" : "No session");
+        
+        if (data.session) {
+          setUser(data.session.user);
+          setSession(data.session);
+        }
+        
+        setLoading(false);
+      } catch (error) {
+        if (isUnmounted.current) return;
+        console.error("Error checking session:", error);
+        setLoading(false);
+      }
     };
     
-    // Do the session check directly, no setTimeout
+    // Do the session check immediately
     checkSession();
     
     return () => {
       console.log("Cleaning up auth listener");
-      isMounted = false;
+      isUnmounted.current = true;
       subscription.unsubscribe();
     };
   }, []);

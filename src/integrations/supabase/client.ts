@@ -28,6 +28,6 @@ supabase.auth.getSession().then(({ data, error }) => {
   if (error) {
     console.error("Initial supabase client session check error:", error);
   } else {
-    console.log("Initial supabase client session check:", data.session ? `Session exists (expires: ${new Date(data.session.expires_at * 1000).toLocaleString()})` : "No session");
+    console.log("Initial supabase client session check:", data.session ? `Session found (expires: ${new Date(data.session.expires_at * 1000).toLocaleString()})` : "No session");
   }
 });

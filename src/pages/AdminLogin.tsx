@@ -16,14 +16,19 @@ const AdminLogin = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Enhanced session check
   useEffect(() => {
-    // Check if user is already logged in
     const checkSession = async () => {
       try {
+        console.log("Checking session status...");
         const { data } = await supabase.auth.getSession();
+        console.log("Session data:", data);
+        
         if (data.session) {
-          // User is logged in, try to navigate to dashboard
-          navigate('/admin/dashboard');
+          console.log("Valid session found, navigating to dashboard");
+          navigate('/admin/dashboard', { replace: true });
+        } else {
+          console.log("No active session found");
         }
       } catch (error) {
         console.error('Session check error:', error);
@@ -39,6 +44,7 @@ const AdminLogin = () => {
     setAuthError(null);
     
     try {
+      console.log("Attempting login with:", email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -46,13 +52,14 @@ const AdminLogin = () => {
       
       if (error) throw error;
       
-      if (data.user) {
-        toast({
-          title: "تم تسجيل الدخول بنجاح",
-          description: "مرحبًا بعودتك!"
-        });
-        navigate('/admin/dashboard');
-      }
+      console.log("Login successful:", data);
+      toast({
+        title: "تم تسجيل الدخول بنجاح",
+        description: "مرحبًا بعودتك!"
+      });
+      
+      // Force navigation to dashboard
+      navigate('/admin/dashboard', { replace: true });
     } catch (error: any) {
       console.error('Login error:', error);
       setAuthError(error.message || "فشل تسجيل الدخول. يرجى التحقق من بيانات الاعتماد الخاصة بك.");
@@ -72,7 +79,7 @@ const AdminLogin = () => {
     setAuthError(null);
     
     try {
-      // Create a new user account
+      console.log("Attempting registration with:", email);
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -83,8 +90,11 @@ const AdminLogin = () => {
       
       if (error) throw error;
       
+      console.log("Registration successful:", data);
+      
       if (data.user) {
-        // Manually add user to admin_users table regardless of email verification status
+        // Manually add user to admin_users table
+        console.log("Adding user to admin_users table:", data.user.id);
         const { error: insertError } = await supabase
           .from('admin_users')
           .insert([{ id: data.user.id }]);
@@ -93,7 +103,7 @@ const AdminLogin = () => {
           console.error("Error adding to admin_users:", insertError);
         }
         
-        // Try to sign in immediately after registration
+        // Immediately sign in after registration
         try {
           const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
             email,
@@ -105,7 +115,7 @@ const AdminLogin = () => {
               title: "تم التسجيل والدخول بنجاح",
               description: "تم إنشاء حساب المسؤول الخاص بك وتسجيل الدخول."
             });
-            navigate('/admin/dashboard');
+            navigate('/admin/dashboard', { replace: true });
           } else {
             toast({
               title: "تم التسجيل بنجاح",
@@ -113,7 +123,7 @@ const AdminLogin = () => {
             });
           }
         } catch (signInErr) {
-          // Silent fail for automatic login attempt
+          console.error("Auto-login error:", signInErr);
           toast({
             title: "تم التسجيل بنجاح",
             description: "يرجى التحقق من بريدك الإلكتروني للتأكيد ثم تسجيل الدخول."

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -18,26 +17,16 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     const checkSession = async () => {
+      console.log("AdminDashboard: Checking session status...");
       const { data } = await supabase.auth.getSession();
       
       if (!data.session) {
-        navigate('/admin');
+        console.log("AdminDashboard: No session found, redirecting to login");
+        navigate('/admin', { replace: true });
         return;
       }
       
-      // Verify if the user is an admin
-      const { data: adminData, error: adminError } = await supabase
-        .from('admin_users')
-        .select('id')
-        .eq('id', data.session.user.id)
-        .single();
-      
-      if (adminError || !adminData) {
-        await supabase.auth.signOut();
-        navigate('/admin');
-        return;
-      }
-      
+      console.log("AdminDashboard: Session found, user:", data.session.user.email);
       setUser(data.session.user);
       
       // Load subscribers and newsletters
@@ -47,12 +36,20 @@ const AdminDashboard = () => {
     checkSession();
     
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event);
+      
       if (event === 'SIGNED_OUT') {
-        navigate('/admin');
+        console.log("User signed out, navigating to login page");
+        navigate('/admin', { replace: true });
+      } else if (event === 'SIGNED_IN' && session) {
+        console.log("User signed in:", session.user.email);
+        setUser(session.user);
+        await fetchData();
       }
     });
     
     return () => {
+      console.log("Cleaning up auth listener");
       authListener.subscription.unsubscribe();
     };
   }, [navigate]);
@@ -91,8 +88,17 @@ const AdminDashboard = () => {
   };
   
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate('/admin');
+    try {
+      await supabase.auth.signOut();
+      navigate('/admin', { replace: true });
+    } catch (error) {
+      console.error("Sign out error:", error);
+      toast({
+        title: "خطأ في تسجيل الخروج",
+        description: "حدث خطأ أثناء تسجيل الخروج.",
+        variant: "destructive"
+      });
+    }
   };
   
   const formatDate = (dateString: string) => {

@@ -12,9 +12,9 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     autoRefreshToken: true,
     persistSession: true,
     storage: localStorage,
-    detectSessionInUrl: false, // Changed from true to false to avoid potential race conditions
+    detectSessionInUrl: false,
     flowType: 'pkce',
-    debug: false // Reduced debug logging to avoid console clutter
+    debug: false
   }
 });
 

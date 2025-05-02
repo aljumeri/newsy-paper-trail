@@ -12,7 +12,7 @@ const AuthErrorAlert: React.FC<AuthErrorAlertProps> = ({ error }) => {
   
   return (
     <Alert variant="destructive" className="mb-4">
-      <AlertCircle className="h-4 w-4" />
+      <AlertCircle className="h-4 w-4 mr-2" />
       <AlertDescription>{error}</AlertDescription>
     </Alert>
   );

@@ -22,7 +22,7 @@ const AdminLogin = () => {
       const { data } = await supabase.auth.getSession();
       if (data.session) {
         // Verify if the user is an admin
-        const { data: adminData } = await supabase
+        const { data: adminData, error: adminError } = await supabase
           .from('admin_users')
           .select('id')
           .eq('id', data.session.user.id)
@@ -43,7 +43,6 @@ const AdminLogin = () => {
     setAuthError(null);
     
     try {
-      // Override to ignore email verification during login
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -52,7 +51,7 @@ const AdminLogin = () => {
       if (error) throw error;
       
       if (data.user) {
-        // Check if the user is an admin
+        // Check if the user is in the admin_users table
         const { data: adminData, error: adminError } = await supabase
           .from('admin_users')
           .select('id')
@@ -60,7 +59,9 @@ const AdminLogin = () => {
           .single();
         
         if (adminError || !adminData) {
+          console.error('Admin check error:', adminError);
           await supabase.auth.signOut();
+          setAuthError("ليس لديك صلاحيات إدارية. تأكد من استخدام حساب مسؤول.");
           toast({
             title: "غير مصرح به",
             description: "ليس لديك صلاحيات إدارية.",
@@ -93,15 +94,14 @@ const AdminLogin = () => {
     setAuthError(null);
     
     try {
-      // Create a new user account without email verification
+      // Create a new user account
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          // Disable email verification during development
           emailRedirectTo: window.location.origin,
           data: {
-            is_admin: true  // Optional metadata to indicate admin status
+            is_admin: true
           }
         }
       });
@@ -109,38 +109,51 @@ const AdminLogin = () => {
       if (error) throw error;
       
       if (data.user) {
-        // Add user to admin_users table using RPC function
-        const { error: adminError } = await supabase.rpc('create_admin_user', {
-          user_id: data.user.id
-        });
-        
-        if (adminError) {
-          console.error("Error adding to admin_users using RPC:", adminError);
+        // Manually add user to admin_users table regardless of email verification status
+        const { error: insertError } = await supabase
+          .from('admin_users')
+          .insert([{ id: data.user.id }]);
           
-          // Fallback: Try direct insert with auth.uid() check
-          const { error: directError } = await supabase
-            .from('admin_users')
-            .insert([{ id: data.user.id }]);
-            
-          if (directError) {
-            throw directError;
-          }
+        if (insertError) {
+          console.error("Error adding to admin_users:", insertError);
+          throw insertError;
         }
         
-        // Check if email confirmation is required
+        // If we got here, the user is now in the admin_users table
+        
         if (data.session) {
-          // User created and logged in directly without email confirmation
+          // User is already logged in
           toast({
             title: "تم التسجيل بنجاح",
             description: "تم إنشاء حساب المسؤول الخاص بك وتسجيل الدخول."
           });
           navigate('/admin/dashboard');
         } else {
-          // Email confirmation might still be required by Supabase settings
+          // User needs to verify email first
           toast({
             title: "تم التسجيل بنجاح",
-            description: "تم إنشاء الحساب. يمكنك الآن تسجيل الدخول."
+            description: "يرجى التحقق من بريدك الإلكتروني للتأكيد ثم تسجيل الدخول."
           });
+          
+          // Try to sign in immediately if verification is bypassed in development
+          try {
+            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+              email,
+              password
+            });
+            
+            if (!signInError && signInData.session) {
+              // Login successful (happens if email verification is disabled)
+              toast({
+                title: "تم تسجيل الدخول تلقائيًا",
+                description: "تم التحقق من حسابك وتسجيل الدخول."
+              });
+              navigate('/admin/dashboard');
+            }
+          } catch (signInErr) {
+            // Silent fail for automatic login attempt
+            console.log("Auto login after registration failed - verification likely required");
+          }
         }
       }
     } catch (error: any) {

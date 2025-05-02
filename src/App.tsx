@@ -14,7 +14,14 @@ import ComposeNewsletter from "./pages/ComposeNewsletter";
 import EditNewsletter from "./pages/EditNewsletter";
 import SendNewsletter from "./pages/SendNewsletter";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

@@ -12,6 +12,7 @@ const AdminLogin = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isPageLoading, setIsPageLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -21,10 +22,13 @@ const AdminLogin = () => {
     const checkSession = async () => {
       try {
         console.log("AdminLogin: Checking session status...");
+        setIsPageLoading(true);
+        
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error("Session check error:", error);
+          setIsPageLoading(false);
           return;
         }
         
@@ -35,13 +39,30 @@ const AdminLogin = () => {
           navigate('/admin/dashboard', { replace: true });
         } else {
           console.log("AdminLogin: No active session found");
+          setIsPageLoading(false);
         }
       } catch (error) {
         console.error('Session check error:', error);
+        setIsPageLoading(false);
       }
     };
     
     checkSession();
+    
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state changed in AdminLogin:", event);
+      
+      if (event === 'SIGNED_IN' && session) {
+        console.log("User signed in, navigating to dashboard");
+        navigate('/admin/dashboard', { replace: true });
+      }
+    });
+    
+    // Clean up subscription when component unmounts
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -117,6 +138,7 @@ const AdminLogin = () => {
               title: "تم التسجيل بنجاح",
               description: "يرجى التحقق من بريدك الإلكتروني للتأكيد ثم تسجيل الدخول."
             });
+            setIsLoading(false);
           }
         } catch (signInErr) {
           console.error("Auto-login error:", signInErr);
@@ -124,6 +146,7 @@ const AdminLogin = () => {
             title: "تم التسجيل بنجاح",
             description: "يرجى التحقق من بريدك الإلكتروني للتأكيد ثم تسجيل الدخول."
           });
+          setIsLoading(false);
         }
       }
     } catch (error: any) {
@@ -134,10 +157,23 @@ const AdminLogin = () => {
         description: error.message || "فشل إنشاء الحساب. يرجى المحاولة مرة أخرى.",
         variant: "destructive"
       });
-    } finally {
       setIsLoading(false);
     }
   };
+
+  if (isPageLoading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-grow flex items-center justify-center px-4 py-12">
+          <div className="text-center">
+            <p className="text-lg">جارٍ التحميل...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">

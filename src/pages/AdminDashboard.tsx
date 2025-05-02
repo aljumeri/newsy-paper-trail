@@ -5,19 +5,20 @@ import DashboardHeader from '@/components/admin/DashboardHeader';
 import StatisticsCards from '@/components/admin/StatisticsCards';
 import SubscribersTable from '@/components/admin/SubscribersTable';
 import NewslettersTable from '@/components/admin/NewslettersTable';
-import useAdminAuth from '@/hooks/useAdminAuth';
-import useAdminDashboardData from '@/hooks/useAdminDashboardData';
 import useFormatDate from '@/hooks/useFormatDate';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 const AdminDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<any>(null);
+  const [subscribers, setSubscribers] = useState<any[]>([]);
+  const [newsletters, setNewsletters] = useState<any[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
   const { formatDate } = useFormatDate();
   const { toast } = useToast();
   
-  // Simplified auth check
+  // Simplified direct auth check
   useEffect(() => {
     console.log("AdminDashboard: Checking authentication");
     
@@ -40,6 +41,9 @@ const AdminDashboard = () => {
         console.log("User authenticated:", data.session.user);
         setUser(data.session.user);
         setIsLoading(false);
+        
+        // Fetch dashboard data once authenticated
+        fetchDashboardData(data.session.user);
       } catch (e) {
         console.error("Auth check failed:", e);
         window.location.href = '/admin';
@@ -65,6 +69,61 @@ const AdminDashboard = () => {
     };
   }, []);
   
+  const fetchDashboardData = async (user: any) => {
+    if (!user) return;
+    
+    setDataLoading(true);
+    
+    try {
+      // Fetch subscribers
+      console.log("Fetching subscribers data...");
+      const { data: subscribersData, error: subscribersError } = await supabase
+        .from('subscribers')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (subscribersError) {
+        console.error('Error fetching subscribers:', subscribersError);
+        toast({
+          title: "خطأ في جلب البيانات",
+          description: subscribersError.message,
+          variant: "destructive"
+        });
+      } else {
+        console.log("Fetched subscribers:", subscribersData?.length || 0);
+        setSubscribers(subscribersData || []);
+      }
+      
+      // Fetch newsletters
+      console.log("Fetching newsletters data...");
+      const { data: newslettersData, error: newslettersError } = await supabase
+        .from('newsletters')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (newslettersError) {
+        console.error('Error fetching newsletters:', newslettersError);
+        toast({
+          title: "خطأ في جلب البيانات",
+          description: newslettersError.message,
+          variant: "destructive"
+        });
+      } else {
+        console.log("Fetched newsletters:", newslettersData?.length || 0);
+        setNewsletters(newslettersData || []);
+      }
+    } catch (error: any) {
+      console.error('Error fetching dashboard data:', error);
+      toast({
+        title: "خطأ في جلب البيانات",
+        description: error.message || "حدث خطأ غير معروف",
+        variant: "destructive"
+      });
+    } finally {
+      setDataLoading(false);
+    }
+  };
+  
   const handleSignOut = async () => {
     try {
       const { error } = await supabase.auth.signOut();
@@ -85,7 +144,7 @@ const AdminDashboard = () => {
       });
       
       window.location.href = '/admin';
-    } catch (error) {
+    } catch (error: any) {
       console.error("Sign out error:", error);
       toast({
         title: "خطأ في تسجيل الخروج",
@@ -94,9 +153,6 @@ const AdminDashboard = () => {
       });
     }
   };
-  
-  // Get dashboard data only when user is authenticated
-  const { subscribers, newsletters, loading: dataLoading, error } = useAdminDashboardData(user);
 
   if (isLoading) {
     return (

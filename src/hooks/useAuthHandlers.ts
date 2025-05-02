@@ -3,9 +3,6 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from "@/integrations/supabase/client";
 
-/**
- * Hook for handling authentication-related operations
- */
 export const useAuthHandlers = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,13 +24,13 @@ export const useAuthHandlers = () => {
       
       if (error) throw error;
       
-      console.log("Login successful:", data);
+      console.log("Login successful, redirecting to dashboard");
       toast({
         title: "تم تسجيل الدخول بنجاح",
         description: "مرحبًا بعودتك!"
       });
       
-      // Direct navigation after successful login
+      // Use direct navigation instead of React Router
       window.location.href = '/admin/dashboard';
     } catch (error: any) {
       console.error('Login error:', error);
@@ -67,31 +64,31 @@ export const useAuthHandlers = () => {
       
       console.log("Registration successful:", data);
       
-      if (data.user) {
-        toast({
-          title: "تم التسجيل بنجاح",
-          description: "يرجى التحقق من بريدك الإلكتروني للتأكيد."
+      toast({
+        title: "تم التسجيل بنجاح",
+        description: "يرجى تسجيل الدخول الآن."
+      });
+      
+      // Try immediate sign in after registration
+      try {
+        console.log("Attempting automatic login after registration");
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password
         });
         
-        // Try immediate sign in after registration
-        try {
-          const { error: signInError } = await supabase.auth.signInWithPassword({
-            email,
-            password
+        if (!signInError) {
+          console.log("Auto-login successful, redirecting to dashboard");
+          toast({
+            title: "تم التسجيل والدخول بنجاح",
+            description: "تم إنشاء حساب المسؤول الخاص بك وتسجيل الدخول."
           });
           
-          if (!signInError) {
-            toast({
-              title: "تم التسجيل والدخول بنجاح",
-              description: "تم إنشاء حساب المسؤول الخاص بك وتسجيل الدخول."
-            });
-            
-            // Direct navigation after successful login
-            window.location.href = '/admin/dashboard';
-          }
-        } catch (signInErr) {
-          console.error("Auto-login error:", signInErr);
+          // Direct navigation after successful login
+          window.location.href = '/admin/dashboard';
         }
+      } catch (signInErr) {
+        console.error("Auto-login error:", signInErr);
       }
     } catch (error: any) {
       console.error('Registration error:', error);

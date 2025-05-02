@@ -9,7 +9,6 @@ import { supabase } from "@/integrations/supabase/client";
 
 const AdminLogin = () => {
   const [isSessionLoading, setIsSessionLoading] = useState(true);
-  const [hasSession, setHasSession] = useState(false);
   const {
     email,
     setEmail,
@@ -21,52 +20,42 @@ const AdminLogin = () => {
     handleRegister
   } = useAuthHandlers();
 
-  // Simplified direct session check
+  // Simple direct session check
   useEffect(() => {
-    console.log("AdminLogin: Checking session status directly");
-    
-    const checkSession = async () => {
+    const checkAuth = async () => {
       try {
-        const { data, error } = await supabase.auth.getSession();
+        console.log("AdminLogin: Checking for active session");
+        const { data } = await supabase.auth.getSession();
         
-        if (error) {
-          console.error("Session check error:", error);
-          setIsSessionLoading(false);
+        if (data.session) {
+          console.log("AdminLogin: Active session found, redirecting to dashboard");
+          window.location.href = '/admin/dashboard';
           return;
         }
         
-        if (data.session) {
-          console.log("AdminLogin: Valid session found, setting hasSession to true");
-          setHasSession(true);
-          window.location.href = '/admin/dashboard';
-        } else {
-          console.log("AdminLogin: No active session, showing login form");
-          setIsSessionLoading(false);
-        }
-      } catch (e) {
-        console.error("AdminLogin: Session check failed with error:", e);
+        console.log("AdminLogin: No active session found, showing login form");
+        setIsSessionLoading(false);
+      } catch (error) {
+        console.error("AdminLogin: Session check error:", error);
         setIsSessionLoading(false);
       }
     };
     
-    checkSession();
+    checkAuth();
   }, []);
-
-  // Set up auth state listener
+  
+  // Set up auth state change listener
   useEffect(() => {
-    console.log("AdminLogin: Setting up auth state listener");
-    
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("AdminLogin: Auth state changed:", event);
       
       if (event === 'SIGNED_IN' && session) {
-        console.log("AdminLogin: User signed in, redirecting to dashboard");
+        console.log("AdminLogin: User signed in event, redirecting to dashboard");
         window.location.href = '/admin/dashboard';
       }
     });
     
     return () => {
-      console.log("AdminLogin: Cleaning up auth listener");
       subscription.unsubscribe();
     };
   }, []);

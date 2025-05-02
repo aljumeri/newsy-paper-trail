@@ -32,6 +32,15 @@ const queryClient = new QueryClient({
   },
 });
 
+// Initialize Supabase auth state check
+supabase.auth.getSession().then(({ data, error }) => {
+  if (error) {
+    console.error("Initial session check error:", error);
+  } else {
+    console.log("Initial session check:", data.session ? "Session exists" : "No session");
+  }
+});
+
 const App = () => {
   console.log("App component rendering with routes");
   
@@ -51,8 +60,6 @@ const App = () => {
   useEffect(() => {
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
       console.error('Unhandled promise rejection:', event.reason);
-      // Prevent default to avoid additional console errors
-      // but log it clearly for debugging
       event.preventDefault();
     };
 
@@ -78,9 +85,7 @@ const App = () => {
             <Route path="/admin/compose" element={<ComposeNewsletter />} />
             <Route path="/admin/edit/:id" element={<EditNewsletter />} />
             <Route path="/admin/send/:id" element={<SendNewsletter />} />
-            {/* Redirect from /admin/ to /admin to fix potential routing issues */}
             <Route path="/admin/" element={<Navigate replace to="/admin" />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

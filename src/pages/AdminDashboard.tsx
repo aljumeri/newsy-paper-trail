@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DashboardHeader from '@/components/admin/DashboardHeader';
@@ -18,7 +17,7 @@ const AdminDashboard = () => {
   const { formatDate } = useFormatDate();
   const { toast } = useToast();
   
-  // Simplified direct auth check
+  // Check authentication on mount
   useEffect(() => {
     console.log("AdminDashboard: Checking authentication");
     
@@ -42,7 +41,7 @@ const AdminDashboard = () => {
         setUser(data.session.user);
         setIsLoading(false);
         
-        // Fetch dashboard data once authenticated
+        // Fetch dashboard data after authentication confirmation
         fetchDashboardData(data.session.user);
       } catch (e) {
         console.error("Auth check failed:", e);
@@ -53,22 +52,7 @@ const AdminDashboard = () => {
     checkAuth();
   }, []);
   
-  // Set up auth state listener
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("AdminDashboard: Auth state changed:", event);
-      
-      if (event === 'SIGNED_OUT') {
-        console.log("User signed out, redirecting to login");
-        window.location.href = '/admin';
-      }
-    });
-    
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-  
+  // Fetch dashboard data
   const fetchDashboardData = async (user: any) => {
     if (!user) return;
     
@@ -126,6 +110,7 @@ const AdminDashboard = () => {
   
   const handleSignOut = async () => {
     try {
+      console.log("Signing out user...");
       const { error } = await supabase.auth.signOut();
       
       if (error) {

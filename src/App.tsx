@@ -32,21 +32,20 @@ const queryClient = new QueryClient({
   },
 });
 
-// Initialize Supabase auth state check
-supabase.auth.getSession().then(({ data, error }) => {
-  if (error) {
-    console.error("Initial session check error:", error);
-  } else {
-    console.log("Initial session check:", data.session ? "Session exists" : "No session");
-  }
-});
-
 const App = () => {
   console.log("App component rendering with routes");
   
-  // Initialize Supabase auth
   useEffect(() => {
-    // Set up auth state change listener for debugging
+    // Initial session check for debugging
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (error) {
+        console.error("Initial session check error:", error);
+      } else {
+        console.log("Initial session check:", data.session ? "Session exists" : "No session");
+      }
+    });
+    
+    // Setup auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("App: Auth state changed:", event, session ? "Session exists" : "No session");
     });

@@ -4,61 +4,147 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import AuthTabs from '@/components/admin/AuthTabs';
-import { useAuthHandlers } from '@/hooks/useAuthHandlers';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from "@/integrations/supabase/client";
 
 const AdminLogin = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [isSessionLoading, setIsSessionLoading] = useState(true);
-  const {
-    email,
-    setEmail,
-    password,
-    setPassword,
-    isLoading,
-    authError,
-    handleLogin,
-    handleRegister
-  } = useAuthHandlers();
-
+  const { toast } = useToast();
+  
   // Simple direct session check
   useEffect(() => {
-    const checkAuth = async () => {
+    const checkSession = async () => {
       try {
         console.log("AdminLogin: Checking for active session");
-        const { data } = await supabase.auth.getSession();
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Session check error:", error);
+          setIsSessionLoading(false);
+          return;
+        }
         
         if (data.session) {
-          console.log("AdminLogin: Active session found, redirecting to dashboard");
+          console.log("AdminLogin: Session found, redirecting to dashboard");
           window.location.href = '/admin/dashboard';
           return;
         }
         
-        console.log("AdminLogin: No active session found, showing login form");
+        console.log("AdminLogin: No session found");
         setIsSessionLoading(false);
       } catch (error) {
-        console.error("AdminLogin: Session check error:", error);
+        console.error("AdminLogin: Session check failed:", error);
         setIsSessionLoading(false);
       }
     };
     
-    checkAuth();
+    checkSession();
   }, []);
-  
-  // Set up auth state change listener
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("AdminLogin: Auth state changed:", event);
-      
-      if (event === 'SIGNED_IN' && session) {
-        console.log("AdminLogin: User signed in event, redirecting to dashboard");
-        window.location.href = '/admin/dashboard';
-      }
-    });
+
+  // Handle login submission
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setAuthError(null);
     
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
+    try {
+      console.log("Attempting login with:", email);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (error) throw error;
+      
+      console.log("Login successful:", data);
+      toast({
+        title: "تم تسجيل الدخول بنجاح",
+        description: "جاري توجيهك إلى لوحة التحكم..."
+      });
+      
+      // Direct navigation approach
+      window.location.href = '/admin/dashboard';
+    } catch (error: any) {
+      console.error('Login error:', error);
+      setAuthError(error.message || "فشل تسجيل الدخول. يرجى التحقق من بيانات الاعتماد الخاصة بك.");
+      toast({
+        title: "خطأ في تسجيل الدخول",
+        description: error.message || "فشل تسجيل الدخول. يرجى التحقق من بيانات الاعتماد الخاصة بك.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle registration submission
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setAuthError(null);
+    
+    try {
+      console.log("Attempting registration with:", email);
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: window.location.origin + '/admin/dashboard'
+        }
+      });
+      
+      if (error) throw error;
+      
+      console.log("Registration successful:", data);
+      toast({
+        title: "تم التسجيل بنجاح",
+        description: "جاري محاولة تسجيل الدخول التلقائي..."
+      });
+      
+      // Try immediate sign in after registration
+      try {
+        console.log("Attempting automatic login after registration");
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+        
+        if (signInError) {
+          console.error("Auto-login error:", signInError);
+          toast({
+            title: "تم التسجيل بنجاح",
+            description: "يرجى تسجيل الدخول الآن.",
+          });
+          return;
+        }
+        
+        console.log("Auto-login successful, redirecting to dashboard");
+        toast({
+          title: "تم التسجيل والدخول بنجاح",
+          description: "جاري توجيهك إلى لوحة التحكم..."
+        });
+        
+        // Direct navigation after successful login
+        window.location.href = '/admin/dashboard';
+      } catch (signInErr) {
+        console.error("Auto-login error:", signInErr);
+      }
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      setAuthError(error.message || "فشل إنشاء الحساب. يرجى المحاولة مرة أخرى.");
+      toast({
+        title: "خطأ في التسجيل",
+        description: error.message || "فشل إنشاء الحساب. يرجى المحاولة مرة أخرى.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col">

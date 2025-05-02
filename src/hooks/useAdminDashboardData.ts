@@ -55,7 +55,8 @@ const useAdminDashboardData = (user: User | null) => {
         }
         
         if (isMounted.current) {
-          setIsAdmin(adminStatus);
+          // Fixed: Convert the response to boolean explicitly
+          setIsAdmin(Boolean(adminStatus));
         }
         
         return adminStatus;
@@ -97,7 +98,8 @@ const useAdminDashboardData = (user: User | null) => {
           }
         } else if (isMounted.current && subscribersData) {
           console.log("Fetched subscribers:", subscribersData?.length || 0);
-          setSubscribers(subscribersData as Subscriber[]);
+          // Fixed: Cast to Subscriber[] to fix type mismatch
+          setSubscribers(subscribersData as unknown as Subscriber[]);
         }
         
         // Fetch newsletters
@@ -114,7 +116,8 @@ const useAdminDashboardData = (user: User | null) => {
           }
         } else if (isMounted.current && newslettersData) {
           console.log("Fetched newsletters:", newslettersData?.length || 0);
-          setNewsletters(newslettersData as Newsletter[]);
+          // Fixed: Cast to Newsletter[] to fix type mismatch
+          setNewsletters(newslettersData as unknown as Newsletter[]);
         }
         
       } catch (error: any) {

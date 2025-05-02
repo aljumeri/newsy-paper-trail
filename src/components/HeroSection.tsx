@@ -16,10 +16,12 @@ const HeroSection = () => {
     setIsLoading(true);
     
     try {
-      // Fixed: Insert a single object, not an array with a single object
+      // Fixed: Use the correct type for the email insert
       const { error } = await supabase
         .from('subscribers')
-        .insert({ email });
+        .insert({
+          email: email
+        } as any);
 
       if (error) {
         if (error.code === '23505') {

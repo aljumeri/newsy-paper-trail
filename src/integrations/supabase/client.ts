@@ -11,7 +11,7 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    storage: localStorage,
+    storage: typeof localStorage !== 'undefined' ? localStorage : undefined,
     detectSessionInUrl: false, // Explicitly disabled to avoid race conditions
     flowType: 'pkce',
     debug: false, // Disabled debug logging
@@ -20,6 +20,10 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   },
   global: {
     fetch: (...args) => fetch(...args)
+  },
+  // Added to improve typing and handle serialization issues
+  db: {
+    schema: 'public'
   }
 });
 

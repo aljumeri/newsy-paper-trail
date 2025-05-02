@@ -78,6 +78,10 @@ export type Database = {
         Args: { user_id: string }
         Returns: undefined
       }
+      get_admin_status: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

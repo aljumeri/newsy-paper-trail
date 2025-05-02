@@ -26,6 +26,7 @@ interface Newsletter {
 
 const AdminControlPanel = () => {
   const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [isChecking, setIsChecking] = useState(true);
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
@@ -38,6 +39,7 @@ const AdminControlPanel = () => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        console.log('Checking authentication status...');
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -52,9 +54,41 @@ const AdminControlPanel = () => {
           return;
         }
         
-        setUser(data.session.user);
+        const currentUser = data.session.user;
+        setUser(currentUser);
+        
+        // Check if user is an admin
+        const { data: adminData, error: adminError } = await supabase.rpc(
+          'get_admin_status',
+          { user_id: currentUser.id }
+        );
+        
+        if (adminError) {
+          console.error('Admin status check error:', adminError);
+          toast({
+            title: "خطأ في التحقق من صلاحيات المسؤول",
+            description: adminError.message,
+            variant: "destructive"
+          });
+          redirectToLogin();
+          return;
+        }
+        
+        setIsAdmin(adminData);
+        
+        if (!adminData) {
+          console.log('User is not an admin');
+          toast({
+            title: "غير مصرح",
+            description: "ليس لديك صلاحيات للوصول إلى لوحة التحكم",
+            variant: "destructive"
+          });
+          redirectToLogin();
+          return;
+        }
+        
         setIsChecking(false);
-        fetchData(data.session.user);
+        fetchData(currentUser);
       } catch (err) {
         console.error('Auth check failed:', err);
         redirectToLogin();
@@ -176,6 +210,7 @@ const AdminControlPanel = () => {
           <div>
             <h1 className="text-2xl font-bold">لوحة تحكم المسؤول</h1>
             <p className="text-sm text-gray-500">مرحبًا، {user?.email}</p>
+            {isAdmin && <p className="text-xs text-green-600">حساب مسؤول</p>}
           </div>
           <div className="flex gap-2">
             <Button 

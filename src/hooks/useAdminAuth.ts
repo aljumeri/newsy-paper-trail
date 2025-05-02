@@ -15,9 +15,13 @@ const useAdminAuth = () => {
   useEffect(() => {
     console.log("Starting auth check in useAdminAuth...");
     
+    let isMounted = true;
+    
     // Set up a simple auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
       console.log("Auth state changed:", event);
+      
+      if (!isMounted) return;
       
       if (event === 'SIGNED_OUT') {
         console.log("User signed out");
@@ -30,40 +34,42 @@ const useAdminAuth = () => {
       }
     });
     
-    // Then check for existing session
-    const checkSession = async () => {
+    // Then check for existing session - use a synchronous approach
+    const checkSession = () => {
       console.log("Checking session status...");
       
-      try {
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("Session check error:", error);
+      supabase.auth.getSession()
+        .then(({ data, error }) => {
+          if (!isMounted) return;
+          
+          if (error) {
+            console.error("Session check error:", error);
+            setLoading(false);
+            return;
+          }
+          
+          console.log("Session check result:", data.session ? "Session found" : "No session");
+          
+          if (data.session) {
+            setUser(data.session.user);
+            setSession(data.session);
+          }
+          
           setLoading(false);
-          return;
-        }
-        
-        console.log("Session check result:", data.session ? "Session found" : "No session");
-        
-        if (data.session) {
-          setUser(data.session.user);
-          setSession(data.session);
-        }
-        
-        setLoading(false);
-      } catch (error) {
-        console.error("Error checking session:", error);
-        setLoading(false);
-      }
+        })
+        .catch(error => {
+          if (!isMounted) return;
+          console.error("Error checking session:", error);
+          setLoading(false);
+        });
     };
     
-    // Use setTimeout to prevent potential race conditions
-    setTimeout(() => {
-      checkSession();
-    }, 0);
+    // Do the session check directly, no setTimeout
+    checkSession();
     
     return () => {
       console.log("Cleaning up auth listener");
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, []);
@@ -97,10 +103,8 @@ const useAdminAuth = () => {
         description: "نراك قريباً!",
       });
       
-      // Use setTimeout to prevent race conditions
-      setTimeout(() => {
-        navigate('/admin', { replace: true });
-      }, 0);
+      // Navigate immediately, no setTimeout needed
+      navigate('/admin', { replace: true });
     } catch (error) {
       console.error("Sign out error:", error);
       toast({

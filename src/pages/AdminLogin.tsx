@@ -23,32 +23,40 @@ const AdminLogin = () => {
   useEffect(() => {
     console.log("AdminLogin: Component mounted, checking session...");
     
-    const checkSession = async () => {
+    let isMounted = true;
+    
+    const checkSession = () => {
       try {
         console.log("AdminLogin: Starting session check");
+        
+        if (!isMounted) return;
         setIsPageLoading(true);
         
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("Session check error:", error);
-          setIsPageLoading(false);
-          return;
-        }
-        
-        console.log("AdminLogin: Session data:", data);
-        
-        if (data.session) {
-          console.log("AdminLogin: Valid session found, navigating to dashboard");
-          // Use setTimeout to avoid potential race conditions
-          setTimeout(() => {
+        supabase.auth.getSession().then(({ data, error }) => {
+          if (!isMounted) return;
+          
+          if (error) {
+            console.error("Session check error:", error);
+            setIsPageLoading(false);
+            return;
+          }
+          
+          console.log("AdminLogin: Session data:", data);
+          
+          if (data.session) {
+            console.log("AdminLogin: Valid session found, navigating to dashboard");
             navigate('/admin/dashboard', { replace: true });
-          }, 0);
-        } else {
-          console.log("AdminLogin: No active session found");
+          } else {
+            console.log("AdminLogin: No active session found");
+            setIsPageLoading(false);
+          }
+        }).catch(err => {
+          if (!isMounted) return;
+          console.error("Session check failed:", err);
           setIsPageLoading(false);
-        }
+        });
       } catch (error) {
+        if (!isMounted) return;
         console.error('Session check error:', error);
         setIsPageLoading(false);
       }
@@ -57,26 +65,31 @@ const AdminLogin = () => {
     // Run session check immediately
     checkSession();
     
+    return () => {
+      isMounted = false;
+    };
   }, [navigate]);
 
   // Separate auth state listener
   useEffect(() => {
+    let isMounted = true;
+    
     // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth state changed in AdminLogin:", event);
       
+      if (!isMounted) return;
+      
       if (event === 'SIGNED_IN' && session) {
         console.log("User signed in, navigating to dashboard");
-        // Use setTimeout to avoid potential race conditions
-        setTimeout(() => {
-          navigate('/admin/dashboard', { replace: true });
-        }, 0);
+        navigate('/admin/dashboard', { replace: true });
       }
     });
     
     // Clean up subscription when component unmounts
     return () => {
       console.log("AdminLogin: Component unmounting, cleaning up subscription");
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, [navigate]);
@@ -140,7 +153,7 @@ const AdminLogin = () => {
           description: "يرجى التحقق من بريدك الإلكتروني للتأكيد."
         });
         
-        // Try immediate sign in after registration
+        // Try immediate sign in after registration - handle this with proper error handling
         try {
           const { error: signInError } = await supabase.auth.signInWithPassword({
             email,
@@ -152,7 +165,6 @@ const AdminLogin = () => {
               title: "تم التسجيل والدخول بنجاح",
               description: "تم إنشاء حساب المسؤول الخاص بك وتسجيل الدخول."
             });
-            // No need to navigate here, the auth listener will handle it
           }
         } catch (signInErr) {
           console.error("Auto-login error:", signInErr);

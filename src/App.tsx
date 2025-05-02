@@ -38,6 +38,8 @@ const App = () => {
   useEffect(() => {
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
       console.error('Unhandled promise rejection:', event.reason);
+      // Prevent default to avoid additional console errors
+      // but log it clearly for debugging
       event.preventDefault();
     };
 

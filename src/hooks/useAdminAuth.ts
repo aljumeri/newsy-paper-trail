@@ -15,23 +15,27 @@ const useAdminAuth = () => {
   useEffect(() => {
     console.log("Starting auth check in useAdminAuth...");
     
-    // Set up auth state listener FIRST to avoid session handling issues
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+    // First set up auth state listener to avoid race conditions
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, currentSession) => {
       console.log("Auth state changed:", event);
       
       if (event === 'SIGNED_OUT') {
         console.log("User signed out, navigating to login page");
         setUser(null);
         setSession(null);
-        navigate('/admin', { replace: true });
-      } else if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
-        console.log("User signed in or token refreshed:", session.user.email);
-        setUser(session.user);
-        setSession(session);
+        
+        // Use setTimeout to prevent potential recursion issues
+        setTimeout(() => {
+          navigate('/admin', { replace: true });
+        }, 0);
+      } else if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && currentSession) {
+        console.log("User signed in or token refreshed:", currentSession.user.email);
+        setUser(currentSession.user);
+        setSession(currentSession);
       }
     });
     
-    // THEN check for existing session
+    // Then check for existing session
     const checkSession = async () => {
       console.log("Checking session status...");
       setLoading(true);
@@ -42,14 +46,22 @@ const useAdminAuth = () => {
         if (error) {
           console.error("Session check error:", error);
           setLoading(false);
-          navigate('/admin', { replace: true });
+          
+          // Use setTimeout to prevent potential recursion issues
+          setTimeout(() => {
+            navigate('/admin', { replace: true });
+          }, 0);
           return;
         }
         
         if (!data.session) {
           console.log("No session found, redirecting to login");
           setLoading(false);
-          navigate('/admin', { replace: true });
+          
+          // Use setTimeout to prevent potential recursion issues
+          setTimeout(() => {
+            navigate('/admin', { replace: true });
+          }, 0);
           return;
         }
         
@@ -60,7 +72,11 @@ const useAdminAuth = () => {
       } catch (error) {
         console.error("Error checking session:", error);
         setLoading(false);
-        navigate('/admin', { replace: true });
+        
+        // Use setTimeout to prevent potential recursion issues
+        setTimeout(() => {
+          navigate('/admin', { replace: true });
+        }, 0);
       }
     };
     

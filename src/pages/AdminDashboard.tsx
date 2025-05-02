@@ -8,12 +8,13 @@ import NewslettersTable from '@/components/admin/NewslettersTable';
 import useAdminAuth from '@/hooks/useAdminAuth';
 import useAdminDashboardData from '@/hooks/useAdminDashboardData';
 import useFormatDate from '@/hooks/useFormatDate';
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 const AdminDashboard = () => {
   const { user, loading: authLoading, handleSignOut } = useAdminAuth();
   const { subscribers, newsletters, loading: dataLoading } = useAdminDashboardData(user);
   const { formatDate } = useFormatDate();
+  const { toast } = useToast();
 
   const loading = authLoading || dataLoading;
 

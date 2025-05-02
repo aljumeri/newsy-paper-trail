@@ -19,9 +19,11 @@ const AdminLogin = () => {
 
   // Enhanced session check
   useEffect(() => {
+    console.log("AdminLogin: Component mounted, checking session...");
+    
     const checkSession = async () => {
       try {
-        console.log("AdminLogin: Checking session status...");
+        console.log("AdminLogin: Starting session check");
         setIsPageLoading(true);
         
         const { data, error } = await supabase.auth.getSession();
@@ -47,6 +49,7 @@ const AdminLogin = () => {
       }
     };
     
+    // Run session check immediately
     checkSession();
     
     // Set up auth state change listener
@@ -61,6 +64,7 @@ const AdminLogin = () => {
     
     // Clean up subscription when component unmounts
     return () => {
+      console.log("AdminLogin: Component unmounting, cleaning up subscription");
       subscription.unsubscribe();
     };
   }, [navigate]);

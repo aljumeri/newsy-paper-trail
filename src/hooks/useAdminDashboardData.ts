@@ -63,15 +63,16 @@ const useAdminDashboardData = (user: User | null) => {
         
         console.log("Fetched newsletters:", newslettersData?.length || 0);
         setNewsletters(newslettersData || []);
-      } catch (error) {
+        
+        setLoading(false);
+      } catch (error: any) {
         console.error('Error fetching data:', error);
+        setLoading(false);
         toast({
           title: "خطأ في جلب البيانات",
           description: "حدث خطأ أثناء تحميل البيانات. يرجى المحاولة مرة أخرى.",
           variant: "destructive"
         });
-      } finally {
-        setLoading(false);
       }
     };
     

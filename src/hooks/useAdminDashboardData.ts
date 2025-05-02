@@ -22,6 +22,7 @@ const useAdminDashboardData = (user: User | null) => {
   const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const { toast } = useToast();
   const isMounted = useRef(false);
 
@@ -35,10 +36,51 @@ const useAdminDashboardData = (user: User | null) => {
       return;
     }
     
+    const checkAdminStatus = async () => {
+      try {
+        // Check if user is an admin first using the RPC function
+        const { data: adminStatus, error: adminError } = await supabase.rpc(
+          'get_admin_status',
+          { user_id: user.id }
+        );
+        
+        if (adminError) {
+          console.error('Admin status check error:', adminError);
+          if (isMounted.current) {
+            setError(adminError.message);
+            setIsAdmin(false);
+            setLoading(false);
+          }
+          return false;
+        }
+        
+        if (isMounted.current) {
+          setIsAdmin(adminStatus);
+        }
+        
+        return adminStatus;
+      } catch (error: any) {
+        console.error('Error checking admin status:', error);
+        if (isMounted.current) {
+          setError(error.message || "Error checking admin status");
+          setIsAdmin(false);
+          setLoading(false);
+        }
+        return false;
+      }
+    };
+    
     const fetchData = async () => {
       console.log("Starting to fetch admin dashboard data...");
       setLoading(true);
       setError(null);
+      
+      // Check admin status first
+      const adminStatus = await checkAdminStatus();
+      if (!adminStatus) {
+        console.log("User is not an admin, skipping data fetch");
+        return;
+      }
       
       try {
         // Fetch subscribers
@@ -106,7 +148,7 @@ const useAdminDashboardData = (user: User | null) => {
     }
   }, [error, toast]);
 
-  return { subscribers, newsletters, loading, error };
+  return { subscribers, newsletters, loading, error, isAdmin };
 };
 
 export default useAdminDashboardData;

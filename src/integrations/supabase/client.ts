@@ -12,22 +12,25 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     autoRefreshToken: true,
     persistSession: true,
     storage: localStorage,
-    detectSessionInUrl: true,
+    detectSessionInUrl: false, // Changed from true to false to avoid potential race conditions
     flowType: 'pkce',
-    debug: true
+    debug: false // Reduced debug logging to avoid console clutter
   }
 });
 
-// Add listener for auth state changes for enhanced debugging
+// Add listener for auth state changes with synchronous handler only
 supabase.auth.onAuthStateChange((event, session) => {
+  // Only perform synchronous operations here, no promises returned
   console.log(`Supabase auth event: ${event}`, session ? `Session exists (expires: ${new Date(session.expires_at! * 1000).toLocaleString()})` : "No session");
 });
 
-// Initial session check to confirm setup
+// Initial session check to confirm setup - using Promise.catch to handle errors
 supabase.auth.getSession().then(({ data, error }) => {
   if (error) {
     console.error("Initial supabase client session check error:", error);
   } else {
     console.log("Initial supabase client session check:", data.session ? `Session found (expires: ${new Date(data.session.expires_at * 1000).toLocaleString()})` : "No session");
   }
+}).catch(err => {
+  console.error("Unhandled error during session check:", err);
 });

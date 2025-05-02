@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,13 +18,18 @@ const AdminLogin = () => {
   const [initialLoading, setInitialLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
   const { toast } = useToast();
+  const isMounted = useRef(true);
 
   // Check for existing session on component mount
   const checkSession = useCallback(async () => {
     try {
+      if (!isMounted.current) return;
+      
       console.log("AdminLogin: Checking for existing session");
       
       const { data, error } = await supabase.auth.getSession();
+      
+      if (!isMounted.current) return;
       
       if (error) {
         console.error("Session check error in AdminLogin:", error);
@@ -39,28 +44,45 @@ const AdminLogin = () => {
       }
       
       console.log("AdminLogin: No active session found");
-      setInitialLoading(false);
+      if (isMounted.current) {
+        setInitialLoading(false);
+      }
     } catch (error) {
       console.error("Session check failed:", error);
-      setInitialLoading(false);
+      if (isMounted.current) {
+        setInitialLoading(false);
+      }
     }
   }, []);
 
   useEffect(() => {
-    checkSession();
+    // Set up isMounted ref
+    isMounted.current = true;
     
-    // Set up auth state change listener
+    // Execute session check
+    checkSession().catch(err => {
+      console.error("Unhandled error during session check:", err);
+      if (isMounted.current) {
+        setInitialLoading(false);
+      }
+    });
+    
+    // Set up auth state change listener - ensure it doesn't return a promise
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!isMounted.current) return;
+      
+      // Only perform synchronous operations here, don't return anything
       console.log("Auth state changed in AdminLogin:", event);
       
-      // Only redirect on valid sign in events
-      if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
+      // Only redirect on valid sign in events when component is still mounted
+      if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session && isMounted.current) {
         console.log("AdminLogin: Valid auth event detected, redirecting to dashboard");
         window.location.href = '/admin/dashboard';
       }
     });
     
     return () => {
+      isMounted.current = false;
       subscription.unsubscribe();
     };
   }, [checkSession]);
@@ -68,6 +90,8 @@ const AdminLogin = () => {
   // Handle login form submission with automatic retry
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isMounted.current) return;
+    
     setLoading(true);
     setAuthError(null);
     
@@ -83,6 +107,8 @@ const AdminLogin = () => {
         throw error;
       }
       
+      if (!isMounted.current) return;
+      
       console.log("Login successful:", data);
       
       toast({
@@ -93,6 +119,8 @@ const AdminLogin = () => {
       // Double-check session establishment before redirect
       const { data: sessionData } = await supabase.auth.getSession();
       
+      if (!isMounted.current) return;
+      
       if (sessionData.session) {
         // Use direct navigation for reliability
         window.location.href = '/admin/dashboard';
@@ -101,6 +129,8 @@ const AdminLogin = () => {
         throw new Error("فشل إنشاء الجلسة");
       }
     } catch (error: any) {
+      if (!isMounted.current) return;
+      
       console.error("Login error:", error);
       setAuthError(error.message || "فشل تسجيل الدخول");
       
@@ -110,13 +140,17 @@ const AdminLogin = () => {
         variant: "destructive"
       });
     } finally {
-      setLoading(false);
+      if (isMounted.current) {
+        setLoading(false);
+      }
     }
   };
 
   // Handle registration form submission
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isMounted.current) return;
+    
     setLoading(true);
     setAuthError(null);
     
@@ -135,6 +169,8 @@ const AdminLogin = () => {
         throw error;
       }
       
+      if (!isMounted.current) return;
+      
       console.log("Registration successful", data);
       
       // Try immediate login after registration
@@ -143,6 +179,8 @@ const AdminLogin = () => {
           email,
           password
         });
+        
+        if (!isMounted.current) return;
         
         if (loginError) {
           throw loginError;
@@ -155,6 +193,8 @@ const AdminLogin = () => {
         
         // Double-check session establishment before redirect
         const { data: sessionData } = await supabase.auth.getSession();
+        
+        if (!isMounted.current) return;
       
         if (sessionData.session) {
           // Use direct navigation for reliability
@@ -167,6 +207,8 @@ const AdminLogin = () => {
           });
         }
       } catch (loginError: any) {
+        if (!isMounted.current) return;
+        
         console.error("Auto-login after registration error:", loginError);
         toast({
           title: "تم التسجيل بنجاح",
@@ -174,6 +216,8 @@ const AdminLogin = () => {
         });
       }
     } catch (error: any) {
+      if (!isMounted.current) return;
+      
       console.error("Registration error:", error);
       setAuthError(error.message || "فشل إنشاء الحساب");
       
@@ -183,9 +227,18 @@ const AdminLogin = () => {
         variant: "destructive"
       });
     } finally {
-      setLoading(false);
+      if (isMounted.current) {
+        setLoading(false);
+      }
     }
   };
+
+  // Use useEffect to handle initialization loading state
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   if (initialLoading) {
     return (

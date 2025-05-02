@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -10,48 +10,46 @@ type AuthSessionCheckerProps = {
 const AuthSessionChecker: React.FC<AuthSessionCheckerProps> = ({ onSessionCheckComplete }) => {
   const [isPageLoading, setIsPageLoading] = useState(true);
   const navigate = useNavigate();
+  const isMounted = useRef(true);
 
   // Check session on component mount
   useEffect(() => {
     console.log("AuthSessionChecker: Component mounted, checking session...");
     
-    let isMounted = true;
+    // Set isMounted ref for cleanup
+    isMounted.current = true;
     
-    const checkSession = () => {
+    const checkSession = async () => {
       try {
         console.log("AuthSessionChecker: Starting session check");
         
-        if (!isMounted) return;
+        if (!isMounted.current) return;
         
-        supabase.auth.getSession().then(({ data, error }) => {
-          if (!isMounted) return;
-          
-          if (error) {
-            console.error("Session check error:", error);
-            setIsPageLoading(false);
-            onSessionCheckComplete();
-            return;
-          }
-          
-          console.log("AuthSessionChecker: Session data:", data);
-          
-          if (data.session) {
-            console.log("AuthSessionChecker: Valid session found, navigating to dashboard");
-            navigate('/admin/dashboard', { replace: true });
-          } else {
-            console.log("AuthSessionChecker: No active session found");
-            setIsPageLoading(false);
-            onSessionCheckComplete();
-          }
-        }).catch(err => {
-          if (!isMounted) return;
-          console.error("Session check failed:", err);
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (!isMounted.current) return;
+        
+        if (error) {
+          console.error("Session check error:", error);
           setIsPageLoading(false);
           onSessionCheckComplete();
-        });
-      } catch (error) {
-        if (!isMounted) return;
-        console.error('Session check error:', error);
+          return;
+        }
+        
+        console.log("AuthSessionChecker: Session data:", data);
+        
+        if (data.session) {
+          console.log("AuthSessionChecker: Valid session found, navigating to dashboard");
+          // Use window.location for more reliable navigation
+          window.location.href = '/admin/dashboard';
+        } else {
+          console.log("AuthSessionChecker: No active session found");
+          setIsPageLoading(false);
+          onSessionCheckComplete();
+        }
+      } catch (err) {
+        if (!isMounted.current) return;
+        console.error("Session check failed:", err);
         setIsPageLoading(false);
         onSessionCheckComplete();
       }
@@ -61,30 +59,30 @@ const AuthSessionChecker: React.FC<AuthSessionCheckerProps> = ({ onSessionCheckC
     checkSession();
     
     return () => {
-      isMounted = false;
+      isMounted.current = false;
     };
   }, [navigate, onSessionCheckComplete]);
 
   // Set up auth state listener
   useEffect(() => {
-    let isMounted = true;
-    
-    // Set up auth state change listener
+    // Set up auth state change listener that doesn't return a promise
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("Auth state changed in AuthSessionChecker:", event);
+      if (!isMounted.current) return;
       
-      if (!isMounted) return;
+      // Ensure we only perform synchronous operations and don't return anything
+      console.log("Auth state changed in AuthSessionChecker:", event);
       
       if (event === 'SIGNED_IN' && session) {
         console.log("User signed in, navigating to dashboard");
-        navigate('/admin/dashboard', { replace: true });
+        // Use window.location for more reliable navigation that doesn't return a promise
+        window.location.href = '/admin/dashboard';
       }
     });
     
     // Clean up subscription when component unmounts
     return () => {
       console.log("AuthSessionChecker: Component unmounting, cleaning up subscription");
-      isMounted = false;
+      isMounted.current = false;
       subscription.unsubscribe();
     };
   }, [navigate]);

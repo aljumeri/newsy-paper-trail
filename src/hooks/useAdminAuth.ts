@@ -19,12 +19,13 @@ const useAdminAuth = () => {
     // Setup unmount flag for cleanup
     isUnmounted.current = false;
     
-    // Set up auth state listener first
+    // Set up auth state listener first - ensure it doesn't return a promise
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
-      console.log("Auth state changed:", event);
-      
       if (isUnmounted.current) return;
       
+      console.log("Auth state changed:", event);
+      
+      // Update state synchronously, don't return anything
       if (event === 'SIGNED_OUT') {
         console.log("User signed out");
         setUser(null);
@@ -69,7 +70,12 @@ const useAdminAuth = () => {
     };
     
     // Do the session check immediately
-    checkSession();
+    checkSession().catch(err => {
+      console.error("Unhandled error during session check:", err);
+      if (!isUnmounted.current) {
+        setLoading(false);
+      }
+    });
     
     return () => {
       console.log("Cleaning up auth listener");
@@ -83,7 +89,8 @@ const useAdminAuth = () => {
     // Only redirect if not loading and we know there's no user
     if (!loading && !user && window.location.pathname.includes('/admin/')) {
       console.log("No authenticated user, redirecting to login");
-      navigate('/admin', { replace: true });
+      // Use window.location for more reliable navigation that doesn't return a promise
+      window.location.href = '/admin';
     }
   }, [loading, user, navigate]);
 
@@ -91,6 +98,8 @@ const useAdminAuth = () => {
     try {
       console.log("Signing out user...");
       const { error } = await supabase.auth.signOut();
+      
+      if (isUnmounted.current) return;
       
       if (error) {
         console.error("Sign out error:", error);
@@ -107,9 +116,11 @@ const useAdminAuth = () => {
         description: "نراك قريباً!",
       });
       
-      // Navigate immediately, no setTimeout needed
-      navigate('/admin', { replace: true });
+      // Navigate immediately, use window.location for reliability
+      window.location.href = '/admin';
     } catch (error) {
+      if (isUnmounted.current) return;
+      
       console.error("Sign out error:", error);
       toast({
         title: "خطأ في تسجيل الخروج",

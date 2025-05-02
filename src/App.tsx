@@ -34,14 +34,21 @@ const queryClient = new QueryClient({
 
 const App = () => {
   console.log("App component rendering with routes");
-  const unsubscribeRef = useRef<() => void | undefined>();
+  const isMounted = useRef(true);
   
   useEffect(() => {
+    // Set isMounted ref for cleanup
+    isMounted.current = true;
+    
     // Initial auth setup
     const setupAuth = async () => {
       try {
+        if (!isMounted.current) return;
+        
         // Initial session check
         const { data, error } = await supabase.auth.getSession();
+        
+        if (!isMounted.current) return;
         
         if (error) {
           console.error("Initial session check error in App:", error);
@@ -56,31 +63,37 @@ const App = () => {
       }
     };
     
-    setupAuth();
-    
-    // Setup auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("App: Auth state changed:", event, session ? `Session present (expires: ${new Date(session.expires_at * 1000).toLocaleString()})` : "No session");
+    setupAuth().catch(err => {
+      console.error("Unhandled error in setupAuth:", err);
     });
     
-    // Store the unsubscribe function
-    unsubscribeRef.current = () => {
-      subscription.unsubscribe();
-    };
+    // Setup auth state change listener - ensure it doesn't return a promise
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // Only perform synchronous operations here
+      if (isMounted.current) {
+        console.log("App: Auth state changed:", event, session ? `Session present (expires: ${new Date(session.expires_at * 1000).toLocaleString()})` : "No session");
+      }
+    });
     
-    // Global error handler for promises
+    // Global error handler for promises that handles the specific error we're seeing
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      console.error('Unhandled promise rejection in App:', event.reason);
+      // Prevent default to suppress the default console error
       event.preventDefault();
+      
+      // Log in a controlled way
+      if (event.reason && event.reason.message && event.reason.message.includes('message channel closed')) {
+        console.log('Handled promise rejection for message channel closing:', event.reason);
+      } else {
+        console.error('Unhandled promise rejection in App:', event.reason);
+      }
     };
     
     window.addEventListener('unhandledrejection', handleUnhandledRejection);
     
     // Cleanup
     return () => {
-      if (unsubscribeRef.current) {
-        unsubscribeRef.current();
-      }
+      isMounted.current = false;
+      subscription.unsubscribe();
       window.removeEventListener('unhandledrejection', handleUnhandledRejection);
     };
   }, []);

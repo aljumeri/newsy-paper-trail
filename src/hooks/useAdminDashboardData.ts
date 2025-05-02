@@ -24,13 +24,18 @@ const useAdminDashboardData = (user: User | null) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      console.log("No user, skipping data fetch");
+      return;
+    }
     
     const fetchData = async () => {
+      console.log("Starting to fetch admin dashboard data...");
       setLoading(true);
       
       try {
-        // Fetch subscribers
+        // Fetch subscribers with error handling
+        console.log("Fetching subscribers...");
         const { data: subscribersData, error: subscribersError } = await supabase
           .from('subscribers')
           .select('*')
@@ -44,7 +49,8 @@ const useAdminDashboardData = (user: User | null) => {
         console.log("Fetched subscribers:", subscribersData?.length || 0);
         setSubscribers(subscribersData || []);
         
-        // Fetch newsletters
+        // Fetch newsletters with error handling
+        console.log("Fetching newsletters...");
         const { data: newslettersData, error: newslettersError } = await supabase
           .from('newsletters')
           .select('*')
@@ -61,7 +67,7 @@ const useAdminDashboardData = (user: User | null) => {
         console.error('Error fetching data:', error);
         toast({
           title: "خطأ في جلب البيانات",
-          description: "حدث خطأ أثناء تحميل البيانات",
+          description: "حدث خطأ أثناء تحميل البيانات. يرجى المحاولة مرة أخرى.",
           variant: "destructive"
         });
       } finally {

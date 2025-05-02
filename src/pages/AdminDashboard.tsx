@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DashboardHeader from '@/components/admin/DashboardHeader';
 import StatisticsCards from '@/components/admin/StatisticsCards';
@@ -8,6 +8,7 @@ import NewslettersTable from '@/components/admin/NewslettersTable';
 import useAdminAuth from '@/hooks/useAdminAuth';
 import useAdminDashboardData from '@/hooks/useAdminDashboardData';
 import useFormatDate from '@/hooks/useFormatDate';
+import { toast } from "@/hooks/use-toast";
 
 const AdminDashboard = () => {
   const { user, loading: authLoading, handleSignOut } = useAdminAuth();
@@ -16,11 +17,35 @@ const AdminDashboard = () => {
 
   const loading = authLoading || dataLoading;
 
-  if (loading) {
+  useEffect(() => {
+    // Log when component mounts for debugging
+    console.log("AdminDashboard component mounted");
+    console.log("Auth loading:", authLoading, "Data loading:", dataLoading);
+    console.log("Current user:", user?.email);
+    
+    return () => {
+      console.log("AdminDashboard component unmounted");
+    };
+  }, [authLoading, dataLoading, user]);
+
+  if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-lg">جارٍ التحميل...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center p-6 bg-white rounded-lg shadow-md">
+          <p className="text-xl font-bold mb-2">جارٍ التحقق من الجلسة...</p>
+          <p className="text-gray-500">يرجى الانتظار قليلاً</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    // If no user after auth loading completed, redirect will happen in the hook
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center p-6 bg-white rounded-lg shadow-md">
+          <p className="text-xl font-bold mb-2">جلسة غير صالحة</p>
+          <p className="text-gray-500">جاري إعادة التوجيه إلى صفحة تسجيل الدخول...</p>
         </div>
       </div>
     );
@@ -34,6 +59,7 @@ const AdminDashboard = () => {
         <StatisticsCards 
           subscribersCount={subscribers.length}
           newslettersCount={newsletters.length}
+          isLoading={dataLoading}
         />
         
         <Tabs defaultValue="subscribers">

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DashboardHeader from '@/components/admin/DashboardHeader';
@@ -17,39 +18,42 @@ const AdminDashboard = () => {
   const { formatDate } = useFormatDate();
   const { toast } = useToast();
   
-  // Check authentication on mount
+  // Check session on mount
   useEffect(() => {
-    console.log("AdminDashboard: Checking authentication");
+    console.log("AdminDashboard: Checking for active session");
     
-    const checkAuth = async () => {
+    const checkSession = async () => {
       try {
+        // Direct session check
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error("Session error:", error);
+          console.error("Session check error:", error);
+          // Redirect to login on error
           window.location.href = '/admin';
           return;
         }
         
         if (!data.session) {
-          console.log("No active session, redirecting to login");
+          console.log("No active session found, redirecting to login");
+          // Redirect to login if no session
           window.location.href = '/admin';
           return;
         }
         
-        console.log("User authenticated:", data.session.user);
+        console.log("Active session found:", data.session.user.email);
         setUser(data.session.user);
         setIsLoading(false);
         
-        // Fetch dashboard data after authentication confirmation
-        fetchDashboardData(data.session.user);
-      } catch (e) {
-        console.error("Auth check failed:", e);
+        // Fetch dashboard data
+        await fetchDashboardData(data.session.user);
+      } catch (error) {
+        console.error("Session check failed:", error);
         window.location.href = '/admin';
       }
     };
     
-    checkAuth();
+    checkSession();
   }, []);
   
   // Fetch dashboard data
@@ -57,17 +61,17 @@ const AdminDashboard = () => {
     if (!user) return;
     
     setDataLoading(true);
+    console.log("Fetching dashboard data for user:", user.email);
     
     try {
       // Fetch subscribers
-      console.log("Fetching subscribers data...");
       const { data: subscribersData, error: subscribersError } = await supabase
         .from('subscribers')
         .select('*')
         .order('created_at', { ascending: false });
       
       if (subscribersError) {
-        console.error('Error fetching subscribers:', subscribersError);
+        console.error("Error fetching subscribers:", subscribersError);
         toast({
           title: "خطأ في جلب البيانات",
           description: subscribersError.message,
@@ -79,14 +83,13 @@ const AdminDashboard = () => {
       }
       
       // Fetch newsletters
-      console.log("Fetching newsletters data...");
       const { data: newslettersData, error: newslettersError } = await supabase
         .from('newsletters')
         .select('*')
         .order('created_at', { ascending: false });
       
       if (newslettersError) {
-        console.error('Error fetching newsletters:', newslettersError);
+        console.error("Error fetching newsletters:", newslettersError);
         toast({
           title: "خطأ في جلب البيانات",
           description: newslettersError.message,
@@ -97,7 +100,7 @@ const AdminDashboard = () => {
         setNewsletters(newslettersData || []);
       }
     } catch (error: any) {
-      console.error('Error fetching dashboard data:', error);
+      console.error("Error fetching dashboard data:", error);
       toast({
         title: "خطأ في جلب البيانات",
         description: error.message || "حدث خطأ غير معروف",
@@ -108,6 +111,7 @@ const AdminDashboard = () => {
     }
   };
   
+  // Handle sign out
   const handleSignOut = async () => {
     try {
       console.log("Signing out user...");
@@ -117,23 +121,25 @@ const AdminDashboard = () => {
         console.error("Sign out error:", error);
         toast({
           title: "خطأ في تسجيل الخروج",
-          description: "حدث خطأ أثناء تسجيل الخروج.",
+          description: error.message,
           variant: "destructive"
         });
         return;
       }
       
+      console.log("Sign out successful");
       toast({
         title: "تم تسجيل الخروج بنجاح",
-        description: "نراك قريباً!",
+        description: "نراك قريباً!"
       });
       
+      // Use direct navigation for reliability
       window.location.href = '/admin';
     } catch (error: any) {
       console.error("Sign out error:", error);
       toast({
         title: "خطأ في تسجيل الخروج",
-        description: "حدث خطأ أثناء تسجيل الخروج.",
+        description: error.message || "حدث خطأ أثناء تسجيل الخروج",
         variant: "destructive"
       });
     }

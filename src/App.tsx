@@ -36,7 +36,12 @@ const App = () => {
   console.log("App component rendering with routes");
   
   useEffect(() => {
-    // Initial session check for debugging
+    // Setup auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("App: Auth state changed:", event, session ? "Session exists" : "No session");
+    });
+    
+    // Check for existing session
     supabase.auth.getSession().then(({ data, error }) => {
       if (error) {
         console.error("Initial session check error:", error);
@@ -45,26 +50,17 @@ const App = () => {
       }
     });
     
-    // Setup auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("App: Auth state changed:", event, session ? "Session exists" : "No session");
-    });
-    
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-  
-  // Add global error handler for uncaught promise rejections
-  useEffect(() => {
+    // Global error handler
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
       console.error('Unhandled promise rejection:', event.reason);
       event.preventDefault();
     };
-
+    
     window.addEventListener('unhandledrejection', handleUnhandledRejection);
     
+    // Cleanup
     return () => {
+      subscription.unsubscribe();
       window.removeEventListener('unhandledrejection', handleUnhandledRejection);
     };
   }, []);

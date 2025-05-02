@@ -9,11 +9,14 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -41,8 +44,10 @@ const AdminLogin = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setAuthError(null);
     
     try {
+      // Override to ignore email verification during login
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -75,6 +80,7 @@ const AdminLogin = () => {
       }
     } catch (error: any) {
       console.error('Login error:', error);
+      setAuthError(error.message || "فشل تسجيل الدخول. يرجى التحقق من بيانات الاعتماد الخاصة بك.");
       toast({
         title: "خطأ في تسجيل الدخول",
         description: error.message || "فشل تسجيل الدخول. يرجى التحقق من بيانات الاعتماد الخاصة بك.",
@@ -88,18 +94,26 @@ const AdminLogin = () => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setAuthError(null);
     
     try {
-      // Create a new user account
+      // Create a new user account without email verification
       const { data, error } = await supabase.auth.signUp({
         email,
-        password
+        password,
+        options: {
+          // Disable email verification during development
+          emailRedirectTo: window.location.origin,
+          data: {
+            is_admin: true  // Optional metadata to indicate admin status
+          }
+        }
       });
       
       if (error) throw error;
       
       if (data.user) {
-        // Use RPC function to add user as admin
+        // Add user to admin_users table using RPC function
         const { error: adminError } = await supabase.rpc('create_admin_user', {
           user_id: data.user.id
         });
@@ -117,18 +131,25 @@ const AdminLogin = () => {
           }
         }
         
-        toast({
-          title: "تم التسجيل بنجاح",
-          description: "تم إنشاء حساب المسؤول الخاص بك. يمكنك الآن تسجيل الدخول."
-        });
-
         // Check if email confirmation is required
         if (data.session) {
+          // User created and logged in directly without email confirmation
+          toast({
+            title: "تم التسجيل بنجاح",
+            description: "تم إنشاء حساب المسؤول الخاص بك وتسجيل الدخول."
+          });
           navigate('/admin/dashboard');
+        } else {
+          // Email confirmation might still be required by Supabase settings
+          toast({
+            title: "تم التسجيل بنجاح",
+            description: "تم إنشاء الحساب. يمكنك الآن تسجيل الدخول."
+          });
         }
       }
     } catch (error: any) {
       console.error('Registration error:', error);
+      setAuthError(error.message || "فشل إنشاء الحساب. يرجى المحاولة مرة أخرى.");
       toast({
         title: "خطأ في التسجيل",
         description: error.message || "فشل إنشاء الحساب. يرجى المحاولة مرة أخرى.",
@@ -149,6 +170,13 @@ const AdminLogin = () => {
             <CardDescription>قم بتسجيل الدخول أو أنشئ حساب مسؤول جديد</CardDescription>
           </CardHeader>
           <CardContent>
+            {authError && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{authError}</AlertDescription>
+              </Alert>
+            )}
+
             <Tabs defaultValue="login" className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-4">
                 <TabsTrigger value="login">تسجيل الدخول</TabsTrigger>

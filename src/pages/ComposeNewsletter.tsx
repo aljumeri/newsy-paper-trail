@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -19,12 +18,13 @@ const ComposeNewsletter = () => {
   const [showYoutubeDialog, setShowYoutubeDialog] = useState(false);
   const [showImageDialog, setShowImageDialog] = useState(false);
   const [textAlignment, setTextAlignment] = useState<'left' | 'center' | 'right'>('right');
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Enhanced session check with better error handling
+  // Enhanced session and admin check
   useEffect(() => {
-    const checkSession = async () => {
+    const checkSessionAndAdmin = async () => {
       try {
         console.log("ComposeNewsletter: Checking session...");
         const { data, error } = await supabase.auth.getSession();
@@ -47,13 +47,46 @@ const ComposeNewsletter = () => {
         }
         
         console.log("ComposeNewsletter: Valid session found for user:", data.session.user.email);
+        
+        // Check admin status immediately to avoid race conditions later
+        try {
+          const { data: adminStatus, error: adminError } = await supabase.rpc(
+            'get_admin_status',
+            { user_id: data.session.user.id }
+          );
+          
+          if (adminError) {
+            console.error("Admin check error:", adminError);
+            toast({
+              title: "خطأ في التحقق من صلاحيات المسؤول",
+              description: "يرجى المحاولة مرة أخرى لاحقًا",
+              variant: "destructive"
+            });
+            navigate('/admin-control');
+            return;
+          }
+          
+          setIsAdmin(adminStatus);
+          
+          if (!adminStatus) {
+            toast({
+              title: "صلاحيات غير كافية",
+              description: "ليس لديك صلاحيات الوصول إلى هذه الصفحة",
+              variant: "destructive"
+            });
+            navigate('/admin-control');
+          }
+        } catch (adminCheckErr) {
+          console.error("Unexpected admin check error:", adminCheckErr);
+          navigate('/admin-control');
+        }
       } catch (err) {
         console.error("Unexpected error checking session:", err);
         navigate('/admin-control');
       }
     };
     
-    checkSession();
+    checkSessionAndAdmin();
     
     // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -83,33 +116,37 @@ const ComposeNewsletter = () => {
     setIsLoading(true);
     
     try {
+      // Verify session again before saving
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session) {
         throw new Error("User not authenticated");
       }
       
-      // First, check if user is an admin using the secure RPC function
-      const { data: isAdmin, error: adminCheckError } = await supabase.rpc(
-        'get_admin_status',
-        { user_id: sessionData.session.user.id }
-      );
-      
-      if (adminCheckError) {
-        console.error("Admin check error:", adminCheckError);
-        throw new Error("Error verifying admin status");
+      // We already verified admin status on page load, but double-check to be safe
+      if (isAdmin !== true) {
+        const { data: adminCheck, error: adminCheckError } = await supabase.rpc(
+          'get_admin_status',
+          { user_id: sessionData.session.user.id }
+        );
+        
+        if (adminCheckError) {
+          console.error("Admin verification error:", adminCheckError);
+          throw new Error("Error verifying admin status");
+        }
+        
+        if (!adminCheck) {
+          throw new Error("Only admin users can save newsletters");
+        }
       }
       
-      if (!isAdmin) {
-        throw new Error("Only admin users can save newsletters");
-      }
-      
-      // Now save the newsletter
-      const { data, error } = await supabase
+      // Save newsletter directly without another admin check
+      const { error } = await supabase
         .from('newsletters')
-        .insert(
-          { subject, content, created_by: sessionData.session.user.id }
-        )
-        .select();
+        .insert({
+          subject, 
+          content, 
+          created_by: sessionData.session.user.id
+        });
       
       if (error) throw error;
       
@@ -123,7 +160,7 @@ const ComposeNewsletter = () => {
       console.error('Error saving newsletter:', error);
       toast({
         title: "خطأ في الحفظ",
-        description: "حدث خطأ أثناء حفظ النشرة الإخبارية",
+        description: error.message || "حدث خطأ أثناء حفظ النشرة الإخبارية",
         variant: "destructive"
       });
     } finally {

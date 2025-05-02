@@ -11,6 +11,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from '@/hooks/use-toast';
+import AuthErrorAlert from '@/components/admin/AuthErrorAlert';
+import AuthLoadingState from '@/components/admin/AuthLoadingState';
 
 const AdminControl = () => {
   const [email, setEmail] = useState('');
@@ -18,6 +20,7 @@ const AdminControl = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [isSessionChecking, setIsSessionChecking] = useState(true);
+  const [activeTab, setActiveTab] = useState('login');
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -100,6 +103,7 @@ const AdminControl = () => {
     setAuthError(null);
     
     try {
+      console.log("Attempting registration with:", email);
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -108,7 +112,38 @@ const AdminControl = () => {
         }
       });
       
-      if (error) throw error;
+      if (error) {
+        // Special handling for "User already registered" error
+        if (error.message.includes("registered")) {
+          console.log("User already registered, attempting to sign in instead");
+          toast({
+            title: "المستخدم مسجل بالفعل",
+            description: "سنحاول تسجيل الدخول تلقائيًا"
+          });
+          
+          // Try to sign in with the provided credentials
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+            email,
+            password
+          });
+          
+          if (signInError) {
+            throw {
+              message: "المستخدم مسجل بالفعل، ولكن كلمة المرور غير صحيحة. يرجى استخدام تسجيل الدخول."
+            };
+          }
+          
+          toast({
+            title: "تم تسجيل الدخول بنجاح",
+            description: "تم تسجيل الدخول بحساب موجود مسبقًا"
+          });
+          return;
+        } else {
+          throw error;
+        }
+      }
+      
+      console.log("Registration successful:", data);
       
       toast({
         title: "تم التسجيل بنجاح",
@@ -117,12 +152,14 @@ const AdminControl = () => {
       
       // Try immediate sign in after registration
       try {
+        console.log("Attempting automatic login after registration");
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password
         });
         
         if (!signInError) {
+          console.log("Auto-login successful, redirecting to dashboard");
           toast({
             title: "تم التسجيل والدخول بنجاح",
             description: "تم إنشاء حساب المسؤول الخاص بك وتسجيل الدخول."
@@ -139,24 +176,18 @@ const AdminControl = () => {
         description: error.message || "فشل إنشاء الحساب. يرجى المحاولة مرة أخرى.",
         variant: "destructive"
       });
+      
+      // Switch to login tab if the user already exists
+      if (error.message.includes("registered")) {
+        setActiveTab('login');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   if (isSessionChecking) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <main className="flex-grow flex items-center justify-center px-4 py-12">
-          <div className="text-center p-4">
-            <p className="text-lg">جارٍ التحميل...</p>
-            <p className="text-sm text-gray-500 mt-2">يتم التحقق من حالة الجلسة...</p>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
+    return <AuthLoadingState />;
   }
 
   return (
@@ -169,13 +200,9 @@ const AdminControl = () => {
             <CardDescription>قم بتسجيل الدخول أو أنشئ حساب مسؤول جديد</CardDescription>
           </CardHeader>
           <CardContent>
-            {authError && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertCircle className="h-4 w-4 mr-2" />
-                <AlertDescription>{authError}</AlertDescription>
-              </Alert>
-            )}
-            <Tabs defaultValue="login" className="w-full">
+            <AuthErrorAlert error={authError} />
+            
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-4">
                 <TabsTrigger value="login">تسجيل الدخول</TabsTrigger>
                 <TabsTrigger value="register">إنشاء حساب جديد</TabsTrigger>

@@ -14,12 +14,7 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: localStorage,
     detectSessionInUrl: true,
     flowType: 'pkce',
-    debug: true,
-    cookieOptions: {
-      sameSite: 'lax',
-      secure: true,
-      domain: window.location.hostname
-    }
+    debug: true
   }
 });
 

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
+import { Database } from '@/integrations/supabase/types';
 
 interface Subscriber {
   id: string;
@@ -51,9 +52,10 @@ const useAdminDashboardData = (user: User | null) => {
           if (isMounted) {
             setError(subscribersError.message);
           }
-        } else if (isMounted) {
+        } else if (isMounted && subscribersData) {
           console.log("Fetched subscribers:", subscribersData?.length || 0);
-          setSubscribers(subscribersData || []);
+          // Fix: Ensure we're handling the type correctly
+          setSubscribers(subscribersData as Subscriber[]);
         }
         
         // Fetch newsletters with error handling
@@ -68,9 +70,10 @@ const useAdminDashboardData = (user: User | null) => {
           if (isMounted) {
             setError(prev => prev || newslettersError.message);
           }
-        } else if (isMounted) {
+        } else if (isMounted && newslettersData) {
           console.log("Fetched newsletters:", newslettersData?.length || 0);
-          setNewsletters(newslettersData || []);
+          // Fix: Ensure we're handling the type correctly
+          setNewsletters(newslettersData as Newsletter[]);
         }
         
       } catch (error: any) {

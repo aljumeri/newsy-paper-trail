@@ -15,9 +15,10 @@ const CallToAction = () => {
     setIsLoading(true);
     
     try {
+      // Fixed: Insert a single object, not an array with a single object
       const { error } = await supabase
         .from('subscribers')
-        .insert([{ email }]);
+        .insert({ email });
 
       if (error) {
         if (error.code === '23505') {

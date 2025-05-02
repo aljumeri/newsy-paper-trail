@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -82,11 +83,12 @@ const ComposeNewsletter = () => {
         throw new Error("User not authenticated");
       }
       
+      // Fix: Insert a single object, not an array with a single object
       const { data, error } = await supabase
         .from('newsletters')
-        .insert([
+        .insert(
           { subject, content, created_by: sessionData.session.user.id }
-        ])
+        )
         .select();
       
       if (error) throw error;

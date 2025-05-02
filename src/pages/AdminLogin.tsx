@@ -99,9 +99,7 @@ const AdminLogin = () => {
       if (error) throw error;
       
       if (data.user) {
-        // Use RPC function or direct SQL to bypass RLS
-        // Since this is a first admin registration, we'll use a special approach
-        // Use supabase functions to execute an insert with admin privileges
+        // Use RPC function to add user as admin
         const { error: adminError } = await supabase.rpc('create_admin_user', {
           user_id: data.user.id
         });

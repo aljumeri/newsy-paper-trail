@@ -99,12 +99,25 @@ const AdminLogin = () => {
       if (error) throw error;
       
       if (data.user) {
-        // Add user to admin_users table
-        const { error: adminError } = await supabase
-          .from('admin_users')
-          .insert([{ id: data.user.id }]);
+        // Use RPC function or direct SQL to bypass RLS
+        // Since this is a first admin registration, we'll use a special approach
+        // Use supabase functions to execute an insert with admin privileges
+        const { error: adminError } = await supabase.rpc('create_admin_user', {
+          user_id: data.user.id
+        });
         
-        if (adminError) throw adminError;
+        if (adminError) {
+          console.error("Error adding to admin_users using RPC:", adminError);
+          
+          // Fallback: Try direct insert with auth.uid() check
+          const { error: directError } = await supabase
+            .from('admin_users')
+            .insert([{ id: data.user.id }]);
+            
+          if (directError) {
+            throw directError;
+          }
+        }
         
         toast({
           title: "تم التسجيل بنجاح",

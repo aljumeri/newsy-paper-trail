@@ -88,6 +88,22 @@ const ComposeNewsletter = () => {
         throw new Error("User not authenticated");
       }
       
+      // First, check if user is an admin using the secure RPC function
+      const { data: isAdmin, error: adminCheckError } = await supabase.rpc(
+        'get_admin_status',
+        { user_id: sessionData.session.user.id }
+      );
+      
+      if (adminCheckError) {
+        console.error("Admin check error:", adminCheckError);
+        throw new Error("Error verifying admin status");
+      }
+      
+      if (!isAdmin) {
+        throw new Error("Only admin users can save newsletters");
+      }
+      
+      // Now save the newsletter
       const { data, error } = await supabase
         .from('newsletters')
         .insert(
@@ -103,7 +119,7 @@ const ComposeNewsletter = () => {
       });
       
       navigate('/admin-control/panel');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving newsletter:', error);
       toast({
         title: "خطأ في الحفظ",

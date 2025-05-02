@@ -7,7 +7,8 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('');
@@ -84,49 +85,137 @@ const AdminLogin = () => {
     }
   };
 
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    try {
+      // Create a new user account
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password
+      });
+      
+      if (error) throw error;
+      
+      if (data.user) {
+        // Add user to admin_users table
+        const { error: adminError } = await supabase
+          .from('admin_users')
+          .insert([{ id: data.user.id }]);
+        
+        if (adminError) throw adminError;
+        
+        toast({
+          title: "تم التسجيل بنجاح",
+          description: "تم إنشاء حساب المسؤول الخاص بك. يمكنك الآن تسجيل الدخول."
+        });
+
+        // Check if email confirmation is required
+        if (data.session) {
+          navigate('/admin/dashboard');
+        }
+      }
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      toast({
+        title: "خطأ في التسجيل",
+        description: error.message || "فشل إنشاء الحساب. يرجى المحاولة مرة أخرى.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-grow flex items-center justify-center px-4 py-12">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl">تسجيل دخول المسؤول</CardTitle>
-            <CardDescription>أدخل بيانات اعتماد المسؤول للوصول إلى لوحة التحكم</CardDescription>
+            <CardTitle className="text-2xl">منطقة المسؤول</CardTitle>
+            <CardDescription>قم بتسجيل الدخول أو أنشئ حساب مسؤول جديد</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="email" className="block text-sm font-medium">البريد الإلكتروني</label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="admin@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="w-full"
-                />
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="password" className="block text-sm font-medium">كلمة المرور</label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="w-full"
-                />
-              </div>
-              <Button
-                type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                disabled={isLoading}
-              >
-                {isLoading ? "جارِ تسجيل الدخول..." : "تسجيل الدخول"}
-              </Button>
-            </form>
+            <Tabs defaultValue="login" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="login">تسجيل الدخول</TabsTrigger>
+                <TabsTrigger value="register">إنشاء حساب جديد</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="login">
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div className="space-y-2">
+                    <label htmlFor="login-email" className="block text-sm font-medium">البريد الإلكتروني</label>
+                    <Input
+                      id="login-email"
+                      type="email"
+                      placeholder="admin@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="login-password" className="block text-sm font-medium">كلمة المرور</label>
+                    <Input
+                      id="login-password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="w-full"
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "جارِ تسجيل الدخول..." : "تسجيل الدخول"}
+                  </Button>
+                </form>
+              </TabsContent>
+              
+              <TabsContent value="register">
+                <form onSubmit={handleRegister} className="space-y-4">
+                  <div className="space-y-2">
+                    <label htmlFor="register-email" className="block text-sm font-medium">البريد الإلكتروني</label>
+                    <Input
+                      id="register-email"
+                      type="email"
+                      placeholder="admin@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="register-password" className="block text-sm font-medium">كلمة المرور</label>
+                    <Input
+                      id="register-password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="w-full"
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    className="w-full bg-green-600 hover:bg-green-700 text-white"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "جارِ إنشاء الحساب..." : "إنشاء حساب جديد"}
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       </main>

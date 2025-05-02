@@ -1,14 +1,15 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import AuthTabs from '@/components/admin/AuthTabs';
-import AuthSessionChecker from '@/components/admin/AuthSessionChecker';
 import { useAuthHandlers } from '@/hooks/useAuthHandlers';
+import { supabase } from "@/integrations/supabase/client";
 
 const AdminLogin = () => {
-  const [sessionCheckComplete, setSessionCheckComplete] = useState(false);
+  const [isSessionLoading, setIsSessionLoading] = useState(true);
+  const [hasSession, setHasSession] = useState(false);
   const {
     email,
     setEmail,
@@ -20,18 +21,64 @@ const AdminLogin = () => {
     handleRegister
   } = useAuthHandlers();
 
-  console.log("AdminLogin component rendering");
+  // Simplified direct session check
+  useEffect(() => {
+    console.log("AdminLogin: Checking session status directly");
+    
+    const checkSession = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Session check error:", error);
+          setIsSessionLoading(false);
+          return;
+        }
+        
+        if (data.session) {
+          console.log("AdminLogin: Valid session found, setting hasSession to true");
+          setHasSession(true);
+          window.location.href = '/admin/dashboard';
+        } else {
+          console.log("AdminLogin: No active session, showing login form");
+          setIsSessionLoading(false);
+        }
+      } catch (e) {
+        console.error("AdminLogin: Session check failed with error:", e);
+        setIsSessionLoading(false);
+      }
+    };
+    
+    checkSession();
+  }, []);
 
-  const handleSessionCheckComplete = () => {
-    setSessionCheckComplete(true);
-  };
+  // Set up auth state listener
+  useEffect(() => {
+    console.log("AdminLogin: Setting up auth state listener");
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("AdminLogin: Auth state changed:", event);
+      
+      if (event === 'SIGNED_IN' && session) {
+        console.log("AdminLogin: User signed in, redirecting to dashboard");
+        window.location.href = '/admin/dashboard';
+      }
+    });
+    
+    return () => {
+      console.log("AdminLogin: Cleaning up auth listener");
+      subscription.unsubscribe();
+    };
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-grow flex items-center justify-center px-4 py-12">
-        {!sessionCheckComplete ? (
-          <AuthSessionChecker onSessionCheckComplete={handleSessionCheckComplete} />
+        {isSessionLoading ? (
+          <div className="text-center p-4">
+            <p className="text-lg">جارٍ التحميل...</p>
+          </div>
         ) : (
           <Card className="w-full max-w-md">
             <CardHeader className="text-center">

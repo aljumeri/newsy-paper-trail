@@ -14,6 +14,7 @@ import ComposeNewsletter from "./pages/ComposeNewsletter";
 import EditNewsletter from "./pages/EditNewsletter";
 import SendNewsletter from "./pages/SendNewsletter";
 import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 // Configure QueryClient with error handling
 const queryClient = new QueryClient({
@@ -33,6 +34,18 @@ const queryClient = new QueryClient({
 
 const App = () => {
   console.log("App component rendering with routes");
+  
+  // Initialize Supabase auth
+  useEffect(() => {
+    // Set up auth state change listener for debugging
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("App: Auth state changed:", event, session ? "Session exists" : "No session");
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
   
   // Add global error handler for uncaught promise rejections
   useEffect(() => {

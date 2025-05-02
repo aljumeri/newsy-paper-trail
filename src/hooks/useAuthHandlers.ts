@@ -1,6 +1,5 @@
 
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -13,7 +12,6 @@ export const useAuthHandlers = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +33,8 @@ export const useAuthHandlers = () => {
         description: "مرحبًا بعودتك!"
       });
       
-      // Auth listener will handle navigation
+      // Direct navigation after successful login
+      window.location.href = '/admin/dashboard';
     } catch (error: any) {
       console.error('Login error:', error);
       setAuthError(error.message || "فشل تسجيل الدخول. يرجى التحقق من بيانات الاعتماد الخاصة بك.");
@@ -60,7 +59,7 @@ export const useAuthHandlers = () => {
         email,
         password,
         options: {
-          emailRedirectTo: window.location.origin,
+          emailRedirectTo: window.location.origin + '/admin/dashboard',
         }
       });
       
@@ -86,6 +85,9 @@ export const useAuthHandlers = () => {
               title: "تم التسجيل والدخول بنجاح",
               description: "تم إنشاء حساب المسؤول الخاص بك وتسجيل الدخول."
             });
+            
+            // Direct navigation after successful login
+            window.location.href = '/admin/dashboard';
           }
         } catch (signInErr) {
           console.error("Auto-login error:", signInErr);

@@ -20,7 +20,7 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				sans: ['Tajawal', 'sans-serif'],
+				sans: ['Noto Naskh Arabic', 'serif'],
 				serif: ['Amiri', 'serif'],
 			},
 			colors: {

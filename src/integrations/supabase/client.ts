@@ -6,31 +6,27 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://vqkdadugmkwnthkfjbla.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxa2RhZHVnbWt3bnRoa2ZqYmxhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYxNDQwOTUsImV4cCI6MjA2MTcyMDA5NX0.AyZpQgkaypIz2thFdO2K5WF7WFXog2tw-t_9RLBapY4";
 
-// Configure Supabase client with explicit auth settings for better reliability
+// Configure Supabase client with optimized auth settings to improve reliability
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
     storage: localStorage,
-    detectSessionInUrl: false,
+    detectSessionInUrl: false, // Explicitly disabled to avoid race conditions
     flowType: 'pkce',
-    debug: false
+    debug: false // Disabled debug logging
   }
 });
 
-// Add listener for auth state changes with synchronous handler only
-supabase.auth.onAuthStateChange((event, session) => {
-  // Only perform synchronous operations here, no promises returned
-  console.log(`Supabase auth event: ${event}`, session ? `Session exists (expires: ${new Date(session.expires_at! * 1000).toLocaleString()})` : "No session");
-});
-
-// Initial session check to confirm setup - using Promise.catch to handle errors
+// Initial session check to confirm setup - using controlled error handling
+console.log("Initializing Supabase client and checking session...");
 supabase.auth.getSession().then(({ data, error }) => {
   if (error) {
-    console.error("Initial supabase client session check error:", error);
+    console.error("Initial Supabase session check error:", error);
   } else {
-    console.log("Initial supabase client session check:", data.session ? `Session found (expires: ${new Date(data.session.expires_at * 1000).toLocaleString()})` : "No session");
+    console.log("Initial Supabase session check:", 
+      data.session ? `Session found (expires: ${new Date(data.session.expires_at * 1000).toLocaleString()})` : "No active session");
   }
 }).catch(err => {
-  console.error("Unhandled error during session check:", err);
+  console.error("Unhandled error during Supabase session check:", err);
 });

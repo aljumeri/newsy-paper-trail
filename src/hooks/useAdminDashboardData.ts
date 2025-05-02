@@ -3,7 +3,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
-import { Database } from '@/integrations/supabase/types';
 
 interface Subscriber {
   id: string;
@@ -24,17 +23,17 @@ const useAdminDashboardData = (user: User | null) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const isUnmounted = useRef(false);
+  const isMounted = useRef(false);
 
   useEffect(() => {
+    // Mark component as mounted
+    isMounted.current = true;
+
     if (!user) {
-      console.log("No user, skipping data fetch");
+      console.log("No authenticated user, skipping data fetch");
       setLoading(false);
       return;
     }
-    
-    // Setup unmount flag for cleanup
-    isUnmounted.current = false;
     
     const fetchData = async () => {
       console.log("Starting to fetch admin dashboard data...");
@@ -42,7 +41,7 @@ const useAdminDashboardData = (user: User | null) => {
       setError(null);
       
       try {
-        // Fetch subscribers with error handling
+        // Fetch subscribers
         console.log("Fetching subscribers...");
         const { data: subscribersData, error: subscribersError } = await supabase
           .from('subscribers')
@@ -51,16 +50,15 @@ const useAdminDashboardData = (user: User | null) => {
         
         if (subscribersError) {
           console.error('Error fetching subscribers:', subscribersError);
-          if (!isUnmounted.current) {
+          if (isMounted.current) {
             setError(subscribersError.message);
           }
-        } else if (!isUnmounted.current && subscribersData) {
+        } else if (isMounted.current && subscribersData) {
           console.log("Fetched subscribers:", subscribersData?.length || 0);
-          // Fix: Ensure we're handling the type correctly
           setSubscribers(subscribersData as Subscriber[]);
         }
         
-        // Fetch newsletters with error handling
+        // Fetch newsletters
         console.log("Fetching newsletters...");
         const { data: newslettersData, error: newslettersError } = await supabase
           .from('newsletters')
@@ -69,22 +67,21 @@ const useAdminDashboardData = (user: User | null) => {
         
         if (newslettersError) {
           console.error('Error fetching newsletters:', newslettersError);
-          if (!isUnmounted.current) {
+          if (isMounted.current) {
             setError(prev => prev || newslettersError.message);
           }
-        } else if (!isUnmounted.current && newslettersData) {
+        } else if (isMounted.current && newslettersData) {
           console.log("Fetched newsletters:", newslettersData?.length || 0);
-          // Fix: Ensure we're handling the type correctly
           setNewsletters(newslettersData as Newsletter[]);
         }
         
       } catch (error: any) {
         console.error('Error fetching data:', error);
-        if (!isUnmounted.current) {
+        if (isMounted.current) {
           setError(error.message || "Unknown error occurred");
         }
       } finally {
-        if (!isUnmounted.current) {
+        if (isMounted.current) {
           setLoading(false);
         }
       }
@@ -92,14 +89,15 @@ const useAdminDashboardData = (user: User | null) => {
     
     fetchData();
     
+    // Clean up
     return () => {
-      isUnmounted.current = true;
+      isMounted.current = false;
     };
-  }, [user, toast]);
+  }, [user]);
 
   // Show toast when error occurs
   useEffect(() => {
-    if (error) {
+    if (error && isMounted.current) {
       toast({
         title: "خطأ في جلب البيانات",
         description: error,

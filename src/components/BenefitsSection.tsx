@@ -5,18 +5,18 @@ import { Mail, Calendar, Inbox, MessageSquare, Newspaper, TrendingUp, Globe, Awa
 const benefits = [
   {
     icon: <Newspaper className="h-10 w-10 text-blue-600" />,
-    title: "أخبار التكنولوجيا",
-    description: "آخر التطورات والاتجاهات في عالم التكنولوجيا والابتكار."
+    title: "أخبار الذكاء الاصطناعي",
+    description: "آخر التطورات والاتجاهات في عالم الذكاء الاصطناعي والتكنولوجيا والابتكار."
   },
   {
     icon: <TrendingUp className="h-10 w-10 text-blue-600" />,
     title: "تحليل الأسواق",
-    description: "تحليلات عميقة للأسواق المالية واتجاهات الاستثمار الرئيسية."
+    description: "تحليلات عميقة للأسواق المالية واتجاهات الاستثمار الرئيسية في مجال التقنيات الناشئة."
   },
   {
     icon: <Globe className="h-10 w-10 text-blue-600" />,
     title: "أخبار عالمية",
-    description: "تغطية شاملة للأحداث العالمية ذات التأثير على الاقتصاد والمجتمع."
+    description: "تغطية شاملة للأحداث العالمية ذات التأثير على الذكاء الاصطناعي والاقتصاد والمجتمع."
   },
   {
     icon: <Mail className="h-10 w-10 text-blue-600" />,
@@ -41,7 +41,7 @@ const benefits = [
   {
     icon: <Award className="h-10 w-10 text-blue-600" />,
     title: "تقارير متميزة",
-    description: "تقارير عميقة عن المواضيع الأكثر أهمية في عالم الأعمال والتكنولوجيا."
+    description: "تقارير عميقة عن المواضيع الأكثر أهمية في عالم الذكاء الاصطناعي والأعمال والتكنولوجيا."
   }
 ];
 

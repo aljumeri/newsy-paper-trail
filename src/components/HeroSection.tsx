@@ -17,8 +17,8 @@ const HeroSection = () => {
     // Simulate API call
     setTimeout(() => {
       toast({
-        title: "Success!",
-        description: "You've been subscribed to our newsletter.",
+        title: "تم بنجاح!",
+        description: "لقد تم اشتراكك في نشرتنا الإخبارية.",
       });
       setIsLoading(false);
       setEmail('');
@@ -31,20 +31,20 @@ const HeroSection = () => {
         <div className="space-y-6 max-w-lg animate-fade-in">
           <div className="flex items-center gap-2 text-blue-600 font-medium">
             <Bell size={20} />
-            <span>Weekly newsletter</span>
+            <span>نشرة أسبوعية</span>
           </div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-            Insights that elevate your thinking
+            نشرة سولو للذكاء الاصطناعي
           </h1>
           <p className="text-lg text-neutral-600">
-            Join thousands of subscribers receiving our carefully curated insights on technology, business, and culture — delivered straight to your inbox every week.
+            انضم إلى آلاف المشتركين الذين يتلقون رؤى مختارة بعناية حول الذكاء الاصطناعي والتكنولوجيا والأعمال — تُرسل مباشرة إلى بريدك الإلكتروني كل أسبوع.
           </p>
           
           <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-3 pt-2">
             <Input
               type="email"
-              placeholder="Enter your email"
-              className="flex-grow text-base py-6"
+              placeholder="أدخل بريدك الإلكتروني"
+              className="flex-grow text-base py-6 text-right"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -54,12 +54,12 @@ const HeroSection = () => {
               className="bg-blue-600 hover:bg-blue-700 text-white py-6 px-8" 
               disabled={isLoading}
             >
-              {isLoading ? "Subscribing..." : "Subscribe"}
+              {isLoading ? "جاري الاشتراك..." : "اشترك الآن"}
             </Button>
           </form>
           
           <div className="text-neutral-500 text-sm">
-            Join over 10,000+ subscribers. No spam, unsubscribe anytime.
+            انضم إلى أكثر من 10,000 مشترك. بدون رسائل مزعجة، يمكنك إلغاء الاشتراك في أي وقت.
           </div>
         </div>
         
@@ -69,14 +69,14 @@ const HeroSection = () => {
             <div className="absolute -right-5 -bottom-5 w-32 h-32 bg-blue-100/80 rounded-full"></div>
             <img 
               src="https://images.unsplash.com/photo-1586339949916-3e9457bef6d3?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80" 
-              alt="Newsletter preview" 
+              alt="معاينة النشرة الإخبارية" 
               className="w-full max-w-md rounded-lg shadow-xl relative z-10"
             />
           </div>
         </div>
       </div>
       
-      {/* Decorative elements */}
+      {/* العناصر الزخرفية */}
       <div className="absolute top-1/3 left-0 w-40 h-40 bg-blue-200/30 rounded-full blur-3xl -z-10"></div>
       <div className="absolute bottom-0 right-0 w-60 h-60 bg-blue-100/50 rounded-full blur-3xl -z-10"></div>
     </section>

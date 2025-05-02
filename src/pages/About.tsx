@@ -13,9 +13,9 @@ const About = () => {
       <main className="flex-grow">
         <div className="bg-purple-50 py-16 md:py-24">
           <div className="container">
-            <h1 className="text-4xl md:text-5xl font-bold text-center font-serif mb-6">About Paper Trail</h1>
+            <h1 className="text-4xl md:text-5xl font-bold text-center font-serif mb-6">عن نشرة سولو للذكاء الاصطناعي</h1>
             <p className="text-center text-neutral-600 max-w-2xl mx-auto">
-              The story behind our newsletter and the team that makes it happen.
+              القصة وراء نشرتنا الإخبارية والفريق الذي يجعلها ممكنة.
             </p>
           </div>
         </div>
@@ -24,47 +24,47 @@ const About = () => {
           <div className="container">
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               <div>
-                <h2 className="text-3xl font-bold mb-6 font-serif">Our Mission</h2>
+                <h2 className="text-3xl font-bold mb-6 font-serif">مهمتنا</h2>
                 <p className="text-lg mb-4 text-neutral-700">
-                  At Paper Trail, we believe that staying informed shouldn't feel like work. Our mission is to deliver clear, concise, and thoughtful analysis of the most important trends in technology, business, and culture.
+                  في نشرة سولو، نؤمن بأن البقاء على اطلاع لا يجب أن يشعرك بالعمل. مهمتنا هي تقديم تحليل واضح وموجز ومدروس لأهم الاتجاهات في مجال الذكاء الاصطناعي والتكنولوجيا والأعمال والثقافة.
                 </p>
                 <p className="text-lg mb-6 text-neutral-700">
-                  Founded in 2022, we've grown from a small passion project to a newsletter trusted by thousands of professionals, entrepreneurs, and curious minds around the world.
+                  تأسست في عام 2022، نمونا من مشروع صغير إلى نشرة إخبارية يثق بها الآلاف من المحترفين ورواد الأعمال والعقول الفضولية حول العالم.
                 </p>
-                <h3 className="text-xl font-bold mb-3 font-serif">What makes us different</h3>
+                <h3 className="text-xl font-bold mb-3 font-serif">ما الذي يميزنا</h3>
                 <ul className="space-y-2 mb-6 text-neutral-700">
                   <li className="flex items-start">
-                    <svg className="h-6 w-6 text-purple-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="h-6 w-6 text-purple-500 ml-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    <span>Deep research beyond the headlines</span>
+                    <span>بحث عميق يتجاوز العناوين الرئيسية</span>
                   </li>
                   <li className="flex items-start">
-                    <svg className="h-6 w-6 text-purple-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="h-6 w-6 text-purple-500 ml-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    <span>Balanced perspectives that challenge conventional thinking</span>
+                    <span>وجهات نظر متوازنة تتحدى التفكير التقليدي</span>
                   </li>
                   <li className="flex items-start">
-                    <svg className="h-6 w-6 text-purple-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="h-6 w-6 text-purple-500 ml-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    <span>Practical insights you can apply immediately</span>
+                    <span>رؤى عملية يمكنك تطبيقها على الفور</span>
                   </li>
                   <li className="flex items-start">
-                    <svg className="h-6 w-6 text-purple-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="h-6 w-6 text-purple-500 ml-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    <span>Concise format designed for busy professionals</span>
+                    <span>تنسيق موجز مصمم للمهنيين المشغولين</span>
                   </li>
                 </ul>
-                <Button className="bg-purple-500 hover:bg-purple-600">Subscribe Now</Button>
+                <Button className="bg-purple-500 hover:bg-purple-600">اشترك الآن</Button>
               </div>
               <div className="relative">
                 <div className="absolute -left-5 -top-5 w-24 h-24 bg-purple-200/60 rounded-full"></div>
                 <img 
                   src="https://images.unsplash.com/photo-1517059224940-d4af9eec41b7?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1305&q=80" 
-                  alt="About Paper Trail" 
+                  alt="عن نشرة سولو" 
                   className="rounded-lg shadow-lg relative z-10"
                 />
               </div>
@@ -74,25 +74,25 @@ const About = () => {
         
         <section className="section bg-gray-50">
           <div className="container">
-            <h2 className="text-3xl font-bold mb-12 text-center font-serif">Meet the Team</h2>
+            <h2 className="text-3xl font-bold mb-12 text-center font-serif">تعرف على الفريق</h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {[
                 {
-                  name: "Alexandra Reynolds",
-                  role: "Founder & Editor-in-Chief",
-                  bio: "Former tech journalist with a passion for making complex ideas accessible to everyone.",
+                  name: "ألكسندرا رينولدز",
+                  role: "المؤسسة ورئيسة التحرير",
+                  bio: "صحفية تقنية سابقة ذات شغف بجعل الأفكار المعقدة في متناول الجميع.",
                   avatar: "https://randomuser.me/api/portraits/women/23.jpg"
                 },
                 {
-                  name: "David Chen",
-                  role: "Senior Writer",
-                  bio: "Specializes in business strategy and market analysis with 10+ years in consulting.",
+                  name: "داوود الأحمد",
+                  role: "كاتب رئيسي",
+                  bio: "متخصص في استراتيجية الأعمال وتحليل السوق مع خبرة تزيد عن 10 سنوات في مجال الاستشارات.",
                   avatar: "https://randomuser.me/api/portraits/men/54.jpg"
                 },
                 {
-                  name: "Mia Johnson",
-                  role: "Culture & Society Editor",
-                  bio: "Anthropologist and writer exploring how technology shapes modern society.",
+                  name: "ميا جونسون",
+                  role: "محررة الثقافة والمجتمع",
+                  bio: "عالمة أنثروبولوجيا وكاتبة تستكشف كيف تشكل التكنولوجيا المجتمع الحديث.",
                   avatar: "https://randomuser.me/api/portraits/women/65.jpg"
                 }
               ].map((person, index) => (

@@ -5,27 +5,27 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const testimonials = [
   {
-    content: "This newsletter has become my weekly ritual. The insights are always fresh, deeply researched, and surprisingly applicable to my work.",
-    author: "Alex Morgan",
-    role: "Product Manager, Stripe",
+    content: "أصبحت هذه النشرة الإخبارية طقسي الأسبوعي. الرؤى دائماً جديدة، مدروسة بعمق، ومفاجئة في تطبيقها على عملي.",
+    author: "أليكس مورغان",
+    role: "مدير المنتج، سترايب",
     avatar: "https://randomuser.me/api/portraits/women/44.jpg"
   },
   {
-    content: "I've subscribed to dozens of newsletters over the years, and Paper Trail is consistently the only one I make time to read every single week.",
-    author: "James Wilson",
-    role: "CEO, FutureTech",
+    content: "لقد اشتركت في عشرات النشرات الإخبارية على مر السنين، ونشرة سولو هي الوحيدة التي أخصص وقتاً لقراءتها كل أسبوع.",
+    author: "جيمس ويلسون",
+    role: "الرئيس التنفيذي، فيوتشرتك",
     avatar: "https://randomuser.me/api/portraits/men/32.jpg"
   },
   {
-    content: "The depth of analysis combined with concise delivery makes this newsletter stand out. It's like having a brilliant analyst on your team.",
-    author: "Sarah Chen",
-    role: "Investment Strategist",
+    content: "عمق التحليل مع الإيجاز في التقديم يجعل هذه النشرة متميزة. إنها مثل وجود محلل بارع في فريقك.",
+    author: "سارة تشن",
+    role: "استراتيجي استثمار",
     avatar: "https://randomuser.me/api/portraits/women/68.jpg"
   },
   {
-    content: "What impresses me most is how the newsletter consistently identifies emerging trends weeks or months before they hit mainstream coverage.",
-    author: "Michael Davis",
-    role: "Head of Innovation",
+    content: "ما يثير إعجابي أكثر هو كيف تحدد النشرة الاتجاهات الناشئة قبل أسابيع أو شهور من وصولها إلى التغطية الإعلامية السائدة.",
+    author: "مايكل ديفيس",
+    role: "رئيس الابتكار",
     avatar: "https://randomuser.me/api/portraits/men/46.jpg"
   }
 ];
@@ -35,9 +35,9 @@ const TestimonialsSection = () => {
     <section className="section bg-white">
       <div className="container">
         <div className="text-center mb-16 max-w-3xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">What Our Readers Say</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">ماذا يقول قراؤنا</h2>
           <p className="text-lg text-neutral-600">
-            Join thousands of satisfied subscribers who trust our insights every week.
+            انضم إلى آلاف المشتركين الراضين الذين يثقون برؤانا كل أسبوع.
           </p>
         </div>
         
@@ -65,7 +65,7 @@ const TestimonialsSection = () => {
                       <AvatarImage src={testimonial.avatar} alt={testimonial.author} />
                       <AvatarFallback>{testimonial.author.charAt(0)}</AvatarFallback>
                     </Avatar>
-                    <div className="ml-3">
+                    <div className="mr-3">
                       <div className="font-medium">{testimonial.author}</div>
                       <div className="text-sm text-neutral-500">{testimonial.role}</div>
                     </div>

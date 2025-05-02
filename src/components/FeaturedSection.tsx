@@ -3,27 +3,27 @@ import React from 'react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
-// Sample newsletter issues data
+// بيانات الإصدارات السابقة
 const newsletterIssues = [
   {
     id: 1,
-    title: "The Future of AI in Creative Industries",
-    excerpt: "How artificial intelligence is transforming content creation, design, and the way we think about creativity.",
-    date: "Apr 25, 2025",
+    title: "مستقبل الذكاء الاصطناعي في الصناعات الإبداعية",
+    excerpt: "كيف يُغير الذكاء الاصطناعي إنشاء المحتوى والتصميم وطريقة تفكيرنا في الإبداع.",
+    date: "25 أبريل 2025",
     imageUrl: "https://images.unsplash.com/photo-1655635643532-fa9ba2648cbe?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2232&q=80",
   },
   {
     id: 2,
-    title: "Sustainable Tech: Beyond the Buzzwords",
-    excerpt: "An in-depth look at how technology companies are truly addressing environmental concerns in 2025.",
-    date: "Apr 18, 2025",
+    title: "التقنية المستدامة: ما وراء الكلمات الرنانة",
+    excerpt: "نظرة متعمقة حول كيفية معالجة شركات التكنولوجيا للمخاوف البيئية في عام 2025.",
+    date: "18 أبريل 2025",
     imageUrl: "https://images.unsplash.com/photo-1618044733300-9472054094ee?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2071&q=80",
   },
   {
     id: 3,
-    title: "The Remote Work Revolution: 5 Years Later",
-    excerpt: "Examining the lasting impact of global remote work adoption on companies, productivity, and work culture.",
-    date: "Apr 11, 2025",
+    title: "ثورة العمل عن بُعد: بعد 5 سنوات",
+    excerpt: "دراسة التأثير المستمر لتبني العمل عن بُعد عالميًا على الشركات والإنتاجية وثقافة العمل.",
+    date: "11 أبريل 2025",
     imageUrl: "https://images.unsplash.com/photo-1521898284481-a5ec348cb555?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1974&q=80",
   }
 ];
@@ -33,9 +33,9 @@ const FeaturedSection = () => {
     <section className="section bg-white">
       <div className="container">
         <div className="text-center mb-12 max-w-3xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Recent Issues</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">آخر الإصدارات</h2>
           <p className="text-neutral-600">
-            Get a taste of the insights we deliver weekly. Browse through some of our recent newsletters.
+            تذوق الرؤى التي نقدمها أسبوعياً. تصفح بعض نشراتنا الإخبارية الأخيرة.
           </p>
         </div>
         
@@ -58,7 +58,7 @@ const FeaturedSection = () => {
               </CardContent>
               <CardFooter className="pt-2 pb-5">
                 <Button variant="outline" className="hover:bg-blue-50 border-blue-200 text-blue-700 hover:text-blue-800">
-                  Read Issue
+                  قراءة العدد
                 </Button>
               </CardFooter>
             </Card>
@@ -67,7 +67,7 @@ const FeaturedSection = () => {
         
         <div className="text-center mt-12">
           <Button variant="link" className="text-blue-600 hover:text-blue-700 text-lg">
-            View All Archives →
+            عرض كل الأرشيف ←
           </Button>
         </div>
       </div>

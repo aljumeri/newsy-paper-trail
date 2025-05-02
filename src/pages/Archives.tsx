@@ -4,48 +4,48 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 
-// Sample expanded newsletter issues data
+// بيانات موسعة للإصدارات السابقة
 const archiveIssues = [
   {
     id: 1,
-    title: "The Future of AI in Creative Industries",
-    excerpt: "How artificial intelligence is transforming content creation, design, and the way we think about creativity.",
-    date: "Apr 25, 2025",
+    title: "مستقبل الذكاء الاصطناعي في الصناعات الإبداعية",
+    excerpt: "كيف يُغير الذكاء الاصطناعي إنشاء المحتوى والتصميم وطريقة تفكيرنا في الإبداع.",
+    date: "25 أبريل 2025",
     imageUrl: "https://images.unsplash.com/photo-1655635643532-fa9ba2648cbe?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2232&q=80",
   },
   {
     id: 2,
-    title: "Sustainable Tech: Beyond the Buzzwords",
-    excerpt: "An in-depth look at how technology companies are truly addressing environmental concerns in 2025.",
-    date: "Apr 18, 2025",
+    title: "التقنية المستدامة: ما وراء الكلمات الرنانة",
+    excerpt: "نظرة متعمقة حول كيفية معالجة شركات التكنولوجيا للمخاوف البيئية في عام 2025.",
+    date: "18 أبريل 2025",
     imageUrl: "https://images.unsplash.com/photo-1618044733300-9472054094ee?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2071&q=80",
   },
   {
     id: 3,
-    title: "The Remote Work Revolution: 5 Years Later",
-    excerpt: "Examining the lasting impact of global remote work adoption on companies, productivity, and work culture.",
-    date: "Apr 11, 2025",
+    title: "ثورة العمل عن بُعد: بعد 5 سنوات",
+    excerpt: "دراسة التأثير المستمر لتبني العمل عن بُعد عالميًا على الشركات والإنتاجية وثقافة العمل.",
+    date: "11 أبريل 2025",
     imageUrl: "https://images.unsplash.com/photo-1521898284481-a5ec348cb555?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1974&q=80",
   },
   {
     id: 4,
-    title: "Digital Privacy in the Age of AI",
-    excerpt: "Understanding how advances in AI are reshaping our understanding of privacy and data protection.",
-    date: "Apr 4, 2025",
+    title: "الخصوصية الرقمية في عصر الذكاء الاصطناعي",
+    excerpt: "فهم كيفية إعادة تشكيل التطورات في الذكاء الاصطناعي لفهمنا للخصوصية وحماية البيانات.",
+    date: "4 أبريل 2025",
     imageUrl: "https://images.unsplash.com/photo-1566837945700-30057527ade0?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80",
   },
   {
     id: 5,
-    title: "The Creator Economy: New Business Models",
-    excerpt: "How individual creators are building sustainable businesses and reshaping the digital economy.",
-    date: "Mar 28, 2025",
+    title: "اقتصاد المبدعين: نماذج أعمال جديدة",
+    excerpt: "كيف يبني المبدعون الأفراد أعماًلا مستدامة ويعيدون تشكيل الاقتصاد الرقمي.",
+    date: "28 مارس 2025",
     imageUrl: "https://images.unsplash.com/photo-1661956602139-ec64991b8b16?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=665&q=80",
   },
   {
     id: 6,
-    title: "Web3: Promise vs. Reality",
-    excerpt: "A balanced examination of where web3 technologies are delivering value and where they're falling short.",
-    date: "Mar 21, 2025",
+    title: "الويب 3.0: بين الوعد والواقع",
+    excerpt: "دراسة متوازنة حول أماكن تقديم تقنيات الويب 3.0 للقيمة وأين تقصر.",
+    date: "21 مارس 2025",
     imageUrl: "https://images.unsplash.com/photo-1639322537228-f710d846310a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1332&q=80",
   },
 ];
@@ -57,9 +57,9 @@ const Archives = () => {
       <main className="flex-grow">
         <div className="bg-purple-50 py-16 md:py-24">
           <div className="container">
-            <h1 className="text-4xl md:text-5xl font-bold text-center font-serif mb-6">Newsletter Archives</h1>
+            <h1 className="text-4xl md:text-5xl font-bold text-center font-serif mb-6">أرشيف النشرات الإخبارية</h1>
             <p className="text-center text-neutral-600 max-w-2xl mx-auto">
-              Browse through our past issues and catch up on insights you might have missed.
+              تصفح إصداراتنا السابقة واطلع على الرؤى التي ربما فاتتك.
             </p>
           </div>
         </div>
@@ -84,7 +84,7 @@ const Archives = () => {
                     <p className="text-neutral-600">{issue.excerpt}</p>
                     <div className="mt-4">
                       <a href="#" className="text-purple-600 hover:text-purple-700 font-medium">
-                        Read Issue →
+                        قراءة العدد ←
                       </a>
                     </div>
                   </CardContent>

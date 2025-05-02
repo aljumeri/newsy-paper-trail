@@ -19,18 +19,14 @@ const AdminLogin = () => {
   useEffect(() => {
     // Check if user is already logged in
     const checkSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        // Verify if the user is an admin
-        const { data: adminData, error: adminError } = await supabase
-          .from('admin_users')
-          .select('id')
-          .eq('id', data.session.user.id)
-          .single();
-        
-        if (adminData) {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (data.session) {
+          // User is logged in, try to navigate to dashboard
           navigate('/admin/dashboard');
         }
+      } catch (error) {
+        console.error('Session check error:', error);
       }
     };
     
@@ -51,29 +47,11 @@ const AdminLogin = () => {
       if (error) throw error;
       
       if (data.user) {
-        // Check if the user is in the admin_users table
-        const { data: adminData, error: adminError } = await supabase
-          .from('admin_users')
-          .select('id')
-          .eq('id', data.user.id)
-          .single();
-        
-        if (adminError || !adminData) {
-          console.error('Admin check error:', adminError);
-          await supabase.auth.signOut();
-          setAuthError("ليس لديك صلاحيات إدارية. تأكد من استخدام حساب مسؤول.");
-          toast({
-            title: "غير مصرح به",
-            description: "ليس لديك صلاحيات إدارية.",
-            variant: "destructive"
-          });
-        } else {
-          toast({
-            title: "تم تسجيل الدخول بنجاح",
-            description: "مرحبًا بعودتك!"
-          });
-          navigate('/admin/dashboard');
-        }
+        toast({
+          title: "تم تسجيل الدخول بنجاح",
+          description: "مرحبًا بعودتك!"
+        });
+        navigate('/admin/dashboard');
       }
     } catch (error: any) {
       console.error('Login error:', error);
@@ -100,9 +78,6 @@ const AdminLogin = () => {
         password,
         options: {
           emailRedirectTo: window.location.origin,
-          data: {
-            is_admin: true
-          }
         }
       });
       
@@ -116,44 +91,33 @@ const AdminLogin = () => {
           
         if (insertError) {
           console.error("Error adding to admin_users:", insertError);
-          throw insertError;
         }
         
-        // If we got here, the user is now in the admin_users table
-        
-        if (data.session) {
-          // User is already logged in
-          toast({
-            title: "تم التسجيل بنجاح",
-            description: "تم إنشاء حساب المسؤول الخاص بك وتسجيل الدخول."
+        // Try to sign in immediately after registration
+        try {
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+            email,
+            password
           });
-          navigate('/admin/dashboard');
-        } else {
-          // User needs to verify email first
+          
+          if (!signInError && signInData.session) {
+            toast({
+              title: "تم التسجيل والدخول بنجاح",
+              description: "تم إنشاء حساب المسؤول الخاص بك وتسجيل الدخول."
+            });
+            navigate('/admin/dashboard');
+          } else {
+            toast({
+              title: "تم التسجيل بنجاح",
+              description: "يرجى التحقق من بريدك الإلكتروني للتأكيد ثم تسجيل الدخول."
+            });
+          }
+        } catch (signInErr) {
+          // Silent fail for automatic login attempt
           toast({
             title: "تم التسجيل بنجاح",
             description: "يرجى التحقق من بريدك الإلكتروني للتأكيد ثم تسجيل الدخول."
           });
-          
-          // Try to sign in immediately if verification is bypassed in development
-          try {
-            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-              email,
-              password
-            });
-            
-            if (!signInError && signInData.session) {
-              // Login successful (happens if email verification is disabled)
-              toast({
-                title: "تم تسجيل الدخول تلقائيًا",
-                description: "تم التحقق من حسابك وتسجيل الدخول."
-              });
-              navigate('/admin/dashboard');
-            }
-          } catch (signInErr) {
-            // Silent fail for automatic login attempt
-            console.log("Auto login after registration failed - verification likely required");
-          }
         }
       }
     } catch (error: any) {

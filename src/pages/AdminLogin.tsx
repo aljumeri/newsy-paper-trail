@@ -1,57 +1,71 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from "@/integrations/supabase/client";
+import LoginForm from '@/components/admin/LoginForm';
+import RegisterForm from '@/components/admin/RegisterForm';
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
-  const [sessionLoading, setSessionLoading] = useState(true);
   const { toast } = useToast();
 
   // Check for existing session on component mount
-  useEffect(() => {
-    console.log("AdminLogin: Checking for existing session");
-    
-    const checkSession = async () => {
-      try {
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("Session check error:", error);
-          setSessionLoading(false);
-          return;
-        }
-        
-        if (data.session) {
-          console.log("Session exists, redirecting to dashboard");
-          // Use direct navigation for reliability
-          window.location.href = '/admin/dashboard';
-          return;
-        }
-        
-        console.log("No active session found");
-        setSessionLoading(false);
-      } catch (error) {
-        console.error("Session check failed:", error);
-        setSessionLoading(false);
+  const checkSession = useCallback(async () => {
+    try {
+      console.log("AdminLogin: Checking for existing session");
+      
+      const { data, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error("Session check error in AdminLogin:", error);
+        setInitialLoading(false);
+        return;
       }
-    };
-    
-    checkSession();
+      
+      if (data.session) {
+        console.log("AdminLogin: Valid session found, redirecting to dashboard");
+        window.location.href = '/admin/dashboard';
+        return;
+      }
+      
+      console.log("AdminLogin: No active session found");
+      setInitialLoading(false);
+    } catch (error) {
+      console.error("Session check failed:", error);
+      setInitialLoading(false);
+    }
   }, []);
 
-  // Handle login form submission
+  useEffect(() => {
+    checkSession();
+    
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state changed in AdminLogin:", event);
+      
+      // Only redirect on valid sign in events
+      if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
+        console.log("AdminLogin: Valid auth event detected, redirecting to dashboard");
+        window.location.href = '/admin/dashboard';
+      }
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [checkSession]);
+
+  // Handle login form submission with automatic retry
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -76,8 +90,16 @@ const AdminLogin = () => {
         description: "جاري توجيهك إلى لوحة التحكم..."
       });
       
-      // Use direct navigation for reliability
-      window.location.href = '/admin/dashboard';
+      // Double-check session establishment before redirect
+      const { data: sessionData } = await supabase.auth.getSession();
+      
+      if (sessionData.session) {
+        // Use direct navigation for reliability
+        window.location.href = '/admin/dashboard';
+      } else {
+        console.error("Session not established after successful login");
+        throw new Error("فشل إنشاء الجلسة");
+      }
     } catch (error: any) {
       console.error("Login error:", error);
       setAuthError(error.message || "فشل تسجيل الدخول");
@@ -115,21 +137,37 @@ const AdminLogin = () => {
       
       console.log("Registration successful", data);
       
-      // Try immediate login
-      const { error: loginError } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      
-      if (!loginError) {
+      // Try immediate login after registration
+      try {
+        const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+        
+        if (loginError) {
+          throw loginError;
+        }
+        
         toast({
           title: "تم التسجيل وتسجيل الدخول بنجاح",
           description: "جاري توجيهك إلى لوحة التحكم..."
         });
         
-        // Use direct navigation for reliability
-        window.location.href = '/admin/dashboard';
-      } else {
+        // Double-check session establishment before redirect
+        const { data: sessionData } = await supabase.auth.getSession();
+      
+        if (sessionData.session) {
+          // Use direct navigation for reliability
+          window.location.href = '/admin/dashboard';
+        } else {
+          console.error("Session not established after successful registration and login");
+          toast({
+            title: "تم التسجيل بنجاح",
+            description: "يرجى تسجيل الدخول الآن"
+          });
+        }
+      } catch (loginError: any) {
+        console.error("Auto-login after registration error:", loginError);
         toast({
           title: "تم التسجيل بنجاح",
           description: "يرجى تسجيل الدخول الآن"
@@ -149,13 +187,14 @@ const AdminLogin = () => {
     }
   };
 
-  if (sessionLoading) {
+  if (initialLoading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
         <main className="flex-grow flex items-center justify-center px-4 py-12">
           <div className="text-center p-4">
             <p className="text-lg">جارٍ التحميل...</p>
+            <p className="text-sm text-gray-500 mt-2">يتم التحقق من حالة الجلسة...</p>
           </div>
         </main>
         <Footer />
@@ -187,75 +226,25 @@ const AdminLogin = () => {
               </TabsList>
               
               <TabsContent value="login">
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <label htmlFor="email" className="block text-sm font-medium">البريد الإلكتروني</label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="admin@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="w-full"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="password" className="block text-sm font-medium">كلمة المرور</label>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      className="w-full"
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                    disabled={loading}
-                  >
-                    {loading ? "جارِ تسجيل الدخول..." : "تسجيل الدخول"}
-                  </Button>
-                </form>
+                <LoginForm
+                  email={email}
+                  setEmail={setEmail}
+                  password={password}
+                  setPassword={setPassword}
+                  onSubmit={handleLogin}
+                  isLoading={loading}
+                />
               </TabsContent>
               
               <TabsContent value="register">
-                <form onSubmit={handleRegister} className="space-y-4">
-                  <div className="space-y-2">
-                    <label htmlFor="reg-email" className="block text-sm font-medium">البريد الإلكتروني</label>
-                    <Input
-                      id="reg-email"
-                      type="email"
-                      placeholder="admin@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="w-full"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="reg-password" className="block text-sm font-medium">كلمة المرور</label>
-                    <Input
-                      id="reg-password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      className="w-full"
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    className="w-full bg-green-600 hover:bg-green-700 text-white"
-                    disabled={loading}
-                  >
-                    {loading ? "جارِ إنشاء الحساب..." : "إنشاء حساب جديد"}
-                  </Button>
-                </form>
+                <RegisterForm
+                  email={email}
+                  setEmail={setEmail}
+                  password={password}
+                  setPassword={setPassword}
+                  onSubmit={handleRegister}
+                  isLoading={loading}
+                />
               </TabsContent>
             </Tabs>
           </CardContent>

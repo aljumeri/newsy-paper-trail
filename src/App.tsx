@@ -36,23 +36,35 @@ const App = () => {
   console.log("App component rendering with routes");
   
   useEffect(() => {
+    // Initial auth setup
+    const setupAuth = async () => {
+      try {
+        // Initial session check
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Initial session check error in App:", error);
+          return;
+        }
+        
+        console.log("Initial App session check:", data.session 
+          ? `Session found (expires: ${new Date(data.session.expires_at * 1000).toLocaleString()})` 
+          : "No session");
+      } catch (err) {
+        console.error("Error during initial auth setup:", err);
+      }
+    };
+    
+    setupAuth();
+    
     // Setup auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("App: Auth state changed:", event, session ? "Session exists" : "No session");
-    });
-    
-    // Check for existing session
-    supabase.auth.getSession().then(({ data, error }) => {
-      if (error) {
-        console.error("Initial session check error:", error);
-      } else {
-        console.log("Initial session check:", data.session ? "Session exists" : "No session");
-      }
+      console.log("App: Auth state changed:", event, session ? `Session present (expires: ${new Date(session.expires_at * 1000).toLocaleString()})` : "No session");
     });
     
     // Global error handler
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      console.error('Unhandled promise rejection:', event.reason);
+      console.error('Unhandled promise rejection in App:', event.reason);
       event.preventDefault();
     };
     

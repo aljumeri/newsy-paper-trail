@@ -11,11 +11,28 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    storage: localStorage
+    storage: localStorage,
+    detectSessionInUrl: true,
+    flowType: 'pkce',
+    debug: true,
+    cookieOptions: {
+      sameSite: 'lax',
+      secure: true,
+      domain: window.location.hostname
+    }
   }
 });
 
-// Add listener for auth state changes for debugging
+// Add listener for auth state changes for enhanced debugging
 supabase.auth.onAuthStateChange((event, session) => {
-  console.log(`Supabase auth event: ${event}`, session ? "Session exists" : "No session");
+  console.log(`Supabase auth event: ${event}`, session ? `Session exists (expires: ${new Date(session.expires_at! * 1000).toLocaleString()})` : "No session");
+});
+
+// Initial session check to confirm setup
+supabase.auth.getSession().then(({ data, error }) => {
+  if (error) {
+    console.error("Initial supabase client session check error:", error);
+  } else {
+    console.log("Initial supabase client session check:", data.session ? `Session exists (expires: ${new Date(data.session.expires_at * 1000).toLocaleString()})` : "No session");
+  }
 });

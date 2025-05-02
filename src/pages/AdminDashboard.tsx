@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DashboardHeader from '@/components/admin/DashboardHeader';
 import StatisticsCards from '@/components/admin/StatisticsCards';
@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const AdminDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
+  const [sessionCheckComplete, setSessionCheckComplete] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [subscribers, setSubscribers] = useState<any[]>([]);
   const [newsletters, setNewsletters] = useState<any[]>([]);
@@ -18,43 +19,70 @@ const AdminDashboard = () => {
   const { formatDate } = useFormatDate();
   const { toast } = useToast();
   
-  // Check session on mount
-  useEffect(() => {
+  // Check session on mount using a callback to prevent stale closures
+  const checkSession = useCallback(async () => {
     console.log("AdminDashboard: Checking for active session");
     
-    const checkSession = async () => {
-      try {
-        // Direct session check
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("Session check error:", error);
-          // Redirect to login on error
-          window.location.href = '/admin';
-          return;
-        }
-        
-        if (!data.session) {
-          console.log("No active session found, redirecting to login");
-          // Redirect to login if no session
-          window.location.href = '/admin';
-          return;
-        }
-        
-        console.log("Active session found:", data.session.user.email);
-        setUser(data.session.user);
-        setIsLoading(false);
-        
-        // Fetch dashboard data
-        await fetchDashboardData(data.session.user);
-      } catch (error) {
-        console.error("Session check failed:", error);
+    try {
+      // Direct session check
+      const { data, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error("AdminDashboard session check error:", error);
+        // Redirect to login on error
         window.location.href = '/admin';
+        return;
       }
+      
+      if (!data.session) {
+        console.log("AdminDashboard: No active session found, redirecting to login");
+        // Redirect to login if no session
+        window.location.href = '/admin';
+        return;
+      }
+      
+      console.log("AdminDashboard: Active session found:", data.session.user.email);
+      setUser(data.session.user);
+      setIsLoading(false);
+      setSessionCheckComplete(true);
+      
+      // Fetch dashboard data only after session check is successful
+      await fetchDashboardData(data.session.user);
+    } catch (error) {
+      console.error("AdminDashboard session check failed:", error);
+      window.location.href = '/admin';
+    }
+  }, []);
+  
+  useEffect(() => {
+    const setUpAuthStateListener = () => {
+      // Set up auth state change listener
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        console.log("Auth state changed in AdminDashboard:", event);
+        
+        // Handle sign out events
+        if (event === 'SIGNED_OUT') {
+          console.log("User signed out, redirecting to login");
+          window.location.href = '/admin';
+          return;
+        }
+        
+        // Update user state for other auth events
+        if (session) {
+          setUser(session.user);
+        }
+      });
+      
+      return subscription;
     };
     
+    const subscription = setUpAuthStateListener();
     checkSession();
-  }, []);
+    
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [checkSession]);
   
   // Fetch dashboard data
   const fetchDashboardData = async (user: any) => {
@@ -111,7 +139,7 @@ const AdminDashboard = () => {
     }
   };
   
-  // Handle sign out
+  // Handle sign out with improved error handling
   const handleSignOut = async () => {
     try {
       console.log("Signing out user...");

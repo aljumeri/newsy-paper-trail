@@ -8,13 +8,9 @@ import Index from "./pages/Index";
 import Archives from "./pages/Archives";
 import About from "./pages/About";
 import NotFound from "./pages/NotFound";
-import AdminLogin from "./pages/AdminLogin";
-import AdminDashboard from "./pages/AdminDashboard";
-import ComposeNewsletter from "./pages/ComposeNewsletter";
-import EditNewsletter from "./pages/EditNewsletter";
-import SendNewsletter from "./pages/SendNewsletter";
 import AdminControl from "./pages/AdminControl";
 import AdminControlPanel from "./pages/AdminControlPanel";
+import ComposeNewsletter from "./pages/ComposeNewsletter";
 
 // Configure QueryClient with error handling
 const queryClient = new QueryClient({
@@ -45,17 +41,18 @@ const App = () => {
             <Route path="/" element={<Index />} />
             <Route path="/archives" element={<Archives />} />
             <Route path="/about" element={<About />} />
-            <Route path="/admin" element={<AdminLogin />} />
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/compose" element={<ComposeNewsletter />} />
-            <Route path="/admin/edit/:id" element={<EditNewsletter />} />
-            <Route path="/admin/send/:id" element={<SendNewsletter />} />
-            <Route path="/admin/" element={<Navigate replace to="/admin" />} />
             
-            {/* New Admin Control Routes */}
+            {/* Admin Control Routes - New working implementation */}
             <Route path="/admin-control" element={<AdminControl />} />
             <Route path="/admin-control/panel" element={<AdminControlPanel />} />
             <Route path="/admin-control/compose" element={<ComposeNewsletter />} />
+            
+            {/* Redirect old admin routes to new ones */}
+            <Route path="/admin" element={<Navigate replace to="/admin-control" />} />
+            <Route path="/admin/dashboard" element={<Navigate replace to="/admin-control/panel" />} />
+            <Route path="/admin/compose" element={<Navigate replace to="/admin-control/compose" />} />
+            <Route path="/admin/edit/:id" element={<Navigate replace to="/admin-control/panel" />} />
+            <Route path="/admin/send/:id" element={<Navigate replace to="/admin-control/panel" />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>

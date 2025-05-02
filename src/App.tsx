@@ -13,40 +13,61 @@ import AdminDashboard from "./pages/AdminDashboard";
 import ComposeNewsletter from "./pages/ComposeNewsletter";
 import EditNewsletter from "./pages/EditNewsletter";
 import SendNewsletter from "./pages/SendNewsletter";
+import { useEffect } from "react";
 
+// Configure QueryClient with error handling
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
       staleTime: 5 * 60 * 1000, // 5 minutes
+      onError: (error) => {
+        console.error('Query error:', error);
+      }
     },
   },
 });
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/archives" element={<Archives />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/admin" element={<AdminLogin />} />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/admin/compose" element={<ComposeNewsletter />} />
-          <Route path="/admin/edit/:id" element={<EditNewsletter />} />
-          <Route path="/admin/send/:id" element={<SendNewsletter />} />
-          {/* Redirect from /admin/ to /admin to fix potential routing issues */}
-          <Route path="/admin/" element={<Navigate replace to="/admin" />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  // Add global error handler for uncaught promise rejections
+  useEffect(() => {
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error('Unhandled promise rejection:', event.reason);
+      event.preventDefault();
+    };
+
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+    
+    return () => {
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/archives" element={<Archives />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/admin" element={<AdminLogin />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/compose" element={<ComposeNewsletter />} />
+            <Route path="/admin/edit/:id" element={<EditNewsletter />} />
+            <Route path="/admin/send/:id" element={<SendNewsletter />} />
+            {/* Redirect from /admin/ to /admin to fix potential routing issues */}
+            <Route path="/admin/" element={<Navigate replace to="/admin" />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

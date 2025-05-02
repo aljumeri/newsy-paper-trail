@@ -4,12 +4,16 @@ const useFormatDate = () => {
     if (!dateString) return 'غير متوفر';
 
     try {
-      const date = new Date(dateString);
+      // Make sure we're working with a valid date string
+      const timestamp = Date.parse(dateString);
       
       // Check if date is valid
-      if (isNaN(date.getTime())) {
+      if (isNaN(timestamp)) {
+        console.warn('Invalid date received:', dateString);
         return 'تاريخ غير صالح';
       }
+      
+      const date = new Date(timestamp);
       
       return new Intl.DateTimeFormat('ar-SA', {
         year: 'numeric',

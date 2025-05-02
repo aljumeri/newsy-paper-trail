@@ -17,7 +17,7 @@ const AdminLogin = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Enhanced session check
+  // Simplified session check
   useEffect(() => {
     console.log("AdminLogin: Component mounted, checking session...");
     
@@ -38,7 +38,10 @@ const AdminLogin = () => {
         
         if (data.session) {
           console.log("AdminLogin: Valid session found, navigating to dashboard");
-          navigate('/admin/dashboard', { replace: true });
+          // Use setTimeout to avoid potential race conditions
+          setTimeout(() => {
+            navigate('/admin/dashboard', { replace: true });
+          }, 0);
         } else {
           console.log("AdminLogin: No active session found");
           setIsPageLoading(false);
@@ -52,13 +55,20 @@ const AdminLogin = () => {
     // Run session check immediately
     checkSession();
     
+  }, [navigate]);
+
+  // Separate auth state listener
+  useEffect(() => {
     // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth state changed in AdminLogin:", event);
       
       if (event === 'SIGNED_IN' && session) {
         console.log("User signed in, navigating to dashboard");
-        navigate('/admin/dashboard', { replace: true });
+        // Use setTimeout to avoid potential race conditions
+        setTimeout(() => {
+          navigate('/admin/dashboard', { replace: true });
+        }, 0);
       }
     });
     
@@ -89,8 +99,7 @@ const AdminLogin = () => {
         description: "مرحبًا بعودتك!"
       });
       
-      // Force navigation to dashboard
-      navigate('/admin/dashboard', { replace: true });
+      // No need to navigate here, the auth listener will handle it
     } catch (error: any) {
       console.error('Login error:', error);
       setAuthError(error.message || "فشل تسجيل الدخول. يرجى التحقق من بيانات الاعتماد الخاصة بك.");
@@ -124,33 +133,27 @@ const AdminLogin = () => {
       console.log("Registration successful:", data);
       
       if (data.user) {
-        // Immediately sign in after registration
+        toast({
+          title: "تم التسجيل بنجاح",
+          description: "يرجى التحقق من بريدك الإلكتروني للتأكيد."
+        });
+        
+        // Try immediate sign in after registration
         try {
-          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          const { error: signInError } = await supabase.auth.signInWithPassword({
             email,
             password
           });
           
-          if (!signInError && signInData.session) {
+          if (!signInError) {
             toast({
               title: "تم التسجيل والدخول بنجاح",
               description: "تم إنشاء حساب المسؤول الخاص بك وتسجيل الدخول."
             });
-            navigate('/admin/dashboard', { replace: true });
-          } else {
-            toast({
-              title: "تم التسجيل بنجاح",
-              description: "يرجى التحقق من بريدك الإلكتروني للتأكيد ثم تسجيل الدخول."
-            });
-            setIsLoading(false);
+            // No need to navigate here, the auth listener will handle it
           }
         } catch (signInErr) {
           console.error("Auto-login error:", signInErr);
-          toast({
-            title: "تم التسجيل بنجاح",
-            description: "يرجى التحقق من بريدك الإلكتروني للتأكيد ثم تسجيل الدخول."
-          });
-          setIsLoading(false);
         }
       }
     } catch (error: any) {
@@ -161,6 +164,7 @@ const AdminLogin = () => {
         description: error.message || "فشل إنشاء الحساب. يرجى المحاولة مرة أخرى.",
         variant: "destructive"
       });
+    } finally {
       setIsLoading(false);
     }
   };

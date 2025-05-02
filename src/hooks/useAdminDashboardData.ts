@@ -21,17 +21,22 @@ const useAdminDashboardData = (user: User | null) => {
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     if (!user) {
       console.log("No user, skipping data fetch");
+      setLoading(false);
       return;
     }
+    
+    let isMounted = true;
     
     const fetchData = async () => {
       console.log("Starting to fetch admin dashboard data...");
       setLoading(true);
+      setError(null);
       
       try {
         // Fetch subscribers with error handling
@@ -43,11 +48,13 @@ const useAdminDashboardData = (user: User | null) => {
         
         if (subscribersError) {
           console.error('Error fetching subscribers:', subscribersError);
-          throw subscribersError;
+          if (isMounted) {
+            setError(subscribersError.message);
+          }
+        } else if (isMounted) {
+          console.log("Fetched subscribers:", subscribersData?.length || 0);
+          setSubscribers(subscribersData || []);
         }
-        
-        console.log("Fetched subscribers:", subscribersData?.length || 0);
-        setSubscribers(subscribersData || []);
         
         // Fetch newsletters with error handling
         console.log("Fetching newsletters...");
@@ -58,28 +65,45 @@ const useAdminDashboardData = (user: User | null) => {
         
         if (newslettersError) {
           console.error('Error fetching newsletters:', newslettersError);
-          throw newslettersError;
+          if (isMounted) {
+            setError(prev => prev || newslettersError.message);
+          }
+        } else if (isMounted) {
+          console.log("Fetched newsletters:", newslettersData?.length || 0);
+          setNewsletters(newslettersData || []);
         }
         
-        console.log("Fetched newsletters:", newslettersData?.length || 0);
-        setNewsletters(newslettersData || []);
-        
-        setLoading(false);
       } catch (error: any) {
         console.error('Error fetching data:', error);
-        setLoading(false);
-        toast({
-          title: "خطأ في جلب البيانات",
-          description: "حدث خطأ أثناء تحميل البيانات. يرجى المحاولة مرة أخرى.",
-          variant: "destructive"
-        });
+        if (isMounted) {
+          setError(error.message || "Unknown error occurred");
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
     
     fetchData();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [user, toast]);
 
-  return { subscribers, newsletters, loading };
+  // Show toast when error occurs
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "خطأ في جلب البيانات",
+        description: error,
+        variant: "destructive"
+      });
+    }
+  }, [error, toast]);
+
+  return { subscribers, newsletters, loading, error };
 };
 
 export default useAdminDashboardData;

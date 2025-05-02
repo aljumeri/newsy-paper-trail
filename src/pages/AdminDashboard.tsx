@@ -9,10 +9,12 @@ import useAdminAuth from '@/hooks/useAdminAuth';
 import useAdminDashboardData from '@/hooks/useAdminDashboardData';
 import useFormatDate from '@/hooks/useFormatDate';
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from 'react-router-dom';
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const { user, loading: authLoading, handleSignOut } = useAdminAuth();
-  const { subscribers, newsletters, loading: dataLoading } = useAdminDashboardData(user);
+  const { subscribers, newsletters, loading: dataLoading, error } = useAdminDashboardData(user);
   const { formatDate } = useFormatDate();
   const { toast } = useToast();
 
@@ -29,6 +31,14 @@ const AdminDashboard = () => {
     };
   }, [authLoading, dataLoading, user]);
 
+  // Redirect if not authenticated and not loading
+  useEffect(() => {
+    if (!authLoading && !user) {
+      console.log("No authenticated user in dashboard, redirecting to login");
+      navigate('/admin', { replace: true });
+    }
+  }, [authLoading, user, navigate]);
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -41,7 +51,6 @@ const AdminDashboard = () => {
   }
 
   if (!user) {
-    // If no user after auth loading completed, redirect will happen in the hook
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center p-6 bg-white rounded-lg shadow-md">

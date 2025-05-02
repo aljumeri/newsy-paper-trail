@@ -15,21 +15,16 @@ const useAdminAuth = () => {
   useEffect(() => {
     console.log("Starting auth check in useAdminAuth...");
     
-    // First set up auth state listener to avoid race conditions
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, currentSession) => {
+    // Set up a simple auth state listener first
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
       console.log("Auth state changed:", event);
       
       if (event === 'SIGNED_OUT') {
-        console.log("User signed out, navigating to login page");
+        console.log("User signed out");
         setUser(null);
         setSession(null);
-        
-        // Use setTimeout to prevent potential recursion issues
-        setTimeout(() => {
-          navigate('/admin', { replace: true });
-        }, 0);
       } else if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && currentSession) {
-        console.log("User signed in or token refreshed:", currentSession.user.email);
+        console.log("User signed in or token refreshed:", currentSession.user?.email);
         setUser(currentSession.user);
         setSession(currentSession);
       }
@@ -38,7 +33,6 @@ const useAdminAuth = () => {
     // Then check for existing session
     const checkSession = async () => {
       console.log("Checking session status...");
-      setLoading(true);
       
       try {
         const { data, error } = await supabase.auth.getSession();
@@ -46,58 +40,67 @@ const useAdminAuth = () => {
         if (error) {
           console.error("Session check error:", error);
           setLoading(false);
-          
-          // Use setTimeout to prevent potential recursion issues
-          setTimeout(() => {
-            navigate('/admin', { replace: true });
-          }, 0);
           return;
         }
         
-        if (!data.session) {
-          console.log("No session found, redirecting to login");
-          setLoading(false);
-          
-          // Use setTimeout to prevent potential recursion issues
-          setTimeout(() => {
-            navigate('/admin', { replace: true });
-          }, 0);
-          return;
+        console.log("Session check result:", data.session ? "Session found" : "No session");
+        
+        if (data.session) {
+          setUser(data.session.user);
+          setSession(data.session);
         }
         
-        console.log("Session found, user:", data.session.user.email);
-        setUser(data.session.user);
-        setSession(data.session);
         setLoading(false);
       } catch (error) {
         console.error("Error checking session:", error);
         setLoading(false);
-        
-        // Use setTimeout to prevent potential recursion issues
-        setTimeout(() => {
-          navigate('/admin', { replace: true });
-        }, 0);
       }
     };
     
-    checkSession();
+    // Use setTimeout to prevent potential race conditions
+    setTimeout(() => {
+      checkSession();
+    }, 0);
     
     return () => {
       console.log("Cleaning up auth listener");
-      authListener.subscription.unsubscribe();
+      subscription.unsubscribe();
     };
-  }, [navigate, toast]);
+  }, []);
+
+  // Separated navigation logic from auth check
+  useEffect(() => {
+    // Only redirect if not loading and we know there's no user
+    if (!loading && !user && window.location.pathname.includes('/admin/')) {
+      console.log("No authenticated user, redirecting to login");
+      navigate('/admin', { replace: true });
+    }
+  }, [loading, user, navigate]);
 
   const handleSignOut = async () => {
     try {
-      setLoading(true);
       console.log("Signing out user...");
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error("Sign out error:", error);
+        toast({
+          title: "خطأ في تسجيل الخروج",
+          description: "حدث خطأ أثناء تسجيل الخروج.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       toast({
         title: "تم تسجيل الخروج بنجاح",
         description: "نراك قريباً!",
       });
-      navigate('/admin', { replace: true });
+      
+      // Use setTimeout to prevent race conditions
+      setTimeout(() => {
+        navigate('/admin', { replace: true });
+      }, 0);
     } catch (error) {
       console.error("Sign out error:", error);
       toast({
@@ -105,8 +108,6 @@ const useAdminAuth = () => {
         description: "حدث خطأ أثناء تسجيل الخروج.",
         variant: "destructive"
       });
-    } finally {
-      setLoading(false);
     }
   };
 

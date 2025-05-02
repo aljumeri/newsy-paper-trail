@@ -13,7 +13,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import ComposeNewsletter from "./pages/ComposeNewsletter";
 import EditNewsletter from "./pages/EditNewsletter";
 import SendNewsletter from "./pages/SendNewsletter";
-import { useEffect } from "react";
+import AdminControl from "./pages/AdminControl";
+import AdminControlPanel from "./pages/AdminControlPanel";
 
 // Configure QueryClient with error handling
 const queryClient = new QueryClient({
@@ -50,6 +51,12 @@ const App = () => {
             <Route path="/admin/edit/:id" element={<EditNewsletter />} />
             <Route path="/admin/send/:id" element={<SendNewsletter />} />
             <Route path="/admin/" element={<Navigate replace to="/admin" />} />
+            
+            {/* New Admin Control Routes */}
+            <Route path="/admin-control" element={<AdminControl />} />
+            <Route path="/admin-control/panel" element={<AdminControlPanel />} />
+            <Route path="/admin-control/compose" element={<ComposeNewsletter />} />
+            
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

@@ -21,7 +21,8 @@ export default {
 		extend: {
 			fontFamily: {
 				sans: ['Noto Naskh Arabic', 'serif'],
-				serif: ['Amiri', 'serif'],
+				serif: ['Noto Naskh Arabic', 'serif'],
+				heading: ['Noto Naskh Arabic', 'serif'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',

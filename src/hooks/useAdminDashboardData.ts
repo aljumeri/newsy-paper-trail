@@ -79,8 +79,8 @@ const useAdminDashboardData = (user: User | null) => {
       setLoading(true);
       setError(null);
       
-      // Check admin status first
-      const adminStatus = await checkAdminStatus(user.id);
+      // Check admin status first - Fixed: removed the user.id parameter since it's accessible in the function
+      const adminStatus = await checkAdminStatus();
       console.log("Admin status result:", adminStatus);
       
       if (!adminStatus) {

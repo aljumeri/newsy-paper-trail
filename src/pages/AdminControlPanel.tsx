@@ -74,7 +74,8 @@ const AdminControlPanel = () => {
           return;
         }
         
-        setIsAdmin(adminData);
+        // Convert adminData to boolean explicitly to prevent type errors
+        setIsAdmin(Boolean(adminData));
         
         if (!adminData) {
           console.log('User is not an admin');
@@ -131,7 +132,8 @@ const AdminControlPanel = () => {
           variant: "destructive"
         });
       } else {
-        setSubscribers(subscribersData as Subscriber[]);
+        // Type casting to overcome the TypeScript errors
+        setSubscribers(subscribersData as unknown as Subscriber[]);
       }
       
       // Fetch newsletters
@@ -148,7 +150,8 @@ const AdminControlPanel = () => {
           variant: "destructive"
         });
       } else {
-        setNewsletters(newslettersData as Newsletter[]);
+        // Type casting to overcome the TypeScript errors
+        setNewsletters(newslettersData as unknown as Newsletter[]);
       }
     } catch (error: any) {
       console.error('Error fetching data:', error);

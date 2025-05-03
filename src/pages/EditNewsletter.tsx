@@ -52,7 +52,7 @@ const EditNewsletter = () => {
           const { data: newsletter, error } = await supabase
             .from('newsletters')
             .select('*')
-            .eq('id', id)
+            .eq('id', id as any)
             .single();
           
           if (error) throw error;
@@ -100,8 +100,11 @@ const EditNewsletter = () => {
     try {
       const { error } = await supabase
         .from('newsletters')
-        .update({ subject, content })
-        .eq('id', id);
+        .update({ 
+          subject, 
+          content 
+        } as any)
+        .eq('id', id as any);
       
       if (error) throw error;
       

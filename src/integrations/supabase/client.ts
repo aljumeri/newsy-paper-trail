@@ -14,12 +14,10 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: typeof localStorage !== 'undefined' ? localStorage : undefined,
     detectSessionInUrl: false, // Explicitly disabled to avoid race conditions
     flowType: 'pkce',
-    debug: false, // Disabled debug logging
-    // Adding a small timeout to resolve race conditions in policy evaluation
-    retryThrottleTimeout: 3000 
+    debug: false // Disabled debug logging
   },
   global: {
-    fetch: (...args) => fetch(...args)
+    fetch: (...args: [RequestInfo, RequestInit?]) => fetch(...args)
   },
   // Added to improve typing and handle serialization issues
   db: {

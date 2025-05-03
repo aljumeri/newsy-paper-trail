@@ -66,7 +66,8 @@ const ComposeNewsletter = () => {
             return;
           }
           
-          setIsAdmin(adminStatus);
+          // Convert to boolean explicitly
+          setIsAdmin(Boolean(adminStatus));
           
           if (!adminStatus) {
             toast({
@@ -139,14 +140,14 @@ const ComposeNewsletter = () => {
         }
       }
       
-      // Save newsletter directly without another admin check
+      // Save newsletter with type casting to fix the type error
       const { error } = await supabase
         .from('newsletters')
         .insert({
           subject, 
           content, 
           created_by: sessionData.session.user.id
-        });
+        } as any);
       
       if (error) throw error;
       

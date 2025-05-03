@@ -15,7 +15,7 @@ const CallToAction = () => {
     setIsLoading(true);
     
     try {
-      // Fixed: Use the correct type for the email insert
+      // Use explicit type casting to fix type mismatch
       const { error } = await supabase
         .from('subscribers')
         .insert({

@@ -26,12 +26,29 @@ export const useSubscribe = () => {
     console.log("Attempting to subscribe with email:", email);
     
     try {
-      const { error, data } = await supabase
+      // Check the current authentication state and log it
+      const { data: authData } = await supabase.auth.getSession();
+      console.log("Current auth state:", authData.session ? "Authenticated" : "Not authenticated");
+
+      // Log the supabase URL and key (masked) to verify configuration
+      console.log("Supabase URL:", supabase.supabaseUrl);
+      console.log("Supabase Key configured:", supabase.supabaseKey ? "Yes (masked)" : "No");
+      
+      // Add debug logs to see what's happening with the request
+      console.log("Making subscription request to Supabase...");
+      
+      const { error, data, status, statusText } = await supabase
         .from('subscribers')
         .insert({ email })
         .select();
       
-      console.log("Subscription response:", { error, data });
+      console.log("Subscription response:", { 
+        error, 
+        data, 
+        status, 
+        statusText,
+        hasError: !!error 
+      });
 
       if (error) {
         if (error.code === '23505') {
@@ -42,10 +59,14 @@ export const useSubscribe = () => {
             variant: "destructive"
           });
         } else {
-          console.error("Subscription error details:", JSON.stringify(error));
+          // Log more detailed error information
+          console.error("Subscription error code:", error.code);
+          console.error("Subscription error message:", error.message);
+          console.error("Subscription error details:", JSON.stringify(error, null, 2));
+          
           toast({
             title: "حدث خطأ",
-            description: "يرجى المحاولة مرة أخرى لاحقًا.",
+            description: `يرجى المحاولة مرة أخرى لاحقًا. (${error.code || 'unknown'})`,
             variant: "destructive"
           });
         }
@@ -58,9 +79,15 @@ export const useSubscribe = () => {
         setEmail('');
       }
     } catch (error) {
+      // More comprehensive error handling
       console.error("Unhandled error during subscription:", error);
+      if (error instanceof Error) {
+        console.error("Error name:", error.name);
+        console.error("Error message:", error.message);
+        console.error("Error stack:", error.stack);
+      }
       toast({
-        title: "حدث خطأ",
+        title: "حدث خطأ غير متوقع",
         description: "يرجى المحاولة مرة أخرى لاحقًا.",
         variant: "destructive"
       });

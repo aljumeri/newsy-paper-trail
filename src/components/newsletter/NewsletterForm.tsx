@@ -125,8 +125,8 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
     }
   };
   
-  // YouTube embedding
-  const handleYoutubeEmbed = (youtubeUrl: string) => {
+  // YouTube embedding with size
+  const handleYoutubeEmbed = (youtubeUrl: string, size: string) => {
     // Extract video ID
     let videoId = '';
     
@@ -140,9 +140,31 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
     }
     
     if (videoId) {
-      // Create responsive embed code
+      // Determine responsive ratio and width based on selected size
+      let containerStyle = 'position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;';
+      let width = '100%';
+      
+      switch (size) {
+        case 'small':
+          width = '50%';
+          break;
+        case 'medium':
+          width = '75%';
+          break;
+        case 'large':
+          width = '85%';
+          break;
+        case 'full':
+        default:
+          width = '100%';
+          break;
+      }
+      
+      containerStyle += ` max-width: ${width}; margin: 0 auto;`;
+      
+      // Create responsive embed code with size
       const embedCode = `
-<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%;">
+<div style="${containerStyle}">
   <iframe 
     style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" 
     src="https://www.youtube.com/embed/${videoId}" 
@@ -169,9 +191,27 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
     }
   };
   
-  // Image insertion
-  const handleImageInsert = (imageUrl: string, altText: string) => {
-    const imageHtml = `<img src="${imageUrl}" alt="${altText}" style="max-width: 100%; height: auto; margin: 10px 0;" />`;
+  // Image insertion with size
+  const handleImageInsert = (imageUrl: string, altText: string, size: string) => {
+    // Determine width based on selected size
+    let width = '50%';
+    
+    switch (size) {
+      case 'small':
+        width = '25%';
+        break;
+      case 'medium':
+        width = '50%';
+        break;
+      case 'large':
+        width = '75%';
+        break;
+      case 'full':
+        width = '100%';
+        break;
+    }
+    
+    const imageHtml = `<img src="${imageUrl}" alt="${altText}" style="display: block; max-width: 100%; width: ${width}; height: auto; margin: 10px auto;" />`;
     
     const textarea = document.getElementById('content') as HTMLTextAreaElement;
     
@@ -189,14 +229,14 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
 
   return (
     <>
-      {/* YouTube Dialog */}
+      {/* YouTube Dialog with Size Control */}
       <YoutubeDialog 
         isOpen={showYoutubeDialog} 
         onClose={() => setShowYoutubeDialog(false)} 
         onEmbed={handleYoutubeEmbed} 
       />
       
-      {/* Image Upload Dialog */}
+      {/* Image Upload Dialog with Size Control */}
       <ImageUploadDialog 
         isOpen={showImageDialog} 
         onClose={() => setShowImageDialog(false)} 

@@ -12,12 +12,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from "@/integrations/supabase/client";
 
 interface ImageUploadDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onInsertImage: (imageUrl: string, altText: string) => void;
+  onInsertImage: (imageUrl: string, altText: string, size: string) => void;
 }
 
 const PLACEHOLDER_IMAGES = [
@@ -27,9 +28,17 @@ const PLACEHOLDER_IMAGES = [
   { id: 'placeholder-4', url: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5', alt: 'كود برمجي' },
 ];
 
+const IMAGE_SIZES = [
+  { value: 'small', label: 'صغير (25%)' },
+  { value: 'medium', label: 'متوسط (50%)' },
+  { value: 'large', label: 'كبير (75%)' },
+  { value: 'full', label: 'كامل (100%)' }
+];
+
 const ImageUploadDialog: React.FC<ImageUploadDialogProps> = ({ isOpen, onClose, onInsertImage }) => {
   const [imageUrl, setImageUrl] = useState('');
   const [altText, setAltText] = useState('');
+  const [imageSize, setImageSize] = useState('medium');
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [activeTab, setActiveTab] = useState('upload');
@@ -37,7 +46,7 @@ const ImageUploadDialog: React.FC<ImageUploadDialogProps> = ({ isOpen, onClose, 
   const handleUrlSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (imageUrl) {
-      onInsertImage(imageUrl, altText);
+      onInsertImage(imageUrl, altText, imageSize);
       resetForm();
       onClose();
     }
@@ -73,7 +82,7 @@ const ImageUploadDialog: React.FC<ImageUploadDialogProps> = ({ isOpen, onClose, 
         .getPublicUrl(filePath);
       
       const uploadedImageUrl = publicUrlData.publicUrl;
-      onInsertImage(uploadedImageUrl, altText || file.name);
+      onInsertImage(uploadedImageUrl, altText || file.name, imageSize);
       resetForm();
       onClose();
       
@@ -89,13 +98,32 @@ const ImageUploadDialog: React.FC<ImageUploadDialogProps> = ({ isOpen, onClose, 
     setAltText('');
     setFile(null);
     setActiveTab('upload');
+    setImageSize('medium');
   };
   
   const handleSelectPlaceholder = (url: string, alt: string) => {
-    onInsertImage(url, alt);
+    onInsertImage(url, alt, imageSize);
     resetForm();
     onClose();
   };
+  
+  const renderSizeSelector = () => (
+    <div>
+      <Label htmlFor="image-size" className="mb-2 block">حجم الصورة</Label>
+      <Select value={imageSize} onValueChange={setImageSize}>
+        <SelectTrigger id="image-size" className="w-full">
+          <SelectValue placeholder="اختر حجم الصورة" />
+        </SelectTrigger>
+        <SelectContent>
+          {IMAGE_SIZES.map(size => (
+            <SelectItem key={size.value} value={size.value}>
+              {size.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -135,6 +163,7 @@ const ImageUploadDialog: React.FC<ImageUploadDialogProps> = ({ isOpen, onClose, 
                     placeholder="وصف الصورة للقراء ذوي الإعاقة البصرية"
                   />
                 </div>
+                {renderSizeSelector()}
               </div>
               <DialogFooter className="mt-4">
                 <Button type="button" variant="outline" onClick={onClose}>إلغاء</Button>
@@ -169,6 +198,7 @@ const ImageUploadDialog: React.FC<ImageUploadDialogProps> = ({ isOpen, onClose, 
                     placeholder="وصف الصورة للقراء ذوي الإعاقة البصرية"
                   />
                 </div>
+                {renderSizeSelector()}
               </div>
               <DialogFooter className="mt-4">
                 <Button type="button" variant="outline" onClick={onClose}>إلغاء</Button>
@@ -178,23 +208,26 @@ const ImageUploadDialog: React.FC<ImageUploadDialogProps> = ({ isOpen, onClose, 
           </TabsContent>
           
           <TabsContent value="placeholder">
-            <div className="grid grid-cols-2 gap-3 py-2">
-              {PLACEHOLDER_IMAGES.map((image) => (
-                <div 
-                  key={image.id}
-                  className="border rounded-md overflow-hidden cursor-pointer hover:border-primary"
-                  onClick={() => handleSelectPlaceholder(image.url, image.alt)}
-                >
-                  <img 
-                    src={image.url} 
-                    alt={image.alt} 
-                    className="w-full h-32 object-cover" 
-                  />
-                  <div className="p-2 text-xs truncate">
-                    {image.alt}
+            <div className="space-y-4">
+              {renderSizeSelector()}
+              <div className="grid grid-cols-2 gap-3">
+                {PLACEHOLDER_IMAGES.map((image) => (
+                  <div 
+                    key={image.id}
+                    className="border rounded-md overflow-hidden cursor-pointer hover:border-primary"
+                    onClick={() => handleSelectPlaceholder(image.url, image.alt)}
+                  >
+                    <img 
+                      src={image.url} 
+                      alt={image.alt} 
+                      className="w-full h-32 object-cover" 
+                    />
+                    <div className="p-2 text-xs truncate">
+                      {image.alt}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </TabsContent>
         </Tabs>

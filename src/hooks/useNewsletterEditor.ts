@@ -15,35 +15,22 @@ export const useNewsletterEditor = () => {
   const { id } = useParams<{ id: string }>();
 
   useEffect(() => {
-    const checkSessionAndLoadNewsletter = async () => {
-      // Check if user is authenticated and admin
-      const { data } = await supabase.auth.getSession();
-      
-      if (!data.session) {
-        navigate('/admin-control');
-        return;
-      }
-      
-      // Verify if the user is an admin
-      const { data: adminData, error: adminError } = await supabase
-        .from('admin_users')
-        .select('id')
-        .eq('id', data.session.user.id)
-        .single();
-      
-      if (adminError || !adminData) {
-        await supabase.auth.signOut();
-        navigate('/admin-control');
-        return;
-      }
-      
-      // Load newsletter data
-      if (id) {
-        try {
+    const loadNewsletter = async () => {
+      try {
+        // Check if user is authenticated
+        const { data } = await supabase.auth.getSession();
+        
+        if (!data.session) {
+          navigate('/admin-control');
+          return;
+        }
+        
+        // If an ID is provided, load the newsletter
+        if (id) {
           const { data: newsletter, error } = await supabase
             .from('newsletters')
             .select('*')
-            .eq('id', id as any)
+            .eq('id', id)
             .single();
           
           if (error) throw error;
@@ -59,21 +46,21 @@ export const useNewsletterEditor = () => {
             });
             navigate('/admin-control/panel');
           }
-        } catch (error) {
-          console.error('Error loading newsletter:', error);
-          toast({
-            title: "خطأ في التحميل",
-            description: "حدث خطأ أثناء تحميل النشرة الإخبارية",
-            variant: "destructive"
-          });
-          navigate('/admin-control/panel');
-        } finally {
-          setIsLoading(false);
         }
+      } catch (error) {
+        console.error('Error loading newsletter:', error);
+        toast({
+          title: "خطأ في التحميل",
+          description: "حدث خطأ أثناء تحميل النشرة الإخبارية",
+          variant: "destructive"
+        });
+        navigate('/admin-control/panel');
+      } finally {
+        setIsLoading(false);
       }
     };
     
-    checkSessionAndLoadNewsletter();
+    loadNewsletter();
   }, [id, navigate, toast]);
 
   const handleUpdateNewsletter = async () => {
@@ -89,13 +76,18 @@ export const useNewsletterEditor = () => {
     setIsSaving(true);
     
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        throw new Error("User not authenticated");
+      }
+      
       const { error } = await supabase
         .from('newsletters')
         .update({ 
           subject, 
           content 
-        } as any)
-        .eq('id', id as any);
+        })
+        .eq('id', id as string);
       
       if (error) throw error;
       

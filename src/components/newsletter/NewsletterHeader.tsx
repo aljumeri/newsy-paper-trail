@@ -4,10 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
 interface NewsletterHeaderProps {
-  title: string;
+  title?: string;
 }
 
-const NewsletterHeader: React.FC<NewsletterHeaderProps> = ({ title }) => {
+const NewsletterHeader: React.FC<NewsletterHeaderProps> = ({ title = "النشرة الإخبارية" }) => {
   const navigate = useNavigate();
 
   return (

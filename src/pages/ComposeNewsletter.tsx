@@ -19,8 +19,8 @@ const ComposeNewsletter = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  // Use the admin auth hook for authentication and authorization
-  const { isAdmin } = useAdminAuth();
+  // Use the admin auth hook
+  const { user } = useAdminAuth();
 
   const handleSaveNewsletter = async () => {
     if (!subject.trim() || !content.trim()) {
@@ -41,24 +41,7 @@ const ComposeNewsletter = () => {
         throw new Error("User not authenticated");
       }
       
-      // We already verified admin status with the hook, but double-check to be safe
-      if (isAdmin !== true) {
-        const { data: adminCheck, error: adminCheckError } = await supabase.rpc(
-          'get_admin_status',
-          { user_id: sessionData.session.user.id }
-        );
-        
-        if (adminCheckError) {
-          console.error("Admin verification error:", adminCheckError);
-          throw new Error("Error verifying admin status");
-        }
-        
-        if (!adminCheck) {
-          throw new Error("Only admin users can save newsletters");
-        }
-      }
-      
-      // Save newsletter with type casting to fix the type error
+      // Save newsletter
       const { error } = await supabase
         .from('newsletters')
         .insert({
@@ -67,7 +50,10 @@ const ComposeNewsletter = () => {
           created_by: sessionData.session.user.id
         } as any);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Newsletter save error:', error);
+        throw error;
+      }
       
       toast({
         title: "تم الحفظ بنجاح",
@@ -93,7 +79,7 @@ const ComposeNewsletter = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <NewsletterHeader />
+      <NewsletterHeader title="إنشاء نشرة إخبارية جديدة" />
       
       <div className="container py-8">
         <Card>

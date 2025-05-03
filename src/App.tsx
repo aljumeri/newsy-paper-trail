@@ -11,6 +11,7 @@ import NotFound from "./pages/NotFound";
 import AdminControl from "./pages/AdminControl";
 import AdminControlPanel from "./pages/AdminControlPanel";
 import ComposeNewsletter from "./pages/ComposeNewsletter";
+import EditNewsletter from "./pages/EditNewsletter";
 
 // Configure QueryClient with error handling
 const queryClient = new QueryClient({
@@ -46,12 +47,13 @@ const App = () => {
             <Route path="/admin-control" element={<AdminControl />} />
             <Route path="/admin-control/panel" element={<AdminControlPanel />} />
             <Route path="/admin-control/compose" element={<ComposeNewsletter />} />
+            <Route path="/admin-control/edit/:id" element={<EditNewsletter />} />
             
             {/* Redirect old admin routes to new ones */}
             <Route path="/admin" element={<Navigate replace to="/admin-control" />} />
             <Route path="/admin/dashboard" element={<Navigate replace to="/admin-control/panel" />} />
             <Route path="/admin/compose" element={<Navigate replace to="/admin-control/compose" />} />
-            <Route path="/admin/edit/:id" element={<Navigate replace to="/admin-control/panel" />} />
+            <Route path="/admin/edit/:id" element={<Navigate replace to="/admin-control/edit/:id" />} />
             <Route path="/admin/send/:id" element={<Navigate replace to="/admin-control/panel" />} />
             
             <Route path="*" element={<NotFound />} />

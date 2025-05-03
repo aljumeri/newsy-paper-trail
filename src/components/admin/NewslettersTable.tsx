@@ -56,7 +56,7 @@ const NewslettersTable = ({ newsletters, formatDate }: NewslettersTableProps) =>
                       <Button 
                         variant="ghost" 
                         size="sm"
-                        onClick={() => navigate(`/admin/edit/${newsletter.id}`)}
+                        onClick={() => navigate(`/admin-control/edit/${newsletter.id}`)}
                       >
                         تعديل
                       </Button>
@@ -64,7 +64,7 @@ const NewslettersTable = ({ newsletters, formatDate }: NewslettersTableProps) =>
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          onClick={() => navigate(`/admin/send/${newsletter.id}`)}
+                          onClick={() => navigate(`/admin-control/send/${newsletter.id}`)}
                         >
                           إرسال
                         </Button>

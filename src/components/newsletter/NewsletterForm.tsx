@@ -1,8 +1,6 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import EditorToolbar from '@/components/newsletter/EditorToolbar';
 import YoutubeDialog from '@/components/newsletter/YoutubeDialog';
 import ImageUploadDialog from '@/components/newsletter/ImageUploadDialog';
@@ -250,25 +248,9 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
             معاينة
           </Button>
           
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button disabled={isLoading}>
-                {isLoading ? "جارِ الحفظ..." : "حفظ النشرة الإخبارية"}
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>حفظ النشرة الإخبارية</AlertDialogTitle>
-                <AlertDialogDescription>
-                  هل أنت متأكد من أنك تريد حفظ هذه النشرة الإخبارية؟ يمكنك تعديلها لاحقًا وإرسالها إلى المشتركين من لوحة التحكم.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                <AlertDialogAction onClick={onSave}>حفظ</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <Button onClick={onSave} disabled={isLoading}>
+            {isLoading ? "جارِ الحفظ..." : "حفظ النشرة الإخبارية"}
+          </Button>
         </div>
       </div>
     </>

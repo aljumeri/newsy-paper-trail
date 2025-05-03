@@ -30,9 +30,8 @@ export const useSubscribe = () => {
       const { data: authData } = await supabase.auth.getSession();
       console.log("Current auth state:", authData.session ? "Authenticated" : "Not authenticated");
 
-      // Log the supabase URL and key (masked) to verify configuration
-      console.log("Supabase URL:", supabase.supabaseUrl);
-      console.log("Supabase Key configured:", supabase.supabaseKey ? "Yes (masked)" : "No");
+      // Log configuration information without accessing protected properties
+      console.log("Supabase client initialized and being used for subscription");
       
       // Add debug logs to see what's happening with the request
       console.log("Making subscription request to Supabase...");

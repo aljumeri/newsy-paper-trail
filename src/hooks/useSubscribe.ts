@@ -11,7 +11,9 @@ export const useSubscribe = () => {
   const handleSubscribe = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     
-    if (!email || !email.includes('@')) {
+    // Improved email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) {
       toast({
         title: "خطأ",
         description: "يرجى إدخال بريد إلكتروني صالح",
@@ -21,21 +23,26 @@ export const useSubscribe = () => {
     }
     
     setIsLoading(true);
+    console.log("Attempting to subscribe with email:", email);
     
     try {
-      const { error } = await supabase
+      const { error, data } = await supabase
         .from('subscribers')
-        .insert({ email });
+        .insert({ email })
+        .select();
+      
+      console.log("Subscription response:", { error, data });
 
       if (error) {
         if (error.code === '23505') {
+          console.log("Duplicate email detected");
           toast({
             title: "البريد الإلكتروني موجود بالفعل",
             description: "أنت مشترك بالفعل في نشرتنا الإخبارية.",
             variant: "destructive"
           });
         } else {
-          console.error("Subscription error:", error);
+          console.error("Subscription error details:", JSON.stringify(error));
           toast({
             title: "حدث خطأ",
             description: "يرجى المحاولة مرة أخرى لاحقًا.",
@@ -43,6 +50,7 @@ export const useSubscribe = () => {
           });
         }
       } else {
+        console.log("Subscription successful");
         toast({
           title: "تم بنجاح!",
           description: "لقد تم اشتراكك في نشرتنا الإخبارية.",
@@ -50,7 +58,7 @@ export const useSubscribe = () => {
         setEmail('');
       }
     } catch (error) {
-      console.error("Error subscribing:", error);
+      console.error("Unhandled error during subscription:", error);
       toast({
         title: "حدث خطأ",
         description: "يرجى المحاولة مرة أخرى لاحقًا.",

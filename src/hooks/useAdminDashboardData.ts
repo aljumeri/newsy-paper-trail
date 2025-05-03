@@ -39,27 +39,29 @@ const useAdminDashboardData = (user: User | null) => {
     const checkAdminStatus = async () => {
       try {
         console.log("Checking admin status for user ID:", user.id);
-        // Check if user is an admin using the is_admin_user function
-        const { data: adminStatus, error: adminError } = await supabase.rpc(
-          'is_admin_user',
-          { user_id: user.id }
-        );
+        // Check if user is an admin using a direct select query 
+        // instead of using the function that was causing recursion
+        const { data, error } = await supabase
+          .from('admin_users')
+          .select('id')
+          .eq('id', user.id)
+          .single();
         
-        if (adminError) {
-          console.error('Admin status check error:', adminError);
+        if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned" error
+          console.error('Admin status check error:', error);
           if (isMounted.current) {
-            setError(adminError.message);
+            setError(error.message);
             setIsAdmin(false);
             setLoading(false);
           }
           return false;
         }
         
+        const adminStatus = !!data;
         console.log("Admin status check result:", adminStatus);
         
         if (isMounted.current) {
-          // Fixed: Convert the response to boolean explicitly
-          setIsAdmin(Boolean(adminStatus));
+          setIsAdmin(adminStatus);
         }
         
         return adminStatus;
@@ -79,7 +81,7 @@ const useAdminDashboardData = (user: User | null) => {
       setLoading(true);
       setError(null);
       
-      // Check admin status first - Fixed: removed the user.id parameter since it's accessible in the function
+      // Check admin status first - We don't pass user.id as it's accessible in the function
       const adminStatus = await checkAdminStatus();
       console.log("Admin status result:", adminStatus);
       
@@ -104,7 +106,6 @@ const useAdminDashboardData = (user: User | null) => {
           }
         } else if (isMounted.current && subscribersData) {
           console.log("Successfully fetched subscribers:", subscribersData);
-          // Fixed: Cast to Subscriber[] to fix type mismatch
           setSubscribers(subscribersData as unknown as Subscriber[]);
         }
         
@@ -122,7 +123,6 @@ const useAdminDashboardData = (user: User | null) => {
           }
         } else if (isMounted.current && newslettersData) {
           console.log("Successfully fetched newsletters:", newslettersData);
-          // Fixed: Cast to Newsletter[] to fix type mismatch
           setNewsletters(newslettersData as unknown as Newsletter[]);
         }
         

@@ -26,9 +26,7 @@ export const useSubscribe = () => {
     console.log("Attempting to subscribe with email:", email);
     
     try {
-      // Add additional debug logging
-      console.log("Sending subscription request to Supabase");
-      
+      // Direct insert without checking admin roles (which was causing the infinite recursion)
       const { error, data } = await supabase
         .from('subscribers')
         .insert({ email })

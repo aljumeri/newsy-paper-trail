@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from "@/integrations/supabase/client";
+import { subscriptionService } from '@/utils/subscriptionService';
 
 export const useSubscribe = () => {
   const [email, setEmail] = useState('');
@@ -23,43 +23,27 @@ export const useSubscribe = () => {
     }
     
     setIsLoading(true);
-    console.log("Attempting to subscribe with email:", email);
+    console.log("useSubscribe: Attempting to subscribe with email:", email);
     
     try {
-      // Direct insert without checking admin roles (which was causing the infinite recursion)
-      const { error, data } = await supabase
-        .from('subscribers')
-        .insert({ email })
-        .select();
+      // Use the new subscription service
+      const result = await subscriptionService.subscribe(email);
       
-      console.log("Subscription response:", { error, data });
-      
-      if (error) {
-        console.error("Subscription error:", error);
-        
-        if (error.code === '23505') {
-          toast({
-            title: "البريد الإلكتروني موجود بالفعل",
-            description: "أنت مشترك بالفعل في نشرتنا الإخبارية.",
-            variant: "destructive"
-          });
-        } else {
-          toast({
-            title: "حدث خطأ",
-            description: "يرجى المحاولة مرة أخرى لاحقًا.",
-            variant: "destructive"
-          });
-        }
-      } else {
-        console.log("Subscription successful!");
+      if (result.success) {
         toast({
           title: "تم بنجاح!",
-          description: "لقد تم اشتراكك في نشرتنا الإخبارية.",
+          description: result.message,
         });
-        setEmail('');
+        setEmail(''); // Clear email on success
+      } else {
+        toast({
+          title: "خطأ",
+          description: result.message,
+          variant: "destructive"
+        });
       }
     } catch (error) {
-      console.error("Unhandled error during subscription:", error);
+      console.error("Subscription error in hook:", error);
       toast({
         title: "حدث خطأ غير متوقع",
         description: "يرجى المحاولة مرة أخرى لاحقًا.",

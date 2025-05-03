@@ -37,23 +37,25 @@ const AdminControlPanel = () => {
 
   // Redirect if not admin
   useEffect(() => {
-    if (!loading && !isAdmin) {
+    if (!loading && !isAdmin && user === null) {
       toast({
         title: "صلاحيات غير كافية",
         description: "يجب أن تكون مسؤولاً للوصول إلى هذه الصفحة",
         variant: "destructive"
       });
       navigate('/admin-control');
-    } else if (!loading && isAdmin) {
+    } else if (!loading && isAdmin && user !== null) {
       fetchData();
     }
-  }, [isAdmin, loading, navigate, toast]);
+  }, [isAdmin, loading, navigate, toast, user]);
 
   const fetchData = async () => {
     setDataLoading(true);
+    console.log("Fetching admin dashboard data...");
     
     try {
-      // Fetch subscribers
+      // Fetch subscribers with explicit debug logging
+      console.log("Fetching subscribers data...");
       const { data: subscribersData, error: subscribersError } = await supabase
         .from('subscribers')
         .select('*')
@@ -62,15 +64,17 @@ const AdminControlPanel = () => {
       if (subscribersError) {
         console.error('Error fetching subscribers:', subscribersError);
         toast({
-          title: "خطأ في جلب البيانات",
+          title: "خطأ في جلب بيانات المشتركين",
           description: subscribersError.message,
           variant: "destructive"
         });
       } else {
-        setSubscribers(subscribersData as unknown as Subscriber[]);
+        console.log("Successfully fetched subscribers data:", subscribersData);
+        setSubscribers(subscribersData || []);
       }
       
       // Fetch newsletters
+      console.log("Fetching newsletters data...");
       const { data: newslettersData, error: newslettersError } = await supabase
         .from('newsletters')
         .select('*')
@@ -79,15 +83,16 @@ const AdminControlPanel = () => {
       if (newslettersError) {
         console.error('Error fetching newsletters:', newslettersError);
         toast({
-          title: "خطأ في جلب البيانات",
+          title: "خطأ في جلب النشرات الإخبارية",
           description: newslettersError.message,
           variant: "destructive"
         });
       } else {
-        setNewsletters(newslettersData as unknown as Newsletter[]);
+        console.log("Successfully fetched newsletters data:", newslettersData);
+        setNewsletters(newslettersData || []);
       }
     } catch (error: any) {
-      console.error('Error fetching data:', error);
+      console.error('Unexpected error fetching data:', error);
       toast({
         title: "خطأ في جلب البيانات",
         description: error.message || "حدث خطأ غير متوقع",
@@ -96,6 +101,12 @@ const AdminControlPanel = () => {
     } finally {
       setDataLoading(false);
     }
+  };
+  
+  // Add manual refresh button functionality
+  const handleRefreshData = () => {
+    console.log("Manual refresh requested");
+    fetchData();
   };
 
   // Show loading state while checking auth
@@ -124,6 +135,12 @@ const AdminControlPanel = () => {
               onClick={() => navigate('/admin-control/compose')}
             >
               إنشاء نشرة إخبارية جديدة
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={handleRefreshData}
+            >
+              تحديث البيانات
             </Button>
             <Button 
               variant="outline" 

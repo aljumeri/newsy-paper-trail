@@ -9,6 +9,7 @@ import {
   TableHead,
   TableCell
 } from '@/components/ui/table';
+import { Info } from 'lucide-react';
 
 interface Subscriber {
   id: string;
@@ -25,7 +26,12 @@ const SubscribersTable = ({ subscribers, formatDate }: SubscribersTableProps) =>
   return (
     <Card>
       <CardHeader>
-        <CardTitle>قائمة المشتركين</CardTitle>
+        <CardTitle className="flex items-center justify-between">
+          <span>قائمة المشتركين</span>
+          <span className="text-sm font-normal text-muted-foreground">
+            {subscribers.length} مشترك
+          </span>
+        </CardTitle>
       </CardHeader>
       <CardContent className="overflow-x-auto">
         <Table>
@@ -45,8 +51,16 @@ const SubscribersTable = ({ subscribers, formatDate }: SubscribersTableProps) =>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={2} className="text-center py-4">
-                  لا يوجد مشتركين بعد.
+                <TableCell colSpan={2}>
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <div className="rounded-full bg-muted p-3 mb-2">
+                      <Info className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-lg font-semibold">لا يوجد مشتركين بعد.</h3>
+                    <p className="text-muted-foreground mb-4">
+                      عندما يقوم الأشخاص بالاشتراك في النشرة الإخبارية، ستظهر معلوماتهم هنا.
+                    </p>
+                  </div>
                 </TableCell>
               </TableRow>
             )}

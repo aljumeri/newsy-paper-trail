@@ -53,6 +53,8 @@ const useAdminAuth = () => {
       try {
         if (isUnmounted.current) return;
         
+        console.log("Checking if user is admin:", userId);
+        
         // Use RPC to call the is_admin_user function
         const { data, error } = await supabase.rpc('is_admin_user', { user_id: userId });
         
@@ -71,6 +73,7 @@ const useAdminAuth = () => {
             navigate('/admin-control');
           }
         } else {
+          console.log("Admin status result:", data);
           setIsAdmin(data); // Set the boolean value directly
           
           // If not admin and trying to access protected routes
@@ -87,6 +90,10 @@ const useAdminAuth = () => {
         if (isUnmounted.current) return;
         console.error("Admin status check error:", error);
         setIsAdmin(false);
+      } finally {
+        if (isUnmounted.current) return;
+        setLoading(false);
+        setIsLoading(false);
       }
     };
     
@@ -116,10 +123,10 @@ const useAdminAuth = () => {
           
           // Check admin status
           await checkAdminStatus(data.session.user.id);
+        } else {
+          setLoading(false);
+          setIsLoading(false);
         }
-        
-        setLoading(false);
-        setIsLoading(false);
       } catch (error) {
         if (isUnmounted.current) return;
         console.error("Error checking session:", error);
@@ -144,16 +151,7 @@ const useAdminAuth = () => {
     };
   }, [navigate, toast]);
 
-  // Separated navigation logic from auth check
-  useEffect(() => {
-    // Only redirect if not loading and we know there's no user
-    if (!loading && !user && window.location.pathname.includes('/admin-control/')) {
-      console.log("No authenticated user, redirecting to login");
-      // Use window.location for more reliable navigation
-      window.location.href = '/admin-control';
-    }
-  }, [loading, user, navigate]);
-
+  // Handle sign out
   const handleSignOut = async () => {
     try {
       console.log("Signing out user...");

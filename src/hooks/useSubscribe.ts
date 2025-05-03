@@ -26,10 +26,15 @@ export const useSubscribe = () => {
     console.log("Attempting to subscribe with email:", email);
     
     try {
-      // Now that we fixed the RLS policy, this insert should work without issues
-      const { error } = await supabase
+      // Add additional debug logging
+      console.log("Sending subscription request to Supabase");
+      
+      const { error, data } = await supabase
         .from('subscribers')
-        .insert({ email });
+        .insert({ email })
+        .select();
+      
+      console.log("Subscription response:", { error, data });
       
       if (error) {
         console.error("Subscription error:", error);
@@ -48,6 +53,7 @@ export const useSubscribe = () => {
           });
         }
       } else {
+        console.log("Subscription successful!");
         toast({
           title: "تم بنجاح!",
           description: "لقد تم اشتراكك في نشرتنا الإخبارية.",

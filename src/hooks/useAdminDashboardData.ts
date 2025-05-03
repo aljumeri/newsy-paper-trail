@@ -38,9 +38,10 @@ const useAdminDashboardData = (user: User | null) => {
     
     const checkAdminStatus = async () => {
       try {
-        // Check if user is an admin first using the RPC function
+        console.log("Checking admin status for user ID:", user.id);
+        // Check if user is an admin using the is_admin_user function
         const { data: adminStatus, error: adminError } = await supabase.rpc(
-          'get_admin_status',
+          'is_admin_user',
           { user_id: user.id }
         );
         
@@ -53,6 +54,8 @@ const useAdminDashboardData = (user: User | null) => {
           }
           return false;
         }
+        
+        console.log("Admin status check result:", adminStatus);
         
         if (isMounted.current) {
           // Fixed: Convert the response to boolean explicitly
@@ -77,15 +80,18 @@ const useAdminDashboardData = (user: User | null) => {
       setError(null);
       
       // Check admin status first
-      const adminStatus = await checkAdminStatus();
+      const adminStatus = await checkAdminStatus(user.id);
+      console.log("Admin status result:", adminStatus);
+      
       if (!adminStatus) {
         console.log("User is not an admin, skipping data fetch");
+        setLoading(false);
         return;
       }
       
       try {
-        // Fetch subscribers
-        console.log("Fetching subscribers...");
+        // Fetch subscribers with debug logging
+        console.log("Fetching subscribers with user ID:", user.id);
         const { data: subscribersData, error: subscribersError } = await supabase
           .from('subscribers')
           .select('*')
@@ -97,7 +103,7 @@ const useAdminDashboardData = (user: User | null) => {
             setError(subscribersError.message);
           }
         } else if (isMounted.current && subscribersData) {
-          console.log("Fetched subscribers:", subscribersData?.length || 0);
+          console.log("Successfully fetched subscribers:", subscribersData);
           // Fixed: Cast to Subscriber[] to fix type mismatch
           setSubscribers(subscribersData as unknown as Subscriber[]);
         }
@@ -115,7 +121,7 @@ const useAdminDashboardData = (user: User | null) => {
             setError(prev => prev || newslettersError.message);
           }
         } else if (isMounted.current && newslettersData) {
-          console.log("Fetched newsletters:", newslettersData?.length || 0);
+          console.log("Successfully fetched newsletters:", newslettersData);
           // Fixed: Cast to Newsletter[] to fix type mismatch
           setNewsletters(newslettersData as unknown as Newsletter[]);
         }

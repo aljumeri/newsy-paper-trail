@@ -75,10 +75,14 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            <DropdownMenuItem onClick={() => onFontSize('small')}>صغير</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onFontSize('medium')}>متوسط</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onFontSize('large')}>كبير</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onFontSize('xlarge')}>كبير جدًا</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onFontSize('12px')}>12px</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onFontSize('14px')}>14px</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onFontSize('16px')}>16px</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onFontSize('18px')}>18px</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onFontSize('20px')}>20px</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onFontSize('24px')}>24px</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onFontSize('28px')}>28px</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onFontSize('32px')}>32px</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

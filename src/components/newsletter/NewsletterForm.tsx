@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -117,27 +116,10 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
     const selectedText = content.substring(start, end);
     
     if (selectedText) {
-      // Map size to actual font size
-      let fontSize = '1em'; // Default (medium)
-      
-      switch(size) {
-        case 'small':
-          fontSize = '0.875em';
-          break;
-        case 'medium':
-          fontSize = '1em';
-          break;
-        case 'large':
-          fontSize = '1.25em';
-          break;
-        case 'xlarge':
-          fontSize = '1.5em';
-          break;
-      }
-      
+      // Use the exact font size value passed from the dropdown
       const newContent = 
         content.substring(0, start) + 
-        `<span style="font-size: ${fontSize};">${selectedText}</span>` + 
+        `<span style="font-size: ${size};">${selectedText}</span>` + 
         content.substring(end);
       
       setContent(newContent);

@@ -43,40 +43,45 @@ const useAdminAuth = () => {
         setUser(currentSession.user);
         setSession(currentSession);
         
-        // Check admin status without using RPC
+        // Check admin status using RPC function
         checkAdminStatus(currentSession.user.id);
       }
     });
     
-    // Simple function to check admin status
+    // Check admin status using our database function
     const checkAdminStatus = async (userId: string) => {
       try {
         if (isUnmounted.current) return;
         
-        // Directly query the admin_users table
-        const { data, error } = await supabase
-          .from('admin_users')
-          .select('id')
-          .eq('id', userId)
-          .single();
+        // Use RPC to call the is_admin_user function
+        const { data, error } = await supabase.rpc('is_admin_user', { user_id: userId });
         
         if (isUnmounted.current) return;
         
-        if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
+        if (error) {
           console.error("Admin check error:", error);
           setIsAdmin(false);
+          
+          if (window.location.pathname.includes('/admin-control/')) {
+            toast({
+              title: "خطأ في التحقق",
+              description: "حدث خطأ أثناء التحقق من صلاحيات المسؤول",
+              variant: "destructive"
+            });
+            navigate('/admin-control');
+          }
         } else {
-          setIsAdmin(!!data); // Convert to boolean
-        }
-        
-        // Handle redirects
-        if (!data && window.location.pathname.includes('/admin-control/')) {
-          toast({
-            title: "صلاحيات غير كافية",
-            description: "ليس لديك صلاحيات الوصول إلى هذه الصفحة",
-            variant: "destructive"
-          });
-          navigate('/admin-control');
+          setIsAdmin(data); // Set the boolean value directly
+          
+          // If not admin and trying to access protected routes
+          if (!data && window.location.pathname.includes('/admin-control/')) {
+            toast({
+              title: "صلاحيات غير كافية",
+              description: "ليس لديك صلاحيات الوصول إلى هذه الصفحة",
+              variant: "destructive"
+            });
+            navigate('/admin-control');
+          }
         }
       } catch (error) {
         if (isUnmounted.current) return;

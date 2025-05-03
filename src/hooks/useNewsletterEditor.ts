@@ -30,16 +30,13 @@ export const useNewsletterEditor = () => {
           return;
         }
         
-        const userId = sessionData.session.user.id;
+        // Use RPC to check admin status
+        const { data: adminData, error: adminError } = await supabase.rpc(
+          'is_admin_user', 
+          { user_id: sessionData.session.user.id }
+        );
         
-        // Check if user is admin by querying admin_users table directly
-        const { data: adminData, error: adminError } = await supabase
-          .from('admin_users')
-          .select('id')
-          .eq('id', userId)
-          .single();
-        
-        if (adminError && adminError.code !== 'PGRST116') {
+        if (adminError) {
           console.error('Admin check error:', adminError);
           toast({
             title: "خطأ في التحقق من الصلاحيات",

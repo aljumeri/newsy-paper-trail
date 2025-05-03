@@ -26,61 +26,28 @@ export const useSubscribe = () => {
     console.log("Attempting to subscribe with email:", email);
     
     try {
-      // Use unauthenticated insert to avoid RLS issues
-      const { error, data, status } = await supabase
+      // Now that we fixed the RLS policy, this insert should work without issues
+      const { error } = await supabase
         .from('subscribers')
-        .insert({ email })
-        .select();
+        .insert({ email });
       
-      console.log("Subscription response:", { 
-        error, 
-        data, 
-        status,
-        hasError: !!error 
-      });
-
       if (error) {
+        console.error("Subscription error:", error);
+        
         if (error.code === '23505') {
-          console.log("Duplicate email detected");
           toast({
             title: "البريد الإلكتروني موجود بالفعل",
             description: "أنت مشترك بالفعل في نشرتنا الإخبارية.",
             variant: "destructive"
           });
-        } else if (error.code === '42P17' || error.code === '42501') {
-          console.log("Permission error detected - likely related to RLS policies");
-          // Try an alternative approach - direct anonymous insert
-          const { error: fallbackError } = await supabase
-            .from('subscribers')
-            .insert([{ email }]);
-          
-          if (fallbackError) {
-            console.error("Fallback subscription attempt failed:", fallbackError);
-            toast({
-              title: "حدث خطأ",
-              description: "يرجى المحاولة مرة أخرى لاحقًا.",
-              variant: "destructive"
-            });
-          } else {
-            // If no error from fallback, assume success
-            toast({
-              title: "تم بنجاح!",
-              description: "لقد تم اشتراكك في نشرتنا الإخبارية.",
-            });
-            setEmail('');
-          }
         } else {
-          console.error("Subscription error code:", error.code);
-          console.error("Subscription error message:", error.message);
-          
           toast({
             title: "حدث خطأ",
-            description: `يرجى المحاولة مرة أخرى لاحقًا.`,
+            description: "يرجى المحاولة مرة أخرى لاحقًا.",
             variant: "destructive"
           });
         }
       } else {
-        console.log("Subscription successful");
         toast({
           title: "تم بنجاح!",
           description: "لقد تم اشتراكك في نشرتنا الإخبارية.",

@@ -8,8 +8,8 @@ import SubscribersTable from '@/components/admin/SubscribersTable';
 import NewslettersTable from '@/components/admin/NewslettersTable';
 import useFormatDate from '@/hooks/useFormatDate';
 import { supabase } from "@/integrations/supabase/client";
-import { User } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
+import useAdminAuth from '@/hooks/useAdminAuth';
 
 interface Subscriber {
   id: string;
@@ -25,61 +25,32 @@ interface Newsletter {
 }
 
 const AdminControlPanel = () => {
-  const [user, setUser] = useState<User | null>(null);
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isChecking, setIsChecking] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
   const navigate = useNavigate();
   const { formatDate } = useFormatDate();
   const { toast } = useToast();
+  
+  // Use our improved admin auth hook
+  const { user, isAdmin, loading, handleSignOut } = useAdminAuth();
 
-  // Simple session check on mount
+  // Redirect if not admin
   useEffect(() => {
-    const checkSession = async () => {
-      try {
-        console.log('AdminPanel: Checking auth session');
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Session check error:', error);
-          navigate('/admin-control');
-          return;
-        }
-        
-        if (!data.session) {
-          console.log('No active session found');
-          navigate('/admin-control');
-          return;
-        }
-        
-        // Set user and fetch data
-        setUser(data.session.user);
-        setIsChecking(false);
-        fetchData();
-        
-      } catch (err) {
-        console.error('Auth check failed:', err);
-        navigate('/admin-control');
-      }
-    };
-    
-    // Setup auth state change for signout only
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_OUT') {
-        navigate('/admin-control');
-      }
-    });
-    
-    checkSession();
-    
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [navigate]);
+    if (!loading && !isAdmin) {
+      toast({
+        title: "صلاحيات غير كافية",
+        description: "يجب أن تكون مسؤولاً للوصول إلى هذه الصفحة",
+        variant: "destructive"
+      });
+      navigate('/admin-control');
+    } else if (!loading && isAdmin) {
+      fetchData();
+    }
+  }, [isAdmin, loading, navigate, toast]);
 
   const fetchData = async () => {
-    setLoading(true);
+    setDataLoading(true);
     
     try {
       // Fetch subscribers
@@ -123,45 +94,16 @@ const AdminControlPanel = () => {
         variant: "destructive"
       });
     } finally {
-      setLoading(false);
+      setDataLoading(false);
     }
   };
 
-  const handleSignOut = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        console.error('Sign out error:', error);
-        toast({
-          title: "خطأ في تسجيل الخروج",
-          description: error.message,
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      toast({
-        title: "تم تسجيل الخروج بنجاح",
-        description: "نراك قريباً!",
-      });
-      
-      navigate('/admin-control');
-    } catch (error: any) {
-      console.error('Sign out error:', error);
-      toast({
-        title: "خطأ في تسجيل الخروج",
-        description: error.message || "حدث خطأ غير متوقع",
-        variant: "destructive"
-      });
-    }
-  };
-
-  if (isChecking) {
+  // Show loading state while checking auth
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center p-6 bg-white rounded-lg shadow-md">
-          <p className="text-xl font-bold mb-2">جارٍ التحقق من الجلسة...</p>
+          <p className="text-xl font-bold mb-2">جارٍ التحقق من الصلاحيات...</p>
           <p className="text-gray-500">يرجى الانتظار قليلاً</p>
         </div>
       </div>
@@ -197,7 +139,7 @@ const AdminControlPanel = () => {
         <StatisticsCards 
           subscribersCount={subscribers.length}
           newslettersCount={newsletters.length}
-          isLoading={loading}
+          isLoading={dataLoading}
         />
         
         <Tabs defaultValue="subscribers">

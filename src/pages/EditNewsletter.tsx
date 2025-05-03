@@ -8,6 +8,9 @@ import NewsletterHeader from '@/components/newsletter/NewsletterHeader';
 import NewsletterForm from '@/components/newsletter/NewsletterForm';
 import NewsletterPreview from '@/components/newsletter/NewsletterPreview';
 import { useNewsletterEditor } from '@/hooks/useNewsletterEditor';
+import useAdminAuth from '@/hooks/useAdminAuth';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 const EditNewsletter = () => {
   const {
@@ -15,14 +18,31 @@ const EditNewsletter = () => {
     setSubject,
     content,
     setContent,
-    isLoading,
+    isLoading: editorLoading,
     isSaving,
     isPreview,
     handleUpdateNewsletter,
     handlePreview
   } = useNewsletterEditor();
+  
+  // Use our improved admin auth hook
+  const { isAdmin, loading: authLoading } = useAdminAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
+  // Redirect if not admin
+  React.useEffect(() => {
+    if (!authLoading && !isAdmin) {
+      toast({
+        title: "صلاحيات غير كافية",
+        description: "يجب أن تكون مسؤولاً للوصول إلى هذه الصفحة",
+        variant: "destructive"
+      });
+      navigate('/admin-control');
+    }
+  }, [isAdmin, authLoading, navigate, toast]);
 
-  if (isLoading) {
+  if (authLoading || editorLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import EditorToolbar from '@/components/newsletter/EditorToolbar';
@@ -125,8 +125,8 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
     }
   };
   
-  // YouTube embedding with size
-  const handleYoutubeEmbed = (youtubeUrl: string, size: string) => {
+  // YouTube embedding with size and position
+  const handleYoutubeEmbed = (youtubeUrl: string, size: string, position: string = 'center') => {
     // Extract video ID
     let videoId = '';
     
@@ -160,11 +160,21 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
           break;
       }
       
-      containerStyle += ` max-width: ${width}; margin: 0 auto;`;
+      // Add float positioning based on the selected position
+      let positionStyle = '';
+      if (position === 'left') {
+        positionStyle = 'float: left; margin-right: 15px; margin-bottom: 10px;';
+      } else if (position === 'right') {
+        positionStyle = 'float: right; margin-left: 15px; margin-bottom: 10px;';
+      } else {
+        positionStyle = 'margin: 0 auto;'; // center
+      }
       
-      // Create responsive embed code with size
+      containerStyle += ` max-width: ${width}; ${positionStyle}`;
+      
+      // Create responsive embed code with size and position
       const embedCode = `
-<div style="${containerStyle}">
+<div style="${containerStyle}" class="youtube-embed" draggable="true" data-type="youtube" data-videoid="${videoId}" data-size="${size}" data-position="${position}">
   <iframe 
     style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" 
     src="https://www.youtube.com/embed/${videoId}" 
@@ -173,6 +183,7 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
     allowfullscreen>
   </iframe>
 </div>
+<div style="clear: both;"></div>
 `;
       
       // Insert the embed code at the cursor position or append to the end
@@ -191,8 +202,8 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
     }
   };
   
-  // Image insertion with size
-  const handleImageInsert = (imageUrl: string, altText: string, size: string) => {
+  // Image insertion with size and position
+  const handleImageInsert = (imageUrl: string, altText: string, size: string, position: string = 'center') => {
     // Determine width based on selected size
     let width = '50%';
     
@@ -211,7 +222,17 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
         break;
     }
     
-    const imageHtml = `<img src="${imageUrl}" alt="${altText}" style="display: block; max-width: 100%; width: ${width}; height: auto; margin: 10px auto;" />`;
+    // Add positioning styles
+    let positionStyle = '';
+    if (position === 'left') {
+      positionStyle = 'float: left; margin-right: 15px;';
+    } else if (position === 'right') {
+      positionStyle = 'float: right; margin-left: 15px;';
+    } else {
+      positionStyle = 'margin-left: auto; margin-right: auto; display: block;'; // center
+    }
+    
+    const imageHtml = `<img src="${imageUrl}" alt="${altText}" style="max-width: 100%; width: ${width}; height: auto; margin-bottom: 10px; ${positionStyle}" class="newsletter-image" draggable="true" data-type="image" data-src="${imageUrl}" data-alt="${altText}" data-size="${size}" data-position="${position}" /><div style="clear: both;"></div>`;
     
     const textarea = document.getElementById('content') as HTMLTextAreaElement;
     
@@ -227,9 +248,107 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
     }
   };
 
+  // Initialize editor drag and drop after component mounts
+  React.useEffect(() => {
+    const initializeDragDrop = () => {
+      const editorContent = document.getElementById('content');
+      if (!editorContent) return;
+      
+      // Make the content editable for preview purposes to see where we're dropping
+      const handleDragStart = (e: DragEvent) => {
+        const target = e.target as HTMLElement;
+        if (target && (target.classList.contains('newsletter-image') || target.closest('.youtube-embed'))) {
+          // Set drag data
+          if (e.dataTransfer) {
+            const element = target.classList.contains('newsletter-image') ? target : target.closest('.youtube-embed');
+            e.dataTransfer.setData('text/plain', element?.outerHTML || '');
+            e.dataTransfer.effectAllowed = 'move';
+          }
+        }
+      };
+      
+      // Handle drop event
+      const handleDrop = (e: DragEvent) => {
+        e.preventDefault();
+        if (!e.dataTransfer) return;
+        
+        const htmlContent = e.dataTransfer.getData('text/plain');
+        if (!htmlContent || !htmlContent.includes('data-type')) return;
+        
+        // Remove the original element from the content
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = content;
+        
+        const isImage = htmlContent.includes('data-type="image"');
+        let elementToRemove;
+        
+        if (isImage) {
+          const imgSrc = htmlContent.match(/data-src="([^"]+)"/)?.[1];
+          if (imgSrc) {
+            elementToRemove = tempDiv.querySelector(`img[data-src="${imgSrc}"]`);
+          }
+        } else {
+          const videoId = htmlContent.match(/data-videoid="([^"]+)"/)?.[1];
+          if (videoId) {
+            elementToRemove = tempDiv.querySelector(`div[data-videoid="${videoId}"]`);
+          }
+        }
+        
+        if (elementToRemove) {
+          // Remove the element and its following clear div if it exists
+          const nextElement = elementToRemove.nextElementSibling;
+          if (nextElement && nextElement.tagName === 'DIV' && nextElement.style.clear === 'both') {
+            nextElement.remove();
+          }
+          elementToRemove.remove();
+        }
+        
+        // Insert at cursor position
+        const textarea = document.getElementById('content') as HTMLTextAreaElement;
+        if (textarea) {
+          const cursorPos = textarea.selectionStart;
+          const newContent = 
+            tempDiv.innerHTML.substring(0, cursorPos) +
+            htmlContent +
+            `<div style="clear: both;"></div>` +
+            tempDiv.innerHTML.substring(cursorPos);
+          
+          setContent(newContent);
+        }
+      };
+      
+      // Allow dragover
+      const handleDragOver = (e: DragEvent) => {
+        e.preventDefault();
+        if (e.dataTransfer) {
+          e.dataTransfer.dropEffect = 'move';
+        }
+      };
+      
+      // Add event listeners
+      document.addEventListener('dragstart', handleDragStart);
+      editorContent.addEventListener('dragover', handleDragOver);
+      editorContent.addEventListener('drop', handleDrop);
+      
+      // Cleanup
+      return () => {
+        document.removeEventListener('dragstart', handleDragStart);
+        editorContent.removeEventListener('dragover', handleDragOver);
+        editorContent.removeEventListener('drop', handleDrop);
+      };
+    };
+    
+    // Initialize after a delay to ensure everything is rendered
+    const timer = setTimeout(() => {
+      initializeDragDrop();
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [content, setContent]);
+
   return (
     <>
-      {/* YouTube Dialog with Size Control */}
+      {/* YouTube Dialog with Size and Position Control */}
       <YoutubeDialog 
         isOpen={showYoutubeDialog} 
         onClose={() => setShowYoutubeDialog(false)} 
@@ -280,7 +399,7 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
           </div>
           
           <p className="text-xs text-gray-500 mt-1">
-            يمكنك استخدام وسوم HTML الأساسية وسيظهر النص بالتنسيق المطلوب في النشرة الإخبارية.
+            يمكنك استخدام وسوم HTML الأساسية وسيظهر النص بالتنسيق المطلوب في النشرة الإخبارية. اسحب الصور ومقاطع الفيديو لتغيير موقعها.
           </p>
         </div>
         <div className="flex justify-end gap-2">

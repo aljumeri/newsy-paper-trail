@@ -12,11 +12,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 interface YoutubeDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onEmbed: (youtubeUrl: string, size: string) => void;
+  onEmbed: (youtubeUrl: string, size: string, position: string) => void;
 }
 
 const YOUTUBE_SIZES = [
@@ -26,16 +27,24 @@ const YOUTUBE_SIZES = [
   { value: 'full', label: 'كامل (1080p)' }
 ];
 
+const POSITION_OPTIONS = [
+  { value: 'left', label: 'يسار' },
+  { value: 'center', label: 'وسط' },
+  { value: 'right', label: 'يمين' },
+];
+
 const YoutubeDialog: React.FC<YoutubeDialogProps> = ({ isOpen, onClose, onEmbed }) => {
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [youtubeSize, setYoutubeSize] = useState('medium');
+  const [position, setPosition] = useState('center');
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (youtubeUrl) {
-      onEmbed(youtubeUrl, youtubeSize);
+      onEmbed(youtubeUrl, youtubeSize, position);
       setYoutubeUrl('');
       setYoutubeSize('medium');
+      setPosition('center');
       onClose();
     }
   };
@@ -76,6 +85,22 @@ const YoutubeDialog: React.FC<YoutubeDialogProps> = ({ isOpen, onClose, onEmbed 
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            
+            <div>
+              <Label className="mb-2 block">موضع الفيديو</Label>
+              <RadioGroup 
+                value={position} 
+                onValueChange={setPosition}
+                className="flex space-x-2 space-x-reverse justify-center"
+              >
+                {POSITION_OPTIONS.map(opt => (
+                  <div key={opt.value} className="flex items-center space-x-2 space-x-reverse rtl:space-x-reverse">
+                    <RadioGroupItem value={opt.value} id={`position-${opt.value}`} />
+                    <Label htmlFor={`position-${opt.value}`}>{opt.label}</Label>
+                  </div>
+                ))}
+              </RadioGroup>
             </div>
           </div>
           <DialogFooter>

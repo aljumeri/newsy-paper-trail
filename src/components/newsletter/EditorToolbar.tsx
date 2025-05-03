@@ -11,7 +11,8 @@ import {
   Image,
   Youtube,
   Link,
-  Text
+  Text,
+  Type
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -61,11 +62,16 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
         <Button variant="ghost" size="icon" onClick={onLink} title="إضافة رابط">
           <Link className="h-4 w-4" />
         </Button>
-        
+      </div>
+
+      <Separator orientation="vertical" className="mx-1 h-6" />
+
+      <div className="flex gap-1">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" title="حجم الخط">
-              <Text className="h-4 w-4" />
+            <Button variant="ghost" className="px-2 flex items-center gap-1 h-9" title="حجم الخط">
+              <Type className="h-4 w-4" />
+              <span className="text-xs">حجم الخط</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">

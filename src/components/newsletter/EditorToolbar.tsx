@@ -9,9 +9,17 @@ import {
   Italic, 
   Underline, 
   Image,
-  Youtube
+  Youtube,
+  Link,
+  Text
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface EditorToolbarProps {
   onBold: () => void;
@@ -22,6 +30,8 @@ interface EditorToolbarProps {
   onAlignRight: () => void;
   onImageUpload: () => void;
   onYoutubeEmbed: () => void;
+  onLink: () => void;
+  onFontSize: (size: string) => void;
 }
 
 const EditorToolbar: React.FC<EditorToolbarProps> = ({
@@ -32,7 +42,9 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
   onAlignCenter,
   onAlignRight,
   onImageUpload,
-  onYoutubeEmbed
+  onYoutubeEmbed,
+  onLink,
+  onFontSize
 }) => {
   return (
     <div className="flex flex-wrap items-center gap-1 border rounded-md p-1 mb-2 bg-white">
@@ -46,6 +58,23 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
         <Button variant="ghost" size="icon" onClick={onUnderline} title="تحته خط">
           <Underline className="h-4 w-4" />
         </Button>
+        <Button variant="ghost" size="icon" onClick={onLink} title="إضافة رابط">
+          <Link className="h-4 w-4" />
+        </Button>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" title="حجم الخط">
+              <Text className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem onClick={() => onFontSize('small')}>صغير</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onFontSize('medium')}>متوسط</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onFontSize('large')}>كبير</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onFontSize('xlarge')}>كبير جدًا</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       
       <Separator orientation="vertical" className="mx-1 h-6" />

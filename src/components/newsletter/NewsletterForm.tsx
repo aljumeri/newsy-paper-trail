@@ -1,9 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import EditorToolbar from '@/components/newsletter/EditorToolbar';
 import YoutubeDialog from '@/components/newsletter/YoutubeDialog';
 import ImageUploadDialog from '@/components/newsletter/ImageUploadDialog';
+import LinkDialog from '@/components/newsletter/LinkDialog';
 
 interface NewsletterFormProps {
   subject: string;
@@ -26,6 +28,7 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
 }) => {
   const [showYoutubeDialog, setShowYoutubeDialog] = useState(false);
   const [showImageDialog, setShowImageDialog] = useState(false);
+  const [showLinkDialog, setShowLinkDialog] = useState(false);
   const [textAlignment, setTextAlignment] = useState<'left' | 'center' | 'right'>('right');
   
   // Text formatting handlers
@@ -101,6 +104,63 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
         textarea.selectionStart = start + 3; // Length of <u>
         textarea.selectionEnd = start + 3 + selectedText.length;
       }, 0);
+    }
+  };
+
+  // Font size handler
+  const handleFontSize = (size: string) => {
+    const textarea = document.getElementById('content') as HTMLTextAreaElement;
+    if (!textarea) return;
+    
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = content.substring(start, end);
+    
+    if (selectedText) {
+      // Map size to actual font size
+      let fontSize = '1em'; // Default (medium)
+      
+      switch(size) {
+        case 'small':
+          fontSize = '0.875em';
+          break;
+        case 'medium':
+          fontSize = '1em';
+          break;
+        case 'large':
+          fontSize = '1.25em';
+          break;
+        case 'xlarge':
+          fontSize = '1.5em';
+          break;
+      }
+      
+      const newContent = 
+        content.substring(0, start) + 
+        `<span style="font-size: ${fontSize};">${selectedText}</span>` + 
+        content.substring(end);
+      
+      setContent(newContent);
+    }
+  };
+  
+  // Link handler
+  const handleLink = (url: string, text: string) => {
+    const textarea = document.getElementById('content') as HTMLTextAreaElement;
+    
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const selectedText = content.substring(start, end);
+      
+      const linkText = text || selectedText || url;
+      
+      const newContent = 
+        content.substring(0, start) + 
+        `<a href="${url}" target="_blank" style="color: #0066cc; text-decoration: underline;">${linkText}</a>` + 
+        content.substring(end);
+      
+      setContent(newContent);
     }
   };
   
@@ -361,6 +421,13 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
         onClose={() => setShowImageDialog(false)} 
         onInsertImage={handleImageInsert} 
       />
+
+      {/* Link Dialog */}
+      <LinkDialog 
+        isOpen={showLinkDialog} 
+        onClose={() => setShowLinkDialog(false)} 
+        onInsertLink={handleLink} 
+      />
     
       <div className="space-y-4">
         <div>
@@ -385,6 +452,8 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
             onAlignRight={() => handleAlignment('right')}
             onImageUpload={() => setShowImageDialog(true)}
             onYoutubeEmbed={() => setShowYoutubeDialog(true)}
+            onLink={() => setShowLinkDialog(true)}
+            onFontSize={handleFontSize}
           />
           
           <div className={`border rounded-md ${textAlignment === 'right' ? 'text-right' : textAlignment === 'center' ? 'text-center' : 'text-left'}`}>

@@ -8,7 +8,9 @@ import { User, Session } from '@supabase/supabase-js';
 const useAdminAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
   const isUnmounted = useRef(false);
@@ -30,10 +32,14 @@ const useAdminAuth = () => {
         console.log("User signed out");
         setUser(null);
         setSession(null);
+        setIsAdmin(false);
       } else if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && currentSession) {
         console.log("User signed in or token refreshed:", currentSession.user?.email);
         setUser(currentSession.user);
         setSession(currentSession);
+        
+        // Check admin status when user signs in
+        checkAdminStatus(currentSession.user.id);
       }
     });
     
@@ -51,6 +57,7 @@ const useAdminAuth = () => {
         if (error) {
           console.error("Session check error:", error);
           setLoading(false);
+          setIsLoading(false);
           return;
         }
         
@@ -59,13 +66,54 @@ const useAdminAuth = () => {
         if (data.session) {
           setUser(data.session.user);
           setSession(data.session);
+          
+          // Check admin status
+          await checkAdminStatus(data.session.user.id);
         }
         
         setLoading(false);
+        setIsLoading(false);
       } catch (error) {
         if (isUnmounted.current) return;
         console.error("Error checking session:", error);
         setLoading(false);
+        setIsLoading(false);
+      }
+    };
+    
+    // Helper function to check admin status
+    const checkAdminStatus = async (userId: string) => {
+      try {
+        if (isUnmounted.current) return;
+        
+        const { data: adminStatus, error } = await supabase.rpc(
+          'get_admin_status',
+          { user_id: userId }
+        );
+        
+        if (isUnmounted.current) return;
+        
+        if (error) {
+          console.error("Admin check error:", error);
+          setIsAdmin(false);
+          return;
+        }
+        
+        // Convert to boolean explicitly
+        setIsAdmin(Boolean(adminStatus));
+        
+        if (!adminStatus && window.location.pathname.includes('/admin-control/')) {
+          toast({
+            title: "صلاحيات غير كافية",
+            description: "ليس لديك صلاحيات الوصول إلى هذه الصفحة",
+            variant: "destructive"
+          });
+          navigate('/admin-control');
+        }
+      } catch (error) {
+        if (isUnmounted.current) return;
+        console.error("Admin status check error:", error);
+        setIsAdmin(false);
       }
     };
     
@@ -74,6 +122,7 @@ const useAdminAuth = () => {
       console.error("Unhandled error during session check:", err);
       if (!isUnmounted.current) {
         setLoading(false);
+        setIsLoading(false);
       }
     });
     
@@ -82,15 +131,15 @@ const useAdminAuth = () => {
       isUnmounted.current = true;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [navigate, toast]);
 
   // Separated navigation logic from auth check
   useEffect(() => {
     // Only redirect if not loading and we know there's no user
-    if (!loading && !user && window.location.pathname.includes('/admin/')) {
+    if (!loading && !user && window.location.pathname.includes('/admin-control/')) {
       console.log("No authenticated user, redirecting to login");
       // Use window.location for more reliable navigation that doesn't return a promise
-      window.location.href = '/admin';
+      window.location.href = '/admin-control';
     }
   }, [loading, user, navigate]);
 
@@ -117,7 +166,7 @@ const useAdminAuth = () => {
       });
       
       // Navigate immediately, use window.location for reliability
-      window.location.href = '/admin';
+      window.location.href = '/admin-control';
     } catch (error) {
       if (isUnmounted.current) return;
       
@@ -130,7 +179,14 @@ const useAdminAuth = () => {
     }
   };
 
-  return { user, session, loading, handleSignOut };
+  return { 
+    user, 
+    session, 
+    loading, 
+    isLoading, 
+    isAdmin, 
+    handleSignOut 
+  };
 };
 
 export default useAdminAuth;

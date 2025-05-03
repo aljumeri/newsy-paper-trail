@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from "@/integrations/supabase/client";
+import useAdminAuth from '@/hooks/useAdminAuth';
 
 export const useNewsletterEditor = () => {
   const [subject, setSubject] = useState('');
@@ -13,15 +14,13 @@ export const useNewsletterEditor = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const { user } = useAdminAuth();
 
   useEffect(() => {
     const loadNewsletter = async () => {
       try {
-        // Check if user is authenticated
-        const { data } = await supabase.auth.getSession();
-        
-        if (!data.session) {
-          navigate('/admin-control');
+        if (!user) {
+          console.log("No user found, waiting for auth check to complete");
           return;
         }
         
@@ -47,6 +46,8 @@ export const useNewsletterEditor = () => {
             navigate('/admin-control/panel');
           }
         }
+        
+        setIsLoading(false);
       } catch (error) {
         console.error('Error loading newsletter:', error);
         toast({
@@ -55,13 +56,13 @@ export const useNewsletterEditor = () => {
           variant: "destructive"
         });
         navigate('/admin-control/panel');
-      } finally {
-        setIsLoading(false);
       }
     };
     
-    loadNewsletter();
-  }, [id, navigate, toast]);
+    if (user) {
+      loadNewsletter();
+    }
+  }, [id, navigate, toast, user]);
 
   const handleUpdateNewsletter = async () => {
     if (!subject.trim() || !content.trim()) {
@@ -73,14 +74,18 @@ export const useNewsletterEditor = () => {
       return;
     }
     
+    if (!user) {
+      toast({
+        title: "خطأ في التحقق",
+        description: "يجب أن تكون مسجل الدخول كمسؤول",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsSaving(true);
     
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) {
-        throw new Error("User not authenticated");
-      }
-      
       const { error } = await supabase
         .from('newsletters')
         .update({ 
@@ -97,11 +102,11 @@ export const useNewsletterEditor = () => {
       });
       
       navigate('/admin-control/panel');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating newsletter:', error);
       toast({
         title: "خطأ في التحديث",
-        description: "حدث خطأ أثناء تحديث النشرة الإخبارية",
+        description: error.message || "حدث خطأ أثناء تحديث النشرة الإخبارية",
         variant: "destructive"
       });
     } finally {

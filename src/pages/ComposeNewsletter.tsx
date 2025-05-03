@@ -32,23 +32,26 @@ const ComposeNewsletter = () => {
       return;
     }
     
+    if (!user) {
+      toast({
+        title: "خطأ في التحقق",
+        description: "يجب أن تكون مسجل الدخول كمسؤول",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
-      // Verify session again before saving
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) {
-        throw new Error("User not authenticated");
-      }
-      
       // Save newsletter
       const { error } = await supabase
         .from('newsletters')
         .insert({
           subject, 
           content, 
-          created_by: sessionData.session.user.id
-        } as any);
+          created_by: user.id
+        });
       
       if (error) {
         console.error('Newsletter save error:', error);

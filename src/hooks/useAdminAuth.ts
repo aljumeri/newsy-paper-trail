@@ -15,33 +15,75 @@ const useAdminAuth = () => {
   const navigate = useNavigate();
   const isUnmounted = useRef(false);
 
+  // Handle session and admin status check
   useEffect(() => {
     console.log("Starting auth check in useAdminAuth...");
     
     // Setup unmount flag for cleanup
     isUnmounted.current = false;
     
-    // Set up auth state listener first - ensure it doesn't return a promise
+    // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
       if (isUnmounted.current) return;
       
       console.log("Auth state changed:", event);
       
-      // Update state synchronously, don't return anything
       if (event === 'SIGNED_OUT') {
         console.log("User signed out");
         setUser(null);
         setSession(null);
         setIsAdmin(false);
+        
+        // Safely navigate from admin pages
+        if (window.location.pathname.includes('/admin-control/')) {
+          window.location.href = '/admin-control';
+        }
       } else if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && currentSession) {
         console.log("User signed in or token refreshed:", currentSession.user?.email);
         setUser(currentSession.user);
         setSession(currentSession);
         
-        // Check admin status when user signs in
+        // Check admin status without using RPC
         checkAdminStatus(currentSession.user.id);
       }
     });
+    
+    // Simple function to check admin status
+    const checkAdminStatus = async (userId: string) => {
+      try {
+        if (isUnmounted.current) return;
+        
+        // Directly query the admin_users table
+        const { data, error } = await supabase
+          .from('admin_users')
+          .select('id')
+          .eq('id', userId)
+          .single();
+        
+        if (isUnmounted.current) return;
+        
+        if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
+          console.error("Admin check error:", error);
+          setIsAdmin(false);
+        } else {
+          setIsAdmin(!!data); // Convert to boolean
+        }
+        
+        // Handle redirects
+        if (!data && window.location.pathname.includes('/admin-control/')) {
+          toast({
+            title: "صلاحيات غير كافية",
+            description: "ليس لديك صلاحيات الوصول إلى هذه الصفحة",
+            variant: "destructive"
+          });
+          navigate('/admin-control');
+        }
+      } catch (error) {
+        if (isUnmounted.current) return;
+        console.error("Admin status check error:", error);
+        setIsAdmin(false);
+      }
+    };
     
     // Check for existing session
     const checkSession = async () => {
@@ -81,42 +123,6 @@ const useAdminAuth = () => {
       }
     };
     
-    // Helper function to check admin status
-    const checkAdminStatus = async (userId: string) => {
-      try {
-        if (isUnmounted.current) return;
-        
-        const { data: adminStatus, error } = await supabase.rpc(
-          'get_admin_status',
-          { user_id: userId }
-        );
-        
-        if (isUnmounted.current) return;
-        
-        if (error) {
-          console.error("Admin check error:", error);
-          setIsAdmin(false);
-          return;
-        }
-        
-        // Convert to boolean explicitly
-        setIsAdmin(Boolean(adminStatus));
-        
-        if (!adminStatus && window.location.pathname.includes('/admin-control/')) {
-          toast({
-            title: "صلاحيات غير كافية",
-            description: "ليس لديك صلاحيات الوصول إلى هذه الصفحة",
-            variant: "destructive"
-          });
-          navigate('/admin-control');
-        }
-      } catch (error) {
-        if (isUnmounted.current) return;
-        console.error("Admin status check error:", error);
-        setIsAdmin(false);
-      }
-    };
-    
     // Do the session check immediately
     checkSession().catch(err => {
       console.error("Unhandled error during session check:", err);
@@ -138,7 +144,7 @@ const useAdminAuth = () => {
     // Only redirect if not loading and we know there's no user
     if (!loading && !user && window.location.pathname.includes('/admin-control/')) {
       console.log("No authenticated user, redirecting to login");
-      // Use window.location for more reliable navigation that doesn't return a promise
+      // Use window.location for more reliable navigation
       window.location.href = '/admin-control';
     }
   }, [loading, user, navigate]);
@@ -165,7 +171,7 @@ const useAdminAuth = () => {
         description: "نراك قريباً!",
       });
       
-      // Navigate immediately, use window.location for reliability
+      // Navigate immediately
       window.location.href = '/admin-control';
     } catch (error) {
       if (isUnmounted.current) return;

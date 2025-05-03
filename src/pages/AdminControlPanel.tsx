@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from '@/components/ui/button';
@@ -25,109 +26,59 @@ interface Newsletter {
 
 const AdminControlPanel = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
-  const [isChecking, setIsChecking] = useState(true);
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isChecking, setIsChecking] = useState(true);
   const navigate = useNavigate();
   const { formatDate } = useFormatDate();
   const { toast } = useToast();
-  const sessionCheckedRef = React.useRef(false);
 
-  // Check for existing session and fetch user - avoid recursion by using a ref
+  // Simple session check on mount
   useEffect(() => {
-    if (sessionCheckedRef.current) return;
-    sessionCheckedRef.current = true;
-    
-    const checkAuth = async () => {
+    const checkSession = async () => {
       try {
-        console.log('AdminControlPanel: Checking authentication status...');
+        console.log('AdminPanel: Checking auth session');
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error('Session check error:', error);
-          redirectToLogin();
+          navigate('/admin-control');
           return;
         }
         
         if (!data.session) {
           console.log('No active session found');
-          redirectToLogin();
+          navigate('/admin-control');
           return;
         }
         
-        const currentUser = data.session.user;
-        setUser(currentUser);
+        // Set user and fetch data
+        setUser(data.session.user);
+        setIsChecking(false);
+        fetchData();
         
-        // Check directly from the admin_users table
-        if (currentUser) {
-          try {
-            const { data: adminData, error: adminError } = await supabase
-              .from('admin_users')
-              .select('id')
-              .eq('id', currentUser.id)
-              .single();
-            
-            if (adminError && adminError.code !== 'PGRST116') { // PGRST116 is "not found"
-              console.error('Admin status check error:', adminError);
-              toast({
-                title: "خطأ في التحقق من صلاحيات المسؤول",
-                description: adminError.message,
-                variant: "destructive"
-              });
-              redirectToLogin();
-              return;
-            }
-            
-            // If adminData exists, user is admin
-            const isUserAdmin = !!adminData;
-            setIsAdmin(isUserAdmin);
-            
-            if (!isUserAdmin) {
-              console.log('User is not an admin');
-              toast({
-                title: "غير مصرح",
-                description: "ليس لديك صلاحيات للوصول إلى لوحة التحكم",
-                variant: "destructive"
-              });
-              redirectToLogin();
-              return;
-            }
-            
-            setIsChecking(false);
-            fetchData(currentUser);
-          } catch (err) {
-            console.error('Admin status check failed:', err);
-            redirectToLogin();
-          }
-        }
       } catch (err) {
         console.error('Auth check failed:', err);
-        redirectToLogin();
+        navigate('/admin-control');
       }
     };
     
-    checkAuth();
-    
-    // Set up auth state change listener once
+    // Setup auth state change for signout only
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_OUT') {
-        redirectToLogin();
+        navigate('/admin-control');
       }
     });
+    
+    checkSession();
     
     return () => {
       subscription.unsubscribe();
     };
   }, [navigate]);
 
-  const redirectToLogin = () => {
-    // Use window.location for a clean redirect to break any loops
-    window.location.href = '/admin-control';
-  };
-
-  const fetchData = async (currentUser: User) => {
+  const fetchData = async () => {
     setLoading(true);
     
     try {
@@ -145,7 +96,6 @@ const AdminControlPanel = () => {
           variant: "destructive"
         });
       } else {
-        // Type casting to overcome the TypeScript errors
         setSubscribers(subscribersData as unknown as Subscriber[]);
       }
       
@@ -163,7 +113,6 @@ const AdminControlPanel = () => {
           variant: "destructive"
         });
       } else {
-        // Type casting to overcome the TypeScript errors
         setNewsletters(newslettersData as unknown as Newsletter[]);
       }
     } catch (error: any) {
@@ -197,8 +146,7 @@ const AdminControlPanel = () => {
         description: "نراك قريباً!",
       });
       
-      // Use window.location for a clean redirect
-      window.location.href = '/admin-control';
+      navigate('/admin-control');
     } catch (error: any) {
       console.error('Sign out error:', error);
       toast({
@@ -227,7 +175,6 @@ const AdminControlPanel = () => {
           <div>
             <h1 className="text-2xl font-bold">لوحة تحكم المسؤول</h1>
             <p className="text-sm text-gray-500">مرحبًا، {user?.email}</p>
-            {isAdmin && <p className="text-xs text-green-600">حساب مسؤول</p>}
           </div>
           <div className="flex gap-2">
             <Button 

@@ -25,9 +25,7 @@ export const useSubscribe = () => {
     try {
       const { error } = await supabase
         .from('subscribers')
-        .insert({
-          email: email
-        } as any);
+        .insert({ email });
 
       if (error) {
         if (error.code === '23505') {
@@ -37,7 +35,12 @@ export const useSubscribe = () => {
             variant: "destructive"
           });
         } else {
-          throw error;
+          console.error("Subscription error:", error);
+          toast({
+            title: "حدث خطأ",
+            description: "يرجى المحاولة مرة أخرى لاحقًا.",
+            variant: "destructive"
+          });
         }
       } else {
         toast({

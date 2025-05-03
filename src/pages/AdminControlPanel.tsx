@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from '@/components/ui/button';
@@ -34,12 +33,16 @@ const AdminControlPanel = () => {
   const navigate = useNavigate();
   const { formatDate } = useFormatDate();
   const { toast } = useToast();
+  const sessionCheckedRef = React.useRef(false);
 
-  // Check for existing session and fetch user
+  // Check for existing session and fetch user - avoid recursion by using a ref
   useEffect(() => {
+    if (sessionCheckedRef.current) return;
+    sessionCheckedRef.current = true;
+    
     const checkAuth = async () => {
       try {
-        console.log('Checking authentication status...');
+        console.log('AdminControlPanel: Checking authentication status...');
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -57,7 +60,6 @@ const AdminControlPanel = () => {
         const currentUser = data.session.user;
         setUser(currentUser);
         
-        // Rather than checking admin status via RPC which causes recursion,
         // Check directly from the admin_users table
         if (currentUser) {
           try {
@@ -108,8 +110,8 @@ const AdminControlPanel = () => {
     
     checkAuth();
     
-    // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    // Set up auth state change listener once
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_OUT') {
         redirectToLogin();
       }
@@ -121,7 +123,8 @@ const AdminControlPanel = () => {
   }, [navigate]);
 
   const redirectToLogin = () => {
-    navigate('/admin-control', { replace: true });
+    // Use window.location for a clean redirect to break any loops
+    window.location.href = '/admin-control';
   };
 
   const fetchData = async (currentUser: User) => {
@@ -194,7 +197,8 @@ const AdminControlPanel = () => {
         description: "نراك قريباً!",
       });
       
-      navigate('/admin-control', { replace: true });
+      // Use window.location for a clean redirect
+      window.location.href = '/admin-control';
     } catch (error: any) {
       console.error('Sign out error:', error);
       toast({

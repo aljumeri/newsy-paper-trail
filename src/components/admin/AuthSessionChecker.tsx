@@ -45,8 +45,9 @@ const AuthSessionChecker: React.FC<AuthSessionCheckerProps> = ({ onSessionCheckC
         
         if (data.session) {
           console.log("AuthSessionChecker: Valid session found, navigating to dashboard");
-          // Navigate once and avoid multiple redirects
-          window.location.href = '/admin/dashboard';
+          // Use hard redirect to admin-control/panel to break any loops
+          window.location.href = '/admin-control/panel';
+          return; // Important: stop execution here
         } else {
           console.log("AuthSessionChecker: No active session found");
           setIsPageLoading(false);
@@ -60,7 +61,7 @@ const AuthSessionChecker: React.FC<AuthSessionCheckerProps> = ({ onSessionCheckC
       }
     };
     
-    // Run session check immediately
+    // Run session check immediately (once)
     checkSession();
     
     return () => {
@@ -70,17 +71,19 @@ const AuthSessionChecker: React.FC<AuthSessionCheckerProps> = ({ onSessionCheckC
 
   // Set up auth state listener - with flags to prevent multiple redirects
   useEffect(() => {
-    // Set up auth state change listener that doesn't return a promise
+    let isRedirecting = false;
+    
+    // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!isMounted.current) return;
+      if (!isMounted.current || isRedirecting) return;
       
-      // Ensure we only perform synchronous operations and don't return anything
       console.log("Auth state changed in AuthSessionChecker:", event);
       
       if (event === 'SIGNED_IN' && session) {
-        console.log("User signed in, navigating to dashboard");
-        // Use window.location to prevent multiple redirects
-        window.location.href = '/admin/dashboard';
+        console.log("User signed in, navigating to panel");
+        isRedirecting = true;
+        // Use hard redirect to break any loops
+        window.location.href = '/admin-control/panel';
       }
     });
     

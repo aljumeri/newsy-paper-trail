@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -23,11 +23,18 @@ const AdminControl = () => {
   const [activeTab, setActiveTab] = useState('login');
   const navigate = useNavigate();
   const { toast } = useToast();
+  const sessionCheckComplete = useRef(false);
 
-  // Check for existing session on component mount
+  // Check for existing session - only once
   useEffect(() => {
+    // Skip if already checked to prevent multiple checks
+    if (sessionCheckComplete.current) return;
+    
     const checkSession = async () => {
       try {
+        console.log("Checking session once...");
+        sessionCheckComplete.current = true;
+        
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -51,10 +58,14 @@ const AdminControl = () => {
     checkSession();
   }, [navigate]);
 
-  // Set up auth state change listener
+  // Set up auth state change listener once
   useEffect(() => {
+    console.log("Setting up auth state listener");
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log("Auth state changed:", event);
+        
         if (event === 'SIGNED_IN' && session) {
           console.log("User signed in, navigating to control panel");
           navigate('/admin-control/panel', { replace: true });
@@ -63,6 +74,7 @@ const AdminControl = () => {
     );
     
     return () => {
+      console.log("Cleaning up auth listener");
       subscription.unsubscribe();
     };
   }, [navigate]);

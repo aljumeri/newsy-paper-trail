@@ -11,8 +11,9 @@ const AuthSessionChecker: React.FC<AuthSessionCheckerProps> = ({ onSessionCheckC
   const [isPageLoading, setIsPageLoading] = useState(true);
   const navigate = useNavigate();
   const isMounted = useRef(true);
+  const checkPerformed = useRef(false);
 
-  // Check session on component mount
+  // Check session on component mount - only once
   useEffect(() => {
     console.log("AuthSessionChecker: Component mounted, checking session...");
     
@@ -20,7 +21,11 @@ const AuthSessionChecker: React.FC<AuthSessionCheckerProps> = ({ onSessionCheckC
     isMounted.current = true;
     
     const checkSession = async () => {
+      // Skip if check already performed
+      if (checkPerformed.current) return;
+      
       try {
+        checkPerformed.current = true;
         console.log("AuthSessionChecker: Starting session check");
         
         if (!isMounted.current) return;
@@ -40,7 +45,7 @@ const AuthSessionChecker: React.FC<AuthSessionCheckerProps> = ({ onSessionCheckC
         
         if (data.session) {
           console.log("AuthSessionChecker: Valid session found, navigating to dashboard");
-          // Use window.location for more reliable navigation
+          // Navigate once and avoid multiple redirects
           window.location.href = '/admin/dashboard';
         } else {
           console.log("AuthSessionChecker: No active session found");
@@ -63,7 +68,7 @@ const AuthSessionChecker: React.FC<AuthSessionCheckerProps> = ({ onSessionCheckC
     };
   }, [navigate, onSessionCheckComplete]);
 
-  // Set up auth state listener
+  // Set up auth state listener - with flags to prevent multiple redirects
   useEffect(() => {
     // Set up auth state change listener that doesn't return a promise
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -74,7 +79,7 @@ const AuthSessionChecker: React.FC<AuthSessionCheckerProps> = ({ onSessionCheckC
       
       if (event === 'SIGNED_IN' && session) {
         console.log("User signed in, navigating to dashboard");
-        // Use window.location for more reliable navigation that doesn't return a promise
+        // Use window.location to prevent multiple redirects
         window.location.href = '/admin/dashboard';
       }
     });

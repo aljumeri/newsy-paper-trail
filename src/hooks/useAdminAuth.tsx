@@ -94,3 +94,5 @@ export function useAdminAuth() {
 
   return { isAdmin, isLoading };
 }
+
+export default useAdminAuth;

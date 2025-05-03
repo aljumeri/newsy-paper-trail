@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 // Import refactored components
-import { useAdminAuth } from '@/hooks/useAdminAuth';
+import useAdminAuth from '@/hooks/useAdminAuth';
 import NewsletterHeader from '@/components/newsletter/NewsletterHeader';
 import NewsletterForm from '@/components/newsletter/NewsletterForm';
 import NewsletterPreview from '@/components/newsletter/NewsletterPreview';

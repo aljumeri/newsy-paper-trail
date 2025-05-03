@@ -6,7 +6,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 // Import refactored components
-import useAdminAuth from '@/hooks/useAdminAuth';
 import NewsletterHeader from '@/components/newsletter/NewsletterHeader';
 import NewsletterForm from '@/components/newsletter/NewsletterForm';
 import NewsletterPreview from '@/components/newsletter/NewsletterPreview';
@@ -19,8 +18,22 @@ const ComposeNewsletter = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  // Use the admin auth hook
-  const { user } = useAdminAuth();
+  // Check auth state on component mount
+  React.useEffect(() => {
+    const checkAuth = async () => {
+      const { data, error } = await supabase.auth.getSession();
+      if (error || !data.session) {
+        toast({
+          title: "يرجى تسجيل الدخول",
+          description: "يجب أن تكون مسجل الدخول للوصول إلى هذه الصفحة",
+          variant: "destructive"
+        });
+        navigate('/admin-control');
+      }
+    };
+    
+    checkAuth();
+  }, [navigate, toast]);
 
   const handleSaveNewsletter = async () => {
     if (!subject.trim() || !content.trim()) {
@@ -32,25 +45,30 @@ const ComposeNewsletter = () => {
       return;
     }
     
-    if (!user) {
-      toast({
-        title: "خطأ في التحقق",
-        description: "يجب أن تكون مسجل الدخول كمسؤول",
-        variant: "destructive"
-      });
-      return;
-    }
-    
     setIsLoading(true);
     
     try {
+      // Get current user
+      const { data: sessionData } = await supabase.auth.getSession();
+      
+      if (!sessionData.session) {
+        toast({
+          title: "خطأ في التحقق",
+          description: "يجب أن تكون مسجل الدخول كمسؤول",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      const userId = sessionData.session.user.id;
+      
       // Save newsletter
       const { error } = await supabase
         .from('newsletters')
         .insert({
           subject, 
           content, 
-          created_by: user.id
+          created_by: userId
         });
       
       if (error) {

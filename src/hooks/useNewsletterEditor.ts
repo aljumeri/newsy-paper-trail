@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from "@/integrations/supabase/client";
-import useAdminAuth from '@/hooks/useAdminAuth';
 
 export const useNewsletterEditor = () => {
   const [subject, setSubject] = useState('');
@@ -14,13 +13,50 @@ export const useNewsletterEditor = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { user } = useAdminAuth();
 
   useEffect(() => {
     const loadNewsletter = async () => {
       try {
-        if (!user) {
-          console.log("No user found, waiting for auth check to complete");
+        // First check if user is authenticated
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError || !sessionData.session) {
+          toast({
+            title: "يرجى تسجيل الدخول",
+            description: "يجب أن تكون مسجل الدخول للوصول إلى هذه الصفحة",
+            variant: "destructive"
+          });
+          navigate('/admin-control');
+          return;
+        }
+        
+        const userId = sessionData.session.user.id;
+        
+        // Check if user is admin by querying admin_users table directly
+        const { data: adminData, error: adminError } = await supabase
+          .from('admin_users')
+          .select('id')
+          .eq('id', userId)
+          .single();
+        
+        if (adminError && adminError.code !== 'PGRST116') {
+          console.error('Admin check error:', adminError);
+          toast({
+            title: "خطأ في التحقق من الصلاحيات",
+            description: "حدث خطأ أثناء التحقق من صلاحيات المسؤول",
+            variant: "destructive"
+          });
+          navigate('/admin-control');
+          return;
+        }
+        
+        if (!adminData) {
+          toast({
+            title: "غير مصرح",
+            description: "ليس لديك صلاحيات المسؤول للوصول إلى هذه الصفحة",
+            variant: "destructive"
+          });
+          navigate('/admin-control');
           return;
         }
         
@@ -48,7 +84,7 @@ export const useNewsletterEditor = () => {
         }
         
         setIsLoading(false);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error loading newsletter:', error);
         toast({
           title: "خطأ في التحميل",
@@ -59,10 +95,8 @@ export const useNewsletterEditor = () => {
       }
     };
     
-    if (user) {
-      loadNewsletter();
-    }
-  }, [id, navigate, toast, user]);
+    loadNewsletter();
+  }, [id, navigate, toast]);
 
   const handleUpdateNewsletter = async () => {
     if (!subject.trim() || !content.trim()) {
@@ -74,18 +108,21 @@ export const useNewsletterEditor = () => {
       return;
     }
     
-    if (!user) {
-      toast({
-        title: "خطأ في التحقق",
-        description: "يجب أن تكون مسجل الدخول كمسؤول",
-        variant: "destructive"
-      });
-      return;
-    }
-    
     setIsSaving(true);
     
     try {
+      // Get current session
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !sessionData.session) {
+        toast({
+          title: "خطأ في التحقق",
+          description: "يجب أن تكون مسجل الدخول كمسؤول",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       const { error } = await supabase
         .from('newsletters')
         .update({ 

@@ -57,39 +57,49 @@ const AdminControlPanel = () => {
         const currentUser = data.session.user;
         setUser(currentUser);
         
-        // Check if user is an admin
-        const { data: adminData, error: adminError } = await supabase.rpc(
-          'get_admin_status',
-          { user_id: currentUser.id }
-        );
-        
-        if (adminError) {
-          console.error('Admin status check error:', adminError);
-          toast({
-            title: "خطأ في التحقق من صلاحيات المسؤول",
-            description: adminError.message,
-            variant: "destructive"
-          });
-          redirectToLogin();
-          return;
+        // Rather than checking admin status via RPC which causes recursion,
+        // Check directly from the admin_users table
+        if (currentUser) {
+          try {
+            const { data: adminData, error: adminError } = await supabase
+              .from('admin_users')
+              .select('id')
+              .eq('id', currentUser.id)
+              .single();
+            
+            if (adminError && adminError.code !== 'PGRST116') { // PGRST116 is "not found"
+              console.error('Admin status check error:', adminError);
+              toast({
+                title: "خطأ في التحقق من صلاحيات المسؤول",
+                description: adminError.message,
+                variant: "destructive"
+              });
+              redirectToLogin();
+              return;
+            }
+            
+            // If adminData exists, user is admin
+            const isUserAdmin = !!adminData;
+            setIsAdmin(isUserAdmin);
+            
+            if (!isUserAdmin) {
+              console.log('User is not an admin');
+              toast({
+                title: "غير مصرح",
+                description: "ليس لديك صلاحيات للوصول إلى لوحة التحكم",
+                variant: "destructive"
+              });
+              redirectToLogin();
+              return;
+            }
+            
+            setIsChecking(false);
+            fetchData(currentUser);
+          } catch (err) {
+            console.error('Admin status check failed:', err);
+            redirectToLogin();
+          }
         }
-        
-        // Convert adminData to boolean explicitly to prevent type errors
-        setIsAdmin(Boolean(adminData));
-        
-        if (!adminData) {
-          console.log('User is not an admin');
-          toast({
-            title: "غير مصرح",
-            description: "ليس لديك صلاحيات للوصول إلى لوحة التحكم",
-            variant: "destructive"
-          });
-          redirectToLogin();
-          return;
-        }
-        
-        setIsChecking(false);
-        fetchData(currentUser);
       } catch (err) {
         console.error('Auth check failed:', err);
         redirectToLogin();

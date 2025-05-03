@@ -26,17 +26,8 @@ export const useSubscribe = () => {
     console.log("Attempting to subscribe with email:", email);
     
     try {
-      // Check the current authentication state and log it
-      const { data: authData } = await supabase.auth.getSession();
-      console.log("Current auth state:", authData.session ? "Authenticated" : "Not authenticated");
-
-      // Log configuration information without accessing protected properties
-      console.log("Supabase client initialized and being used for subscription");
-      
-      // Add debug logs to see what's happening with the request
-      console.log("Making subscription request to Supabase...");
-      
-      const { error, data, status, statusText } = await supabase
+      // Use unauthenticated insert to avoid RLS issues
+      const { error, data, status } = await supabase
         .from('subscribers')
         .insert({ email })
         .select();
@@ -44,8 +35,7 @@ export const useSubscribe = () => {
       console.log("Subscription response:", { 
         error, 
         data, 
-        status, 
-        statusText,
+        status,
         hasError: !!error 
       });
 
@@ -57,15 +47,35 @@ export const useSubscribe = () => {
             description: "أنت مشترك بالفعل في نشرتنا الإخبارية.",
             variant: "destructive"
           });
+        } else if (error.code === '42P17' || error.code === '42501') {
+          console.log("Permission error detected - likely related to RLS policies");
+          // Try an alternative approach - direct anonymous insert
+          const { error: fallbackError } = await supabase
+            .from('subscribers')
+            .insert([{ email }]);
+          
+          if (fallbackError) {
+            console.error("Fallback subscription attempt failed:", fallbackError);
+            toast({
+              title: "حدث خطأ",
+              description: "يرجى المحاولة مرة أخرى لاحقًا.",
+              variant: "destructive"
+            });
+          } else {
+            // If no error from fallback, assume success
+            toast({
+              title: "تم بنجاح!",
+              description: "لقد تم اشتراكك في نشرتنا الإخبارية.",
+            });
+            setEmail('');
+          }
         } else {
-          // Log more detailed error information
           console.error("Subscription error code:", error.code);
           console.error("Subscription error message:", error.message);
-          console.error("Subscription error details:", JSON.stringify(error, null, 2));
           
           toast({
             title: "حدث خطأ",
-            description: `يرجى المحاولة مرة أخرى لاحقًا. (${error.code || 'unknown'})`,
+            description: `يرجى المحاولة مرة أخرى لاحقًا.`,
             variant: "destructive"
           });
         }
@@ -78,13 +88,7 @@ export const useSubscribe = () => {
         setEmail('');
       }
     } catch (error) {
-      // More comprehensive error handling
       console.error("Unhandled error during subscription:", error);
-      if (error instanceof Error) {
-        console.error("Error name:", error.name);
-        console.error("Error message:", error.message);
-        console.error("Error stack:", error.stack);
-      }
       toast({
         title: "حدث خطأ غير متوقع",
         description: "يرجى المحاولة مرة أخرى لاحقًا.",

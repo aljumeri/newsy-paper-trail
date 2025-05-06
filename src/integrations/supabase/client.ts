@@ -14,11 +14,17 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: typeof localStorage !== 'undefined' ? localStorage : undefined,
     detectSessionInUrl: true, // Enable session detection in URL
     flowType: 'pkce',
-    debug: true // Enable debug logging for auth
+    debug: true, // Enable debug logging for auth
+    // Add official supported domains
+    cookieOptions: {
+      domain: typeof window !== 'undefined' ? window.location.hostname : undefined,
+      secure: typeof window !== 'undefined' ? window.location.protocol === 'https:' : true
+    }
   },
   global: {
     headers: {
-      'x-client-domain': typeof window !== 'undefined' ? window.location.hostname : 'unknown'
+      'x-client-domain': typeof window !== 'undefined' ? window.location.hostname : 'unknown',
+      'x-client-info': 'lovable-custom-domain'
     },
     fetch: (...args: [RequestInfo, RequestInit?]) => fetch(...args)
   },
@@ -28,9 +34,11 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
 });
 
 // Enhanced session check with more detailed logging
+console.log("=============================================");
 console.log("Initializing Supabase client and checking session...");
 console.log("Current domain:", typeof window !== 'undefined' ? window.location.hostname : 'server-side');
 console.log("Current origin:", typeof window !== 'undefined' ? window.location.origin : 'server-side');
+console.log("Current protocol:", typeof window !== 'undefined' ? window.location.protocol : 'unknown');
 
 supabase.auth.getSession().then(({ data, error }) => {
   if (error) {
@@ -40,7 +48,6 @@ supabase.auth.getSession().then(({ data, error }) => {
     console.log("User email:", data.session.user.email);
     console.log("User ID:", data.session.user.id);
     console.log("Session expires:", new Date(data.session.expires_at * 1000).toLocaleString());
-    // Remove the reference to access_token_expires_at as it doesn't exist on Session type
   } else {
     console.log("Initial Supabase session check: No active session");
   }
@@ -51,10 +58,14 @@ supabase.auth.getSession().then(({ data, error }) => {
 // Setup auth change listener
 if (typeof window !== 'undefined') {
   supabase.auth.onAuthStateChange((event, session) => {
+    console.log("=============================================");
     console.log("Auth state changed:", event);
     console.log("Session present:", session ? "Yes" : "No");
+    console.log("Current domain:", window.location.hostname);
+    console.log("Current origin:", window.location.origin);
     if (session) {
       console.log("User email:", session.user.email);
     }
+    console.log("=============================================");
   });
 }

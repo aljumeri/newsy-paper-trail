@@ -34,12 +34,15 @@ const App = () => {
   const currentDomain = window.location.hostname;
   const currentOrigin = window.location.origin;
   const currentPath = window.location.pathname;
+  const currentProtocol = window.location.protocol;
   
   console.log("=============================================");
   console.log("App component rendering with routes");
   console.log("Current domain:", currentDomain);
   console.log("Current origin:", currentOrigin);
+  console.log("Current protocol:", currentProtocol);
   console.log("Current path:", currentPath);
+  console.log("User agent:", navigator.userAgent);
   console.log("=============================================");
   
   return (

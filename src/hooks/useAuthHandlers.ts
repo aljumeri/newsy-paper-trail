@@ -9,6 +9,7 @@ export const useAuthHandlers = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const { toast } = useToast();
+  const origin = window.location.origin;
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,6 +18,8 @@ export const useAuthHandlers = () => {
     
     try {
       console.log("Attempting login with:", email);
+      console.log("Current origin:", origin);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -24,14 +27,14 @@ export const useAuthHandlers = () => {
       
       if (error) throw error;
       
-      console.log("Login successful, redirecting to dashboard");
+      console.log("Login successful, redirecting to panel");
       toast({
         title: "تم تسجيل الدخول بنجاح",
         description: "مرحبًا بعودتك!"
       });
       
-      // Use direct navigation instead of React Router
-      window.location.href = '/admin/dashboard';
+      // Use relative path for navigation on any domain
+      window.location.href = '/admin-control/panel';
     } catch (error: any) {
       console.error('Login error:', error);
       setAuthError(error.message || "فشل تسجيل الدخول. يرجى التحقق من بيانات الاعتماد الخاصة بك.");
@@ -52,11 +55,13 @@ export const useAuthHandlers = () => {
     
     try {
       console.log("Attempting registration with:", email);
+      console.log("Current origin:", origin);
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: window.location.origin + '/admin/dashboard',
+          emailRedirectTo: `${origin}/admin-control/panel`,
         }
       });
       
@@ -78,14 +83,14 @@ export const useAuthHandlers = () => {
         });
         
         if (!signInError) {
-          console.log("Auto-login successful, redirecting to dashboard");
+          console.log("Auto-login successful, redirecting to panel");
           toast({
             title: "تم التسجيل والدخول بنجاح",
             description: "تم إنشاء حساب المسؤول الخاص بك وتسجيل الدخول."
           });
           
-          // Direct navigation after successful login
-          window.location.href = '/admin/dashboard';
+          // Use relative path for navigation on any domain
+          window.location.href = '/admin-control/panel';
         }
       } catch (signInErr) {
         console.error("Auto-login error:", signInErr);

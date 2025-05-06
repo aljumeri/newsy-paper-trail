@@ -36,11 +36,12 @@ const AuthSessionChecker: React.FC<AuthSessionCheckerProps> = ({ onSessionCheckC
           console.log("AuthSessionChecker: Valid session found for user:", data.session.user.email);
           console.log("Session expires at:", new Date(data.session.expires_at * 1000).toLocaleString());
           
-          // Use absolute URL with origin to ensure proper redirect on any domain
-          const redirectUrl = `${origin}/admin-control/panel`;
-          console.log("Redirecting to:", redirectUrl);
+          // Always use relative URL to ensure proper navigation on any domain
+          const redirectPath = '/admin-control/panel';
+          console.log("Redirecting to:", redirectPath);
           
-          window.location.href = redirectUrl;
+          // Use relative path for redirection to work on any domain
+          window.location.href = redirectPath;
           return;
         } else {
           console.log("AuthSessionChecker: No session found");

@@ -1,18 +1,19 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { X, Facebook, Mail } from 'lucide-react';
 
 const Footer = () => {
   return (
     <footer className="bg-neutral-800 text-neutral-300 pt-16 pb-8">
       <div className="container">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
           <div>
             <Link to="/" className="inline-block mb-4">
               <span className="font-serif font-bold text-2xl text-white">نشرة<span className="text-purple-400">سولو</span></span>
             </Link>
             <p className="text-neutral-400 mb-4">
-              رؤى مدروسة حول الذكاء الاصطناعي والتكنولوجيا والأعمال — توصل مباشرة إلى بريدك الإلكتروني كل أسبوع.
+              ملخصات منتقاة من أخبار وأدوات الذكاء الاصطناعي تُرسل إليك دون إزعاج، وبتوقيت يناسبك.
             </p>
           </div>
           
@@ -35,33 +36,21 @@ const Footer = () => {
           </div>
           
           <div>
-            <h4 className="font-medium text-white mb-4 text-lg">قانوني</h4>
-            <ul className="space-y-2">
-              <li>
-                <Link to="/privacy" className="hover:text-white transition-colors">سياسة الخصوصية</Link>
-              </li>
-              <li>
-                <Link to="/terms" className="hover:text-white transition-colors">شروط الخدمة</Link>
-              </li>
-              <li>
-                <Link to="/cookies" className="hover:text-white transition-colors">سياسة ملفات تعريف الارتباط</Link>
-              </li>
-            </ul>
-          </div>
-          
-          <div>
             <h4 className="font-medium text-white mb-4 text-lg">تواصل معنا</h4>
-            <ul className="space-y-2">
-              <li>
-                <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">تويتر</a>
-              </li>
-              <li>
-                <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">لينكد إن</a>
-              </li>
-              <li>
-                <a href="mailto:hello@papertrail.com" className="hover:text-white transition-colors">راسلنا</a>
-              </li>
-            </ul>
+            <div className="flex gap-4">
+              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors p-2 bg-neutral-700 rounded-full">
+                <X size={20} />
+                <span className="sr-only">تويتر</span>
+              </a>
+              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors p-2 bg-neutral-700 rounded-full">
+                <Facebook size={20} />
+                <span className="sr-only">فيسبوك</span>
+              </a>
+              <a href="mailto:hello@papertrail.com" className="hover:text-white transition-colors p-2 bg-neutral-700 rounded-full">
+                <Mail size={20} />
+                <span className="sr-only">البريد الإلكتروني</span>
+              </a>
+            </div>
           </div>
         </div>
         

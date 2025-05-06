@@ -12,6 +12,7 @@ import AdminControl from "./pages/AdminControl";
 import AdminControlPanel from "./pages/AdminControlPanel";
 import ComposeNewsletter from "./pages/ComposeNewsletter";
 import EditNewsletter from "./pages/EditNewsletter";
+import NewsletterDetail from "./pages/NewsletterDetail";
 
 // Configure QueryClient with error handling
 const queryClient = new QueryClient({
@@ -42,6 +43,7 @@ const App = () => {
             <Route path="/" element={<Index />} />
             <Route path="/archives" element={<Archives />} />
             <Route path="/about" element={<About />} />
+            <Route path="/newsletter/:id" element={<NewsletterDetail />} />
             
             {/* Admin Control Routes - New working implementation */}
             <Route path="/admin-control" element={<AdminControl />} />

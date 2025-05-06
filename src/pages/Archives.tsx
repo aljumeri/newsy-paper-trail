@@ -3,6 +3,7 @@ import React from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Link } from 'react-router-dom';
 
 // بيانات موسعة للإصدارات السابقة
 const archiveIssues = [
@@ -83,9 +84,9 @@ const Archives = () => {
                   <CardContent className="py-2">
                     <p className="text-neutral-600">{issue.excerpt}</p>
                     <div className="mt-4">
-                      <a href="#" className="text-purple-600 hover:text-purple-700 font-medium">
+                      <Link to={`/newsletter/${issue.id}`} className="text-purple-600 hover:text-purple-700 font-medium">
                         قراءة العدد ←
-                      </a>
+                      </Link>
                     </div>
                   </CardContent>
                 </Card>

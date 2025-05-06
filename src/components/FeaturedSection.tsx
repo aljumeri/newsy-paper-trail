@@ -2,6 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
 
 // بيانات الإصدارات السابقة
 const newsletterIssues = [
@@ -57,8 +58,14 @@ const FeaturedSection = () => {
                 <p className="text-neutral-600">{issue.excerpt}</p>
               </CardContent>
               <CardFooter className="pt-2 pb-5">
-                <Button variant="outline" className="hover:bg-blue-50 border-blue-200 text-blue-700 hover:text-blue-800">
-                  قراءة العدد
+                <Button 
+                  variant="outline" 
+                  className="hover:bg-blue-50 border-blue-200 text-blue-700 hover:text-blue-800"
+                  asChild
+                >
+                  <Link to={`/newsletter/${issue.id}`}>
+                    قراءة العدد
+                  </Link>
                 </Button>
               </CardFooter>
             </Card>
@@ -66,8 +73,8 @@ const FeaturedSection = () => {
         </div>
         
         <div className="text-center mt-12">
-          <Button variant="link" className="text-blue-600 hover:text-blue-700 text-lg">
-            عرض كل الأرشيف ←
+          <Button variant="link" className="text-blue-600 hover:text-blue-700 text-lg" asChild>
+            <Link to="/archives">عرض كل الأرشيف ←</Link>
           </Button>
         </div>
       </div>

@@ -58,18 +58,13 @@ const App = () => {
             <Route path="/about" element={<About />} />
             <Route path="/newsletter/:id" element={<NewsletterDetail />} />
             
-            {/* Admin Routes with exact paths */}
+            {/* Admin Routes */}
             <Route path="/admin-control" element={<AdminControl />} />
             <Route path="/admin-control/panel" element={<AdminControlPanel />} />
             <Route path="/admin-control/compose" element={<ComposeNewsletter />} />
             <Route path="/admin-control/edit/:id" element={<EditNewsletter />} />
             
-            {/* Redirect old admin routes to new ones */}
-            <Route path="/admin" element={<Navigate replace to="/admin-control" />} />
-            <Route path="/admin/dashboard" element={<Navigate replace to="/admin-control/panel" />} />
-            <Route path="/admin/compose" element={<Navigate replace to="/admin-control/compose" />} />
-            <Route path="/admin/edit/:id" element={<Navigate replace to="/admin-control/edit/:id" />} />
-            <Route path="/admin/send/:id" element={<Navigate replace to="/admin-control/panel" />} />
+            {/* Removed old admin redirects as they're no longer needed */}
             
             {/* Catch-all route for 404 */}
             <Route path="*" element={<NotFound />} />

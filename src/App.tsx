@@ -32,6 +32,8 @@ const queryClient = new QueryClient({
 
 const App = () => {
   console.log("App component rendering with routes");
+  console.log("Current domain:", window.location.hostname);
+  console.log("Current path:", window.location.pathname);
   
   return (
     <QueryClientProvider client={queryClient}>

@@ -13,6 +13,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from '@/hooks/use-toast';
 import AuthErrorAlert from '@/components/admin/AuthErrorAlert';
 import AuthLoadingState from '@/components/admin/AuthLoadingState';
+import LoginForm from '@/components/admin/LoginForm';
+import RegisterForm from '@/components/admin/RegisterForm';
 
 const AdminControl = () => {
   const [email, setEmail] = useState('');
@@ -24,6 +26,14 @@ const AdminControl = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const sessionCheckComplete = useRef(false);
+  const domainName = window.location.hostname;
+
+  // Log the domain for debugging
+  useEffect(() => {
+    console.log("Current domain:", domainName);
+    console.log("Current pathname:", window.location.pathname);
+    console.log("Current URL:", window.location.href);
+  }, [domainName]);
 
   // Check for existing session - only once
   useEffect(() => {
@@ -85,6 +95,7 @@ const AdminControl = () => {
     setAuthError(null);
     
     try {
+      console.log("Attempting login with:", email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -210,6 +221,7 @@ const AdminControl = () => {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">لوحة التحكم</CardTitle>
             <CardDescription>قم بتسجيل الدخول أو أنشئ حساب مسؤول جديد</CardDescription>
+            <CardDescription className="mt-2 text-blue-600">الموقع الحالي: {domainName}</CardDescription>
           </CardHeader>
           <CardContent>
             <AuthErrorAlert error={authError} />
@@ -221,75 +233,25 @@ const AdminControl = () => {
               </TabsList>
               
               <TabsContent value="login">
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <label htmlFor="login-email" className="block text-sm font-medium">البريد الإلكتروني</label>
-                    <Input
-                      id="login-email"
-                      type="email"
-                      placeholder="admin@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="w-full"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="login-password" className="block text-sm font-medium">كلمة المرور</label>
-                    <Input
-                      id="login-password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      className="w-full"
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? "جارِ تسجيل الدخول..." : "تسجيل الدخول"}
-                  </Button>
-                </form>
+                <LoginForm 
+                  email={email}
+                  setEmail={setEmail}
+                  password={password}
+                  setPassword={setPassword}
+                  onSubmit={handleLogin}
+                  isLoading={isLoading}
+                />
               </TabsContent>
               
               <TabsContent value="register">
-                <form onSubmit={handleRegister} className="space-y-4">
-                  <div className="space-y-2">
-                    <label htmlFor="register-email" className="block text-sm font-medium">البريد الإلكتروني</label>
-                    <Input
-                      id="register-email"
-                      type="email"
-                      placeholder="admin@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="w-full"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="register-password" className="block text-sm font-medium">كلمة المرور</label>
-                    <Input
-                      id="register-password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      className="w-full"
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    className="w-full bg-green-600 hover:bg-green-700 text-white"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? "جارِ إنشاء الحساب..." : "إنشاء حساب جديد"}
-                  </Button>
-                </form>
+                <RegisterForm
+                  email={email}
+                  setEmail={setEmail}
+                  password={password}
+                  setPassword={setPassword}
+                  onSubmit={handleRegister}
+                  isLoading={isLoading}
+                />
               </TabsContent>
             </Tabs>
           </CardContent>

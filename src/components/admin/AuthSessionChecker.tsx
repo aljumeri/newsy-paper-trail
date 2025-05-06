@@ -8,12 +8,15 @@ type AuthSessionCheckerProps = {
 
 const AuthSessionChecker: React.FC<AuthSessionCheckerProps> = ({ onSessionCheckComplete }) => {
   const [isLoading, setIsLoading] = useState(true);
+  const domain = window.location.hostname;
 
   // Single session check on mount
   useEffect(() => {
     const checkSession = async () => {
       try {
         console.log("AuthSessionChecker: Checking session");
+        console.log("Current domain:", domain);
+        console.log("Full URL:", window.location.href);
         
         const { data, error } = await supabase.auth.getSession();
         
@@ -42,7 +45,7 @@ const AuthSessionChecker: React.FC<AuthSessionCheckerProps> = ({ onSessionCheckC
     };
 
     checkSession();
-  }, [onSessionCheckComplete]);
+  }, [onSessionCheckComplete, domain]);
 
   if (isLoading) {
     return (

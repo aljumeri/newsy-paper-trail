@@ -14,10 +14,13 @@ const useAdminAuth = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const isUnmounted = useRef(false);
+  const domain = window.location.hostname;
 
   // Handle session and admin status check
   useEffect(() => {
     console.log("Starting auth check in useAdminAuth...");
+    console.log("Current domain:", domain);
+    console.log("Current path:", window.location.pathname);
     
     // Setup unmount flag for cleanup
     isUnmounted.current = false;
@@ -55,8 +58,11 @@ const useAdminAuth = () => {
         
         console.log("Checking if user is admin:", userId);
         
-        // Use RPC to call the is_admin_user function
-        const { data, error } = await supabase.rpc('is_admin_user', { user_id: userId });
+        // Use direct query rather than RPC to avoid recursion
+        const { data, error } = await supabase
+          .from('admin_users')
+          .select('id')
+          .eq('id', userId);
         
         if (isUnmounted.current) return;
         
@@ -73,11 +79,12 @@ const useAdminAuth = () => {
             navigate('/admin-control');
           }
         } else {
-          console.log("Admin status result:", data);
-          setIsAdmin(data); // Set the boolean value directly
+          const hasAdminRole = data && data.length > 0;
+          console.log("Admin status result:", hasAdminRole);
+          setIsAdmin(hasAdminRole);
           
           // If not admin and trying to access protected routes
-          if (!data && window.location.pathname.includes('/admin-control/')) {
+          if (!hasAdminRole && window.location.pathname.includes('/admin-control/')) {
             toast({
               title: "صلاحيات غير كافية",
               description: "ليس لديك صلاحيات الوصول إلى هذه الصفحة",
@@ -149,7 +156,7 @@ const useAdminAuth = () => {
       isUnmounted.current = true;
       subscription.unsubscribe();
     };
-  }, [navigate, toast]);
+  }, [navigate, toast, domain]);
 
   // Handle sign out
   const handleSignOut = async () => {

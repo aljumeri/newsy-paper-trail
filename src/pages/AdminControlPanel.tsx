@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from '@/hooks/use-toast';
 import useAdminAuth from '@/hooks/useAdminAuth';
 import { RefreshCw, Plus } from 'lucide-react';
+import DashboardHeader from '@/components/admin/DashboardHeader';
 
 interface Subscriber {
   id: string;
@@ -33,12 +34,16 @@ const AdminControlPanel = () => {
   const navigate = useNavigate();
   const { formatDate } = useFormatDate();
   const { toast } = useToast();
+  const domain = window.location.hostname;
   
   // Use our admin auth hook
   const { user, isAdmin, loading, handleSignOut } = useAdminAuth();
 
   // Redirect if not admin
   useEffect(() => {
+    console.log("AdminControlPanel: Current domain:", domain);
+    console.log("AdminControlPanel: Checking auth state - isAdmin:", isAdmin, "user:", user ? "exists" : "null", "loading:", loading);
+    
     if (!loading && !isAdmin && user === null) {
       toast({
         title: "صلاحيات غير كافية",
@@ -49,7 +54,7 @@ const AdminControlPanel = () => {
     } else if (!loading && isAdmin && user !== null) {
       fetchData();
     }
-  }, [isAdmin, loading, navigate, toast, user]);
+  }, [isAdmin, loading, navigate, toast, user, domain]);
 
   const fetchData = async () => {
     setDataLoading(true);
@@ -120,6 +125,7 @@ const AdminControlPanel = () => {
         <div className="text-center p-6 bg-white rounded-lg shadow-md">
           <p className="text-xl font-bold mb-2">جارٍ التحقق من الصلاحيات...</p>
           <p className="text-gray-500">يرجى الانتظار قليلاً</p>
+          <p className="mt-3 text-blue-600">الموقع الحالي: {domain}</p>
         </div>
       </div>
     );
@@ -127,38 +133,17 @@ const AdminControlPanel = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow">
-        <div className="container py-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold">لوحة تحكم المسؤول</h1>
-            <p className="text-sm text-gray-500">مرحبًا، {user?.email}</p>
-          </div>
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              onClick={() => navigate('/admin-control/compose')}
-            >
-              <Plus className="w-4 h-4 ml-1" /> إنشاء نشرة إخبارية جديدة
-            </Button>
-            <Button 
-              variant="outline"
-              onClick={handleRefreshData}
-              disabled={refreshing}
-            >
-              <RefreshCw className={`w-4 h-4 ml-1 ${refreshing ? 'animate-spin' : ''}`} /> 
-              {refreshing ? 'جارٍ التحديث...' : 'تحديث البيانات'}
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={handleSignOut}
-            >
-              تسجيل الخروج
-            </Button>
-          </div>
-        </div>
-      </div>
+      <DashboardHeader user={user} handleSignOut={handleSignOut} />
       
       <div className="container py-8">
+        <div className="bg-white p-4 mb-4 rounded-lg shadow border border-blue-300">
+          <p className="text-lg font-bold">معلومات التصحيح:</p>
+          <p>الموقع الحالي: {domain}</p>
+          <p>حالة المستخدم: {user ? 'متصل' : 'غير متصل'}</p>
+          <p>البريد الإلكتروني: {user?.email || 'غير متاح'}</p>
+          <p>المسؤول: {isAdmin ? 'نعم' : 'لا'}</p>
+        </div>
+
         <StatisticsCards 
           subscribersCount={subscribers.length}
           newslettersCount={newsletters.length}

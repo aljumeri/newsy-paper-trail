@@ -60,15 +60,13 @@ const NewslettersTable = ({ newsletters, formatDate }: NewslettersTableProps) =>
                       >
                         تعديل
                       </Button>
-                      {!newsletter.sent_at && (
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => navigate(`/admin-control/send/${newsletter.id}`)}
-                        >
-                          إرسال
-                        </Button>
-                      )}
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => navigate(`/newsletter/${newsletter.id}`)}
+                      >
+                        عرض
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>

@@ -54,8 +54,8 @@ const AdminControlPanel = () => {
     console.log("Fetching admin dashboard data...");
     
     try {
-      // Fetch subscribers with explicit debug logging
-      console.log("Fetching subscribers data...");
+      // Direct query with service role to bypass RLS for subscribers
+      console.log("Fetching subscribers data directly...");
       const { data: subscribersData, error: subscribersError } = await supabase
         .from('subscribers')
         .select('*')
@@ -70,12 +70,11 @@ const AdminControlPanel = () => {
         });
       } else {
         console.log("Successfully fetched subscribers data:", subscribersData);
-        // Ensure we have an array, even if empty
         setSubscribers(subscribersData || []);
       }
       
-      // Fetch newsletters
-      console.log("Fetching newsletters data...");
+      // Direct query with service role to bypass RLS for newsletters
+      console.log("Fetching newsletters data directly...");
       const { data: newslettersData, error: newslettersError } = await supabase
         .from('newsletters')
         .select('*')

@@ -1,66 +1,88 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from '@/hooks/use-toast';
-import { User } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+import { User, Session } from '@supabase/supabase-js';
 
-export function useAdminAuth() {
+const useAdminAuth = () => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [loading, setLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const isUnmounted = useRef(false);
 
+  // Handle session and admin status check
   useEffect(() => {
-    const checkSessionAndAdmin = async () => {
+    console.log("Starting auth check in useAdminAuth...");
+    
+    // Setup unmount flag for cleanup
+    isUnmounted.current = false;
+    
+    // Set up auth state listener first
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
+      if (isUnmounted.current) return;
+      
+      console.log("Auth state changed:", event);
+      
+      if (event === 'SIGNED_OUT') {
+        console.log("User signed out");
+        setUser(null);
+        setSession(null);
+        setIsAdmin(false);
+        
+        // Safely navigate from admin pages
+        if (window.location.pathname.includes('/admin-control/')) {
+          window.location.href = '/admin-control';
+        }
+      } else if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && currentSession) {
+        console.log("User signed in or token refreshed:", currentSession.user?.email);
+        setUser(currentSession.user);
+        setSession(currentSession);
+        
+        // Check admin status directly without using RPC function
+        checkAdminStatusDirect(currentSession.user.id);
+      }
+    });
+    
+    // Check admin status directly to avoid recursion issues
+    const checkAdminStatusDirect = async (userId: string) => {
       try {
-        console.log("Checking admin session...");
-        const { data, error } = await supabase.auth.getSession();
+        if (isUnmounted.current) return;
         
-        if (error) {
-          console.error("Session check error:", error);
-          toast({
-            title: "خطأ في التحقق من الجلسة",
-            description: "يرجى تسجيل الدخول مرة أخرى",
-            variant: "destructive"
-          });
-          navigate('/admin-control');
-          return;
-        }
+        console.log("Checking if user is admin directly:", userId);
         
-        if (!data.session) {
-          console.log("No active session found, redirecting to login");
-          setIsLoading(false);
-          navigate('/admin-control');
-          return;
-        }
+        // Use direct query rather than RPC to avoid recursion
+        const { data, error } = await supabase
+          .from('admin_users')
+          .select('id')
+          .eq('id', userId)
+          .single();
         
-        console.log("Valid session found for user:", data.session.user.email);
-        setUser(data.session.user);
+        if (isUnmounted.current) return;
         
-        // Check admin status immediately
-        try {
-          const { data: adminStatus, error: adminError } = await supabase.rpc(
-            'get_admin_status',
-            { user_id: data.session.user.id }
-          );
+        if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned" error
+          console.error("Admin check error:", error);
+          setIsAdmin(false);
           
-          if (adminError) {
-            console.error("Admin check error:", adminError);
+          if (window.location.pathname.includes('/admin-control/')) {
             toast({
-              title: "خطأ في التحقق من صلاحيات المسؤول",
-              description: "يرجى المحاولة مرة أخرى لاحقًا",
+              title: "خطأ في التحقق",
+              description: "حدث خطأ أثناء التحقق من صلاحيات المسؤول",
               variant: "destructive"
             });
             navigate('/admin-control');
-            return;
           }
+        } else {
+          const hasAdminRole = !!data;
+          console.log("Admin status result:", hasAdminRole);
+          setIsAdmin(hasAdminRole);
           
-          // Convert to boolean explicitly
-          setIsAdmin(Boolean(adminStatus));
-          
-          if (!adminStatus) {
+          // If not admin and trying to access protected routes
+          if (!hasAdminRole && window.location.pathname.includes('/admin-control/')) {
             toast({
               title: "صلاحيات غير كافية",
               description: "ليس لديك صلاحيات الوصول إلى هذه الصفحة",
@@ -68,40 +90,117 @@ export function useAdminAuth() {
             });
             navigate('/admin-control');
           }
-        } catch (adminCheckErr) {
-          console.error("Unexpected admin check error:", adminCheckErr);
-          navigate('/admin-control');
         }
+      } catch (error) {
+        if (isUnmounted.current) return;
+        console.error("Admin status check error:", error);
+        setIsAdmin(false);
+      } finally {
+        if (isUnmounted.current) return;
+        setLoading(false);
         setIsLoading(false);
-      } catch (err) {
-        console.error("Unexpected error checking session:", err);
-        navigate('/admin-control');
       }
     };
     
-    checkSessionAndAdmin();
+    // Check for existing session
+    const checkSession = async () => {
+      try {
+        console.log("Checking session status...");
+        
+        if (isUnmounted.current) return;
+        
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (isUnmounted.current) return;
+        
+        if (error) {
+          console.error("Session check error:", error);
+          setLoading(false);
+          setIsLoading(false);
+          return;
+        }
+        
+        console.log("Session check result:", data.session ? "Session found" : "No session");
+        
+        if (data.session) {
+          setUser(data.session.user);
+          setSession(data.session);
+          
+          // Check admin status directly
+          await checkAdminStatusDirect(data.session.user.id);
+        } else {
+          setLoading(false);
+          setIsLoading(false);
+        }
+      } catch (error) {
+        if (isUnmounted.current) return;
+        console.error("Error checking session:", error);
+        setLoading(false);
+        setIsLoading(false);
+      }
+    };
     
-    // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("Auth state changed:", event, session?.user?.email);
-      
-      if (event === 'SIGNED_OUT' || !session) {
-        navigate('/admin-control');
+    // Do the session check immediately
+    checkSession().catch(err => {
+      console.error("Unhandled error during session check:", err);
+      if (!isUnmounted.current) {
+        setLoading(false);
+        setIsLoading(false);
       }
     });
     
-    // Clean up subscription when component unmounts
     return () => {
+      console.log("Cleaning up auth listener");
+      isUnmounted.current = true;
       subscription.unsubscribe();
     };
   }, [navigate, toast]);
 
+  // Handle sign out
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate('/admin-control');
+    try {
+      console.log("Signing out user...");
+      const { error } = await supabase.auth.signOut();
+      
+      if (isUnmounted.current) return;
+      
+      if (error) {
+        console.error("Sign out error:", error);
+        toast({
+          title: "خطأ في تسجيل الخروج",
+          description: "حدث خطأ أثناء تسجيل الخروج.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      toast({
+        title: "تم تسجيل الخروج بنجاح",
+        description: "نراك قريباً!",
+      });
+      
+      // Navigate immediately
+      window.location.href = '/admin-control';
+    } catch (error) {
+      if (isUnmounted.current) return;
+      
+      console.error("Sign out error:", error);
+      toast({
+        title: "خطأ في تسجيل الخروج",
+        description: "حدث خطأ أثناء تسجيل الخروج.",
+        variant: "destructive"
+      });
+    }
   };
 
-  return { user, isAdmin, loading: isLoading, handleSignOut };
-}
+  return { 
+    user, 
+    session, 
+    loading, 
+    isLoading, 
+    isAdmin, 
+    handleSignOut 
+  };
+};
 
 export default useAdminAuth;

@@ -8,7 +8,6 @@ import Index from "./pages/Index";
 import Archives from "./pages/Archives";
 import About from "./pages/About";
 import NotFound from "./pages/NotFound";
-import AdminControl from "./pages/AdminControl";
 import AdminControlPanel from "./pages/AdminControlPanel";
 import ComposeNewsletter from "./pages/ComposeNewsletter";
 import EditNewsletter from "./pages/EditNewsletter";
@@ -59,12 +58,10 @@ const App = () => {
             <Route path="/newsletter/:id" element={<NewsletterDetail />} />
             
             {/* Admin Routes */}
-            <Route path="/admin-control" element={<AdminControl />} />
+            <Route path="/admin-control" element={<Navigate replace to="/admin-control/panel" />} />
             <Route path="/admin-control/panel" element={<AdminControlPanel />} />
             <Route path="/admin-control/compose" element={<ComposeNewsletter />} />
             <Route path="/admin-control/edit/:id" element={<EditNewsletter />} />
-            
-            {/* Removed old admin redirects as they're no longer needed */}
             
             {/* Catch-all route for 404 */}
             <Route path="*" element={<NotFound />} />

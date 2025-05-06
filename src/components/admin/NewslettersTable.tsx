@@ -31,7 +31,7 @@ const NewslettersTable = ({ newsletters, formatDate }: NewslettersTableProps) =>
   return (
     <Card>
       <CardHeader>
-        <CardTitle>النشرات الإخبارية</CardTitle>
+        <CardTitle>النشرات الإخبارية <span className="text-xs text-muted-foreground">(v2025.05.06)</span></CardTitle>
       </CardHeader>
       <CardContent className="overflow-x-auto">
         <Table>

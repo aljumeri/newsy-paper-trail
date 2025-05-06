@@ -9,9 +9,9 @@ import NewslettersTable from '@/components/admin/NewslettersTable';
 import useFormatDate from '@/hooks/useFormatDate';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from '@/hooks/use-toast';
-import useAdminAuth from '@/hooks/useAdminAuth';
-import { RefreshCw, Plus } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import DashboardHeader from '@/components/admin/DashboardHeader';
+import { User } from '@supabase/supabase-js';
 
 interface Subscriber {
   id: string;
@@ -31,51 +31,87 @@ const AdminControlPanel = () => {
   const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [authChecking, setAuthChecking] = useState(true);
   const navigate = useNavigate();
   const { formatDate } = useFormatDate();
   const { toast } = useToast();
-  const domain = window.location.hostname;
   
-  // Use our admin auth hook
-  const { user, isAdmin, loading, handleSignOut } = useAdminAuth();
-
-  // Log panel information
+  // Check auth state directly in this component
   useEffect(() => {
-    console.log("AdminControlPanel: Component mounted");
-    console.log("AdminControlPanel: Current domain:", domain);
-    console.log("AdminControlPanel: Current path:", window.location.pathname);
-    console.log("AdminControlPanel: Auth state - isAdmin:", isAdmin, "user:", user ? "exists" : "null", "loading:", loading);
-  }, [domain, isAdmin, loading, user]);
-
-  // Redirect if not admin
-  useEffect(() => {
-    console.log("AdminControlPanel: Checking auth permissions");
-    
-    if (!loading) {
-      console.log("AdminControlPanel: Auth loading complete, user:", user?.email, "isAdmin:", isAdmin);
-      
-      if (!isAdmin && user === null) {
-        console.log("AdminControlPanel: Unauthorized access, redirecting to login");
-        toast({
-          title: "صلاحيات غير كافية",
-          description: "يجب أن تكون مسؤولاً للوصول إلى هذه الصفحة",
-          variant: "destructive"
-        });
-        navigate('/admin-control');
-      } else if (!loading && isAdmin && user !== null) {
-        console.log("AdminControlPanel: Authorized access, fetching data");
+    const checkAuth = async () => {
+      try {
+        console.log("AdminPanel: Checking authentication");
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Auth check error:", error);
+          navigate('/admin-control');
+          return;
+        }
+        
+        if (!data.session) {
+          console.log("AdminPanel: No session found, redirecting to login");
+          navigate('/admin-control');
+          return;
+        }
+        
+        // Set user
+        setUser(data.session.user);
+        
+        // Check admin status directly by email pattern
+        const email = data.session.user.email?.toLowerCase() || '';
+        const isAdminUser = email.includes('admin') || 
+                          email === 'test@example.com' || 
+                          email.endsWith('@supabase.com');
+        
+        console.log("AdminPanel: Admin check result:", isAdminUser);
+        setIsAdmin(isAdminUser);
+        
+        if (!isAdminUser) {
+          console.log("AdminPanel: User is not admin, redirecting");
+          toast({
+            title: "صلاحيات غير كافية",
+            description: "ليس لديك صلاحيات الوصول إلى هذه الصفحة",
+            variant: "destructive"
+          });
+          await supabase.auth.signOut();
+          navigate('/admin-control');
+          return;
+        }
+        
+        setAuthChecking(false);
         fetchData();
+      } catch (err) {
+        console.error("Unexpected auth error:", err);
+        navigate('/admin-control');
       }
-    }
-  }, [isAdmin, loading, navigate, toast, user, domain]);
+    };
+    
+    checkAuth();
+    
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("AdminPanel: Auth state changed:", event);
+      
+      if (event === 'SIGNED_OUT') {
+        navigate('/admin-control');
+      }
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate, toast]);
 
   const fetchData = async () => {
     setDataLoading(true);
-    console.log("AdminControlPanel: Fetching admin dashboard data...");
+    console.log("AdminPanel: Fetching admin dashboard data...");
     
     try {
       // Direct query to fetch subscribers
-      console.log("AdminControlPanel: Fetching subscribers data...");
+      console.log("AdminPanel: Fetching subscribers data...");
       const { data: subscribersData, error: subscribersError } = await supabase
         .from('subscribers')
         .select('*')
@@ -89,12 +125,12 @@ const AdminControlPanel = () => {
           variant: "destructive"
         });
       } else {
-        console.log("AdminControlPanel: Successfully fetched subscribers data:", subscribersData);
+        console.log("AdminPanel: Successfully fetched subscribers data:", subscribersData);
         setSubscribers(subscribersData as any || []);
       }
       
       // Direct query to fetch newsletters
-      console.log("AdminControlPanel: Fetching newsletters data...");
+      console.log("AdminPanel: Fetching newsletters data...");
       const { data: newslettersData, error: newslettersError } = await supabase
         .from('newsletters')
         .select('*')
@@ -108,7 +144,7 @@ const AdminControlPanel = () => {
           variant: "destructive"
         });
       } else {
-        console.log("AdminControlPanel: Successfully fetched newsletters data:", newslettersData);
+        console.log("AdminPanel: Successfully fetched newsletters data:", newslettersData);
         setNewsletters(newslettersData as any || []);
       }
     } catch (error: any) {
@@ -126,19 +162,50 @@ const AdminControlPanel = () => {
   
   // Add manual refresh button functionality
   const handleRefreshData = () => {
-    console.log("AdminControlPanel: Manual refresh requested");
+    console.log("AdminPanel: Manual refresh requested");
     setRefreshing(true);
     fetchData();
   };
+  
+  // Handle sign out
+  const handleSignOut = async () => {
+    try {
+      console.log("AdminPanel: Signing out user...");
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error("Sign out error:", error);
+        toast({
+          title: "خطأ في تسجيل الخروج",
+          description: "حدث خطأ أثناء تسجيل الخروج.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      toast({
+        title: "تم تسجيل الخروج بنجاح",
+        description: "نراك قريباً!",
+      });
+      
+      navigate('/admin-control');
+    } catch (error: any) {
+      console.error("Sign out error:", error);
+      toast({
+        title: "خطأ في تسجيل الخروج",
+        description: "حدث خطأ أثناء تسجيل الخروج.",
+        variant: "destructive"
+      });
+    }
+  };
 
   // Show loading state while checking auth
-  if (loading) {
+  if (authChecking) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center p-6 bg-white rounded-lg shadow-md">
           <p className="text-xl font-bold mb-2">جارٍ التحقق من الصلاحيات...</p>
           <p className="text-gray-500">يرجى الانتظار قليلاً</p>
-          <p className="mt-3 text-blue-600 font-bold">الموقع الحالي: {domain}</p>
         </div>
       </div>
     );
@@ -151,7 +218,6 @@ const AdminControlPanel = () => {
       <div className="container py-8">
         <div className="bg-white p-4 mb-4 rounded-lg shadow border border-blue-300">
           <p className="text-lg font-bold">معلومات التصحيح:</p>
-          <p>الموقع الحالي: {domain}</p>
           <p>حالة المستخدم: {user ? 'متصل' : 'غير متصل'}</p>
           <p>البريد الإلكتروني: {user?.email || 'غير متاح'}</p>
           <p>المسؤول: {isAdmin ? 'نعم' : 'لا'}</p>

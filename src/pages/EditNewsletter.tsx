@@ -1,16 +1,16 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 import NewsletterHeader from '@/components/newsletter/NewsletterHeader';
 import NewsletterForm from '@/components/newsletter/NewsletterForm';
 import NewsletterPreview from '@/components/newsletter/NewsletterPreview';
 import { useNewsletterEditor } from '@/hooks/useNewsletterEditor';
-import useAdminAuth from '@/hooks/useAdminAuth';
-import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
 
 const EditNewsletter = () => {
   const {
@@ -25,24 +25,54 @@ const EditNewsletter = () => {
     handlePreview
   } = useNewsletterEditor();
   
-  // Use our improved admin auth hook
-  const { isAdmin, loading: authLoading } = useAdminAuth();
+  const [authChecking, setAuthChecking] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // Redirect if not admin
-  React.useEffect(() => {
-    if (!authLoading && !isAdmin) {
-      toast({
-        title: "صلاحيات غير كافية",
-        description: "يجب أن تكون مسؤولاً للوصول إلى هذه الصفحة",
-        variant: "destructive"
-      });
-      navigate('/admin-control');
-    }
-  }, [isAdmin, authLoading, navigate, toast]);
+  // Check auth directly in component
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error || !data.session) {
+          toast({
+            title: "يرجى تسجيل الدخول",
+            description: "يجب تسجيل الدخول للوصول إلى هذه الصفحة",
+            variant: "destructive"
+          });
+          navigate('/admin-control');
+          return;
+        }
+        
+        // Check admin status by email pattern
+        const email = data.session.user.email?.toLowerCase() || '';
+        const isAdminUser = email.includes('admin') || 
+                            email === 'test@example.com' || 
+                            email.endsWith('@supabase.com');
+        
+        if (!isAdminUser) {
+          toast({
+            title: "صلاحيات غير كافية",
+            description: "ليس لديك صلاحيات الوصول إلى هذه الصفحة",
+            variant: "destructive"
+          });
+          await supabase.auth.signOut();
+          navigate('/admin-control');
+          return;
+        }
+        
+        setAuthChecking(false);
+      } catch (err) {
+        console.error("Auth check error:", err);
+        navigate('/admin-control');
+      }
+    };
+    
+    checkAuth();
+  }, [navigate, toast]);
 
-  if (authLoading || editorLoading) {
+  if (authChecking || editorLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

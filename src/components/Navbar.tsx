@@ -27,6 +27,11 @@ const Navbar = () => {
     <nav className="border-b border-gray-100 py-4 bg-white/95 sticky top-0 z-50 backdrop-blur-sm">
       <div className="container flex items-center justify-between">
         <Link to="/" className="flex items-center">
+          <img 
+            src="/lovable-uploads/b40e2534-e282-4e60-9ca0-91070f9c6ad7.png" 
+            alt="نشرة سولو"
+            className="h-10 mr-2"
+          />
           <span className="font-serif font-bold text-2xl text-purple-500">نشرة<span className="text-neutral-800">سولو</span></span>
         </Link>
 

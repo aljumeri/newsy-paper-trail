@@ -13,7 +13,12 @@ const NewsletterHeader: React.FC<NewsletterHeaderProps> = ({ title = "النشر
   return (
     <div className="bg-white shadow">
       <div className="container py-4 flex justify-between items-center">
-        <div>
+        <div className="flex items-center">
+          <img 
+            src="/lovable-uploads/b40e2534-e282-4e60-9ca0-91070f9c6ad7.png" 
+            alt="نشرة سولو"
+            className="h-10 mr-3"
+          />
           <h1 className="text-2xl font-bold">{title}</h1>
         </div>
         <div className="flex gap-2">

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Facebook, Mail } from 'lucide-react';
@@ -8,12 +9,7 @@ const Footer = () => {
       <div className="container">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
           <div>
-            <Link to="/" className="inline-block mb-4 flex items-center">
-              <img 
-                src="/lovable-uploads/b40e2534-e282-4e60-9ca0-91070f9c6ad7.png" 
-                alt="نشرة سولو"
-                className="h-8 mr-2"
-              />
+            <Link to="/" className="inline-block mb-4">
               <span className="font-serif font-bold text-2xl text-white">نشرة<span className="text-purple-400">سولو</span></span>
             </Link>
             <p className="text-neutral-400 mb-4">

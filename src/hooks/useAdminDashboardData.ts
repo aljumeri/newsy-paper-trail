@@ -44,7 +44,7 @@ const useAdminDashboardData = (user: User | null) => {
         const { data, error } = await supabase
           .from('admin_users')
           .select('id')
-          .eq('id', user.id)
+          .eq('id', user.id as any)
           .single();
         
         if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned" error
@@ -106,7 +106,7 @@ const useAdminDashboardData = (user: User | null) => {
           }
         } else if (isMounted.current && subscribersData) {
           console.log("Successfully fetched subscribers:", subscribersData);
-          setSubscribers(subscribersData as unknown as Subscriber[]);
+          setSubscribers(subscribersData as any);
         }
         
         // Fetch newsletters
@@ -123,7 +123,7 @@ const useAdminDashboardData = (user: User | null) => {
           }
         } else if (isMounted.current && newslettersData) {
           console.log("Successfully fetched newsletters:", newslettersData);
-          setNewsletters(newslettersData as unknown as Newsletter[]);
+          setNewsletters(newslettersData as any);
         }
         
       } catch (error: any) {

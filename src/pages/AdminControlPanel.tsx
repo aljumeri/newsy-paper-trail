@@ -90,7 +90,7 @@ const AdminControlPanel = () => {
         });
       } else {
         console.log("AdminControlPanel: Successfully fetched subscribers data:", subscribersData);
-        setSubscribers(subscribersData || []);
+        setSubscribers(subscribersData as any || []);
       }
       
       // Direct query to fetch newsletters
@@ -109,7 +109,7 @@ const AdminControlPanel = () => {
         });
       } else {
         console.log("AdminControlPanel: Successfully fetched newsletters data:", newslettersData);
-        setNewsletters(newslettersData || []);
+        setNewsletters(newslettersData as any || []);
       }
     } catch (error: any) {
       console.error('Unexpected error fetching data:', error);

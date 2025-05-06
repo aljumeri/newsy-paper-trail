@@ -62,8 +62,8 @@ export const useNewsletterEditor = () => {
           const { data: newsletter, error } = await supabase
             .from('newsletters')
             .select('*')
-            .eq('id', id)
-            .single();
+            .eq('id', id as any)
+            .maybeSingle();
           
           if (error) throw error;
           
@@ -125,8 +125,8 @@ export const useNewsletterEditor = () => {
         .update({ 
           subject, 
           content 
-        })
-        .eq('id', id as string);
+        } as any)
+        .eq('id', id as any);
       
       if (error) throw error;
       

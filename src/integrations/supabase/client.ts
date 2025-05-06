@@ -14,12 +14,7 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: typeof localStorage !== 'undefined' ? localStorage : undefined,
     detectSessionInUrl: true, // Enable session detection in URL
     flowType: 'pkce',
-    debug: true, // Enable debug logging for auth
-    // Add official supported domains
-    cookieOptions: {
-      domain: typeof window !== 'undefined' ? window.location.hostname : undefined,
-      secure: typeof window !== 'undefined' ? window.location.protocol === 'https:' : true
-    }
+    debug: true // Enable debug logging for auth
   },
   global: {
     headers: {

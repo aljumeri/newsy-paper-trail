@@ -71,7 +71,7 @@ const ComposeNewsletter = () => {
           subject, 
           content, 
           created_by: userId
-        });
+        } as any);
       
       if (error) {
         console.error('Newsletter save error:', error);

@@ -59,7 +59,7 @@ const useAdminAuth = () => {
         const { data, error } = await supabase
           .from('admin_users')
           .select('id')
-          .eq('id', userId);
+          .eq('id', userId as any);
         
         if (isUnmounted.current) return;
         

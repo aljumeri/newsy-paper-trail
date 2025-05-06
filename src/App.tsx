@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Archives from "./pages/Archives";
 import About from "./pages/About";
@@ -12,6 +12,7 @@ import AdminControlPanel from "./pages/AdminControlPanel";
 import ComposeNewsletter from "./pages/ComposeNewsletter";
 import EditNewsletter from "./pages/EditNewsletter";
 import NewsletterDetail from "./pages/NewsletterDetail";
+import AdminControl from "./pages/AdminControl";
 
 // Configure QueryClient with error handling
 const queryClient = new QueryClient({
@@ -58,7 +59,7 @@ const App = () => {
             <Route path="/newsletter/:id" element={<NewsletterDetail />} />
             
             {/* Admin Routes */}
-            <Route path="/admin-control" element={<Navigate replace to="/admin-control/panel" />} />
+            <Route path="/admin-control" element={<AdminControl />} />
             <Route path="/admin-control/panel" element={<AdminControlPanel />} />
             <Route path="/admin-control/compose" element={<ComposeNewsletter />} />
             <Route path="/admin-control/edit/:id" element={<EditNewsletter />} />

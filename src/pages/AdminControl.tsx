@@ -6,18 +6,16 @@ import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import AuthTabs from '@/components/admin/AuthTabs';
-import AuthLoadingState from '@/components/admin/AuthLoadingState';
 
 const AdminControl = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [checkingSession, setCheckingSession] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
-  
-  // Check for existing session on mount
+
+  // Simple check for existing session without any redirects
   useEffect(() => {
     const checkSession = async () => {
       try {
@@ -26,14 +24,13 @@ const AdminControl = () => {
         
         if (error) {
           console.error("Session check error:", error);
-          setCheckingSession(false);
           return;
         }
         
         if (data.session) {
           console.log("AdminControl: Session found for user:", data.session.user.email);
           
-          // Check admin status by email pattern
+          // Check admin status by email pattern without redirecting
           const email = data.session.user.email?.toLowerCase() || '';
           const isAdminUser = email.includes('admin') || 
                               email === 'test@example.com' || 
@@ -42,28 +39,15 @@ const AdminControl = () => {
           if (isAdminUser) {
             console.log("AdminControl: User is admin, redirecting to panel");
             navigate('/admin-control/panel');
-            return;
-          } else {
-            console.log("AdminControl: User is not admin");
-            // Sign out non-admin users
-            await supabase.auth.signOut();
-            toast({
-              title: "صلاحيات غير كافية",
-              description: "ليس لديك صلاحيات الوصول إلى هذه الصفحة",
-              variant: "destructive"
-            });
           }
         }
-        
-        setCheckingSession(false);
       } catch (err) {
         console.error("Error checking session:", err);
-        setCheckingSession(false);
       }
     };
     
     checkSession();
-  }, [navigate, toast]);
+  }, [navigate]);
 
   // Handle login
   const handleLogin = async (e: React.FormEvent) => {
@@ -81,6 +65,7 @@ const AdminControl = () => {
       if (error) {
         console.error("Login error:", error);
         setAuthError(error.message);
+        setIsLoading(false);
         return;
       }
       
@@ -108,12 +93,12 @@ const AdminControl = () => {
             description: "ليس لديك صلاحيات الوصول إلى هذه الصفحة",
             variant: "destructive"
           });
+          setIsLoading(false);
         }
       }
     } catch (error: any) {
       console.error("Unexpected login error:", error);
       setAuthError(error.message || "حدث خطأ أثناء تسجيل الدخول");
-    } finally {
       setIsLoading(false);
     }
   };
@@ -134,6 +119,7 @@ const AdminControl = () => {
       if (error) {
         console.error("Registration error:", error);
         setAuthError(error.message);
+        setIsLoading(false);
         return;
       }
       
@@ -148,6 +134,7 @@ const AdminControl = () => {
           title: "التحقق من البريد الإلكتروني مطلوب",
           description: "يرجى التحقق من بريدك الإلكتروني لإكمال عملية التسجيل."
         });
+        setIsLoading(false);
       } else if (data.session) {
         // Check admin status by email pattern
         const userEmail = data.user?.email?.toLowerCase() || '';
@@ -165,19 +152,15 @@ const AdminControl = () => {
             description: "ليس لديك صلاحيات الوصول إلى هذه الصفحة",
             variant: "destructive"
           });
+          setIsLoading(false);
         }
       }
     } catch (error: any) {
       console.error("Unexpected registration error:", error);
       setAuthError(error.message || "حدث خطأ أثناء إنشاء الحساب");
-    } finally {
       setIsLoading(false);
     }
   };
-
-  if (checkingSession) {
-    return <AuthLoadingState />;
-  }
 
   return (
     <div className="min-h-screen flex flex-col">

@@ -29,11 +29,24 @@ const EditNewsletter = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // Check auth directly in component
+  // Check auth with timeout to prevent infinite loading
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        // Add timeout to prevent infinite loading
+        const timeoutId = setTimeout(() => {
+          console.log("EditNewsletter: Auth check timeout reached");
+          toast({
+            title: "مهلة التحقق انتهت",
+            description: "يرجى تسجيل الدخول مرة أخرى",
+            variant: "destructive"
+          });
+          navigate('/admin-control');
+        }, 5000);
+        
         const { data, error } = await supabase.auth.getSession();
+        
+        clearTimeout(timeoutId);
         
         if (error || !data.session) {
           toast({

@@ -19,11 +19,24 @@ const ComposeNewsletter = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  // Check auth directly in component
+  // Check auth directly in component with timeout
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        // Add timeout to prevent infinite loading
+        const timeoutId = setTimeout(() => {
+          console.log("ComposeNewsletter: Auth check timeout reached");
+          toast({
+            title: "مهلة التحقق انتهت",
+            description: "يرجى تسجيل الدخول مرة أخرى",
+            variant: "destructive"
+          });
+          navigate('/admin-control');
+        }, 5000);
+        
         const { data, error } = await supabase.auth.getSession();
+        
+        clearTimeout(timeoutId);
         
         if (error || !data.session) {
           toast({

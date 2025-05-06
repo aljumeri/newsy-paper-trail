@@ -38,12 +38,23 @@ const AdminControlPanel = () => {
   const { formatDate } = useFormatDate();
   const { toast } = useToast();
   
-  // Check auth state directly in this component
+  // Check auth state directly in this component with timeout for network issues
   useEffect(() => {
     const checkAuth = async () => {
       try {
         console.log("AdminPanel: Checking authentication");
+        
+        // Add a timeout to prevent infinite loading
+        const timeoutId = setTimeout(() => {
+          console.log("AdminPanel: Auth check timeout reached");
+          setAuthChecking(false);
+          navigate('/admin-control');
+        }, 5000); // 5 seconds timeout
+        
         const { data, error } = await supabase.auth.getSession();
+        
+        // Clear the timeout since we got a response
+        clearTimeout(timeoutId);
         
         if (error) {
           console.error("Auth check error:", error);
@@ -90,19 +101,6 @@ const AdminControlPanel = () => {
     };
     
     checkAuth();
-    
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("AdminPanel: Auth state changed:", event);
-      
-      if (event === 'SIGNED_OUT') {
-        navigate('/admin-control');
-      }
-    });
-    
-    return () => {
-      subscription.unsubscribe();
-    };
   }, [navigate, toast]);
 
   const fetchData = async () => {

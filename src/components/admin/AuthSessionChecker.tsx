@@ -9,14 +9,18 @@ type AuthSessionCheckerProps = {
 const AuthSessionChecker: React.FC<AuthSessionCheckerProps> = ({ onSessionCheckComplete }) => {
   const [isLoading, setIsLoading] = useState(true);
   const domain = window.location.hostname;
+  const fullUrl = window.location.href;
+  const origin = window.location.origin;
 
-  // Single session check on mount
+  // Enhanced session check on mount
   useEffect(() => {
     const checkSession = async () => {
       try {
-        console.log("AuthSessionChecker: Checking session");
+        console.log("=============================================");
+        console.log("AuthSessionChecker: Starting session check");
         console.log("Current domain:", domain);
-        console.log("Full URL:", window.location.href);
+        console.log("Full URL:", fullUrl);
+        console.log("Origin:", origin);
         console.log("Current path:", window.location.pathname);
         
         const { data, error } = await supabase.auth.getSession();
@@ -29,9 +33,14 @@ const AuthSessionChecker: React.FC<AuthSessionCheckerProps> = ({ onSessionCheckC
         }
         
         if (data.session) {
-          console.log("AuthSessionChecker: Valid session found");
-          // Simply redirect to panel page using relative path that works on any domain
-          window.location.href = '/admin-control/panel';
+          console.log("AuthSessionChecker: Valid session found for user:", data.session.user.email);
+          console.log("Session expires at:", new Date(data.session.expires_at * 1000).toLocaleString());
+          
+          // Use absolute URL with origin to ensure proper redirect on any domain
+          const redirectUrl = `${origin}/admin-control/panel`;
+          console.log("Redirecting to:", redirectUrl);
+          
+          window.location.href = redirectUrl;
           return;
         } else {
           console.log("AuthSessionChecker: No session found");
@@ -45,13 +54,16 @@ const AuthSessionChecker: React.FC<AuthSessionCheckerProps> = ({ onSessionCheckC
       }
     };
 
+    console.log("AuthSessionChecker: Component mounted");
     checkSession();
-  }, [onSessionCheckComplete, domain]);
+    console.log("=============================================");
+  }, [onSessionCheckComplete, domain, fullUrl, origin]);
 
   if (isLoading) {
     return (
       <div className="text-center">
         <p className="text-lg">جارٍ التحميل...</p>
+        <p className="text-sm text-gray-500">{domain}</p>
       </div>
     );
   }

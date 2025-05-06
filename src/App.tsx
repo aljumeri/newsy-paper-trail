@@ -31,9 +31,16 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
+  const currentDomain = window.location.hostname;
+  const currentOrigin = window.location.origin;
+  const currentPath = window.location.pathname;
+  
+  console.log("=============================================");
   console.log("App component rendering with routes");
-  console.log("Current domain:", window.location.hostname);
-  console.log("Current path:", window.location.pathname);
+  console.log("Current domain:", currentDomain);
+  console.log("Current origin:", currentOrigin);
+  console.log("Current path:", currentPath);
+  console.log("=============================================");
   
   return (
     <QueryClientProvider client={queryClient}>

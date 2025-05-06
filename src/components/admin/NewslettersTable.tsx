@@ -11,6 +11,7 @@ import {
   TableHead,
   TableCell
 } from '@/components/ui/table';
+import { Eye, Edit, ExternalLink } from 'lucide-react';
 
 interface Newsletter {
   id: string;
@@ -54,18 +55,28 @@ const NewslettersTable = ({ newsletters, formatDate }: NewslettersTableProps) =>
                   <TableCell>
                     <div className="flex gap-2">
                       <Button 
-                        variant="ghost" 
+                        variant="outline" 
                         size="sm"
                         onClick={() => navigate(`/admin-control/edit/${newsletter.id}`)}
                       >
-                        تعديل
+                        <Edit className="w-4 h-4 ml-1" /> تعديل
                       </Button>
                       <Button 
-                        variant="ghost" 
+                        variant="outline" 
                         size="sm"
                         onClick={() => navigate(`/newsletter/${newsletter.id}`)}
                       >
-                        عرض
+                        <Eye className="w-4 h-4 ml-1" /> عرض
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        asChild
+                        className="text-blue-500"
+                      >
+                        <a href={`/newsletter/${newsletter.id}`} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="w-4 h-4 ml-1" /> فتح في صفحة جديدة
+                        </a>
                       </Button>
                     </div>
                   </TableCell>

@@ -10,6 +10,7 @@ import useFormatDate from '@/hooks/useFormatDate';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from '@/hooks/use-toast';
 import useAdminAuth from '@/hooks/useAdminAuth';
+import { RefreshCw, Plus } from 'lucide-react';
 
 interface Subscriber {
   id: string;
@@ -28,11 +29,12 @@ const AdminControlPanel = () => {
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const navigate = useNavigate();
   const { formatDate } = useFormatDate();
   const { toast } = useToast();
   
-  // Use our improved admin auth hook
+  // Use our admin auth hook
   const { user, isAdmin, loading, handleSignOut } = useAdminAuth();
 
   // Redirect if not admin
@@ -54,8 +56,8 @@ const AdminControlPanel = () => {
     console.log("Fetching admin dashboard data...");
     
     try {
-      // Direct query with service role to bypass RLS for subscribers
-      console.log("Fetching subscribers data directly...");
+      // Direct query to fetch subscribers
+      console.log("Fetching subscribers data...");
       const { data: subscribersData, error: subscribersError } = await supabase
         .from('subscribers')
         .select('*')
@@ -73,8 +75,8 @@ const AdminControlPanel = () => {
         setSubscribers(subscribersData || []);
       }
       
-      // Direct query with service role to bypass RLS for newsletters
-      console.log("Fetching newsletters data directly...");
+      // Direct query to fetch newsletters
+      console.log("Fetching newsletters data...");
       const { data: newslettersData, error: newslettersError } = await supabase
         .from('newsletters')
         .select('*')
@@ -100,12 +102,14 @@ const AdminControlPanel = () => {
       });
     } finally {
       setDataLoading(false);
+      setRefreshing(false);
     }
   };
   
   // Add manual refresh button functionality
   const handleRefreshData = () => {
     console.log("Manual refresh requested");
+    setRefreshing(true);
     fetchData();
   };
 
@@ -134,13 +138,15 @@ const AdminControlPanel = () => {
               variant="outline" 
               onClick={() => navigate('/admin-control/compose')}
             >
-              إنشاء نشرة إخبارية جديدة
+              <Plus className="w-4 h-4 ml-1" /> إنشاء نشرة إخبارية جديدة
             </Button>
             <Button 
               variant="outline"
               onClick={handleRefreshData}
+              disabled={refreshing}
             >
-              تحديث البيانات
+              <RefreshCw className={`w-4 h-4 ml-1 ${refreshing ? 'animate-spin' : ''}`} /> 
+              {refreshing ? 'جارٍ التحديث...' : 'تحديث البيانات'}
             </Button>
             <Button 
               variant="outline" 

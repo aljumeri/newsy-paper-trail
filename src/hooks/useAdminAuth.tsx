@@ -59,12 +59,11 @@ const useAdminAuth = () => {
         const { data, error } = await supabase
           .from('admin_users')
           .select('id')
-          .eq('id', userId)
-          .single();
+          .eq('id', userId);
         
         if (isUnmounted.current) return;
         
-        if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned" error
+        if (error) {
           console.error("Admin check error:", error);
           setIsAdmin(false);
           
@@ -77,7 +76,7 @@ const useAdminAuth = () => {
             navigate('/admin-control');
           }
         } else {
-          const hasAdminRole = !!data;
+          const hasAdminRole = data && data.length > 0;
           console.log("Admin status result:", hasAdminRole);
           setIsAdmin(hasAdminRole);
           

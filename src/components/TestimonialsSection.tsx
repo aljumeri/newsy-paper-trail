@@ -5,27 +5,27 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const testimonials = [
   {
-    content: "أصبحت هذه النشرة الإخبارية طقسي الأسبوعي. الرؤى دائماً جديدة، مدروسة بعمق، ومفاجئة في تطبيقها على عملي.",
-    author: "أليكس مورغان",
-    role: "مدير المنتج، سترايب",
+    content: "أكثر شيء يعجبني في النشرة أنها توصلني لأخبار وأدوات ما كنت أسمع عنها، بدون ما أضيع وقتي في تويتر أو أتابع كل المواقع.",
+    author: "عبدالله القحطاني",
+    role: "مدير تطوير أعمال",
     avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=774&q=80"
   },
   {
-    content: "لقد اشتركت في عشرات النشرات الإخبارية على مر السنين، ونشرة سولو هي الوحيدة التي أخصص وقتاً لقراءتها كل أسبوع.",
-    author: "جيمس ويلسون",
-    role: "الرئيس التنفيذي، فيوتشرتك",
-    avatar: "https://images.unsplash.com/photo-1618374789415-3bd5c16483c7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1015&q=80"
-  },
-  {
-    content: "عمق التحليل مع الإيجاز في التقديم يجعل هذه النشرة متميزة. إنها مثل وجود محلل بارع في فريقك.",
-    author: "سارة تشن",
-    role: "استراتيجي استثمار",
+    content: "أحب بساطتها وتنظيمها. دائمًا ألقى فيها شيء مفيد سواء خبر أو أداة أو رابط يستحق الحفظ.",
+    author: "نورة العبدالله",
+    role: "باحثة تقنية",
     avatar: "https://images.unsplash.com/photo-1551836022-deb4988cc6c0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=774&q=80"
   },
   {
-    content: "ما يثير إعجابي أكثر هو كيف تحدد النشرة الاتجاهات الناشئة قبل أسابيع أو شهور من وصولها إلى التغطية الإعلامية السائدة.",
-    author: "مايكل ديفيس",
-    role: "رئيس الابتكار",
+    content: "جرّبت كثير نشرات بس أغلبها فيها حشو أو إعلانات. نشرة سولو مختلفة، خفيفة ومباشرة وفيها محتوى فعلاً له قيمة.",
+    author: "خالد الزهراني",
+    role: "مؤسس مشروع ناشئ",
+    avatar: "https://images.unsplash.com/photo-1618374789415-3bd5c16483c7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1015&q=80"
+  },
+  {
+    content: "وصلتني من توصية، وصارت جزء من روتيني الأسبوعي. تعجبني لأنها ما تتكلف، وتحط أشياء أحسّها فعلاً مفيدة.",
+    author: "ريما السبيعي",
+    role: "مهتمة بالتقنية والذكاء الاصطناعي",
     avatar: "https://images.unsplash.com/photo-1583195764036-6dc248ac07d9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1776&q=80"
   }
 ];

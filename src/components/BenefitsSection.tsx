@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { MessageSquare, Globe, Settings, BookOpen, Bell, Users, FileText, Award } from 'lucide-react';
+import { MessageSquare, Globe, Settings, BookOpen, Bell, Users, FileText, Award, GraduationCap } from 'lucide-react';
 
 const benefits = [
   {
@@ -37,6 +37,11 @@ const benefits = [
     icon: <FileText className="h-10 w-10 text-blue-600" />,
     title: "بدون تعقيد",
     description: "نقدم المعلومة كما هي من مصدرها لا نحلل أو نضيف توقعات، فقط ننقل لك المعلومة المفيدة كما وردت من مصادرها الموثوقة."
+  },
+  {
+    icon: <GraduationCap className="h-10 w-10 text-blue-600" />,
+    title: "دروس ومصادر تعليمية",
+    description: "نشارك دورات، شروحات، وأدلة مبسطة تساعدك على فهم وتطبيق مفاهيم الذكاء الاصطناعي بسهولة، سواء كنت مبتدئًا أو تطمح للتطور."
   }
 ];
 

@@ -24,10 +24,10 @@ interface SubscribersTableProps {
 
 const SubscribersTable = ({ subscribers, formatDate }: SubscribersTableProps) => {
   return (
-    <Card>
-      <CardHeader>
+    <Card className="border-2 border-green-500">
+      <CardHeader className="bg-green-50">
         <CardTitle className="flex items-center justify-between">
-          <span>قائمة المشتركين</span>
+          <span>قائمة المشتركين <span className="text-xs text-green-600 font-bold">(تحديث SOLO4AI)</span></span>
           <span className="text-sm font-normal text-muted-foreground">
             {subscribers.length} مشترك
           </span>

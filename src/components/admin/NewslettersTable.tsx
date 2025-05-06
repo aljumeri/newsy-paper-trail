@@ -29,9 +29,9 @@ const NewslettersTable = ({ newsletters, formatDate }: NewslettersTableProps) =>
   const navigate = useNavigate();
   
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>النشرات الإخبارية <span className="text-xs text-muted-foreground">(v2025.05.06)</span></CardTitle>
+    <Card className="border-2 border-blue-500">
+      <CardHeader className="bg-blue-50">
+        <CardTitle>النشرات الإخبارية <span className="text-xs text-blue-600 font-bold">(تحديث SOLO4AI - {new Date().toISOString().split('T')[0]})</span></CardTitle>
       </CardHeader>
       <CardContent className="overflow-x-auto">
         <Table>

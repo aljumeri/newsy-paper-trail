@@ -26,36 +26,36 @@ const About = () => {
               <div>
                 <h2 className="text-3xl font-bold mb-6 font-serif">مهمتنا</h2>
                 <p className="text-lg mb-4 text-neutral-700">
-                  في نشرة سولو، نؤمن بأن البقاء على اطلاع لا يجب أن يشعرك بالعمل. مهمتنا هي تقديم تحليل واضح وموجز ومدروس لأهم الاتجاهات في مجال الذكاء الاصطناعي والتكنولوجيا والأعمال والثقافة.
+                  في نشرة سولو، نؤمن بأن البقاء على اطلاع لا يجب أن يشعرك بالعمل. نشاركك أخبارًا وأدوات ومصادر في الذكاء الاصطناعي بطريقة بسيطة وواضحة، دون تعقيد أو مبالغة. نرسل لك النشرة فقط عندما يتوفر محتوى يستحق القراءة.
                 </p>
                 <p className="text-lg mb-6 text-neutral-700">
-                  تأسست في عام 2022، نمونا من مشروع صغير إلى نشرة إخبارية يثق بها الآلاف من المحترفين ورواد الأعمال والعقول الفضولية حول العالم.
+                  بدأنا كمبادرة شخصية، ومع الوقت انضم إلينا قراء مهتمون من مختلف التخصصات يبحثون عن محتوى مختصر وموثوق في عالم التقنية والذكاء الاصطناعي.
                 </p>
-                <h3 className="text-xl font-bold mb-3 font-serif">ما الذي يميزنا</h3>
+                <h3 className="text-xl font-bold mb-3 font-serif">ما الذي يميزنا؟</h3>
                 <ul className="space-y-2 mb-6 text-neutral-700">
                   <li className="flex items-start">
                     <svg className="h-6 w-6 text-purple-500 ml-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    <span>بحث عميق يتجاوز العناوين الرئيسية</span>
+                    <span>نختار المحتوى بعناية، ونشارك فقط ما نراه فعلاً يستحق</span>
                   </li>
                   <li className="flex items-start">
                     <svg className="h-6 w-6 text-purple-500 ml-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    <span>وجهات نظر متوازنة تتحدى التفكير التقليدي</span>
+                    <span>لا إعلانات، ولا ترويج لمنتجات أو خدمات</span>
                   </li>
                   <li className="flex items-start">
                     <svg className="h-6 w-6 text-purple-500 ml-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    <span>رؤى عملية يمكنك تطبيقها على الفور</span>
+                    <span>تصل النشرة عندما يكون هناك ما يستحق، لا وفق جدول ثابت</span>
                   </li>
                   <li className="flex items-start">
                     <svg className="h-6 w-6 text-purple-500 ml-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    <span>تنسيق موجز مصمم للمهنيين المشغولين</span>
+                    <span>نكتب بلغة واضحة ومباشرة، بدون تعقيد أو تكلّف</span>
                   </li>
                 </ul>
                 <Button className="bg-purple-500 hover:bg-purple-600">اشترك الآن</Button>

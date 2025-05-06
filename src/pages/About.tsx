@@ -84,10 +84,10 @@ const About = () => {
                   avatar: "https://randomuser.me/api/portraits/women/23.jpg"
                 },
                 {
-                  name: "داوود الأحمد",
-                  role: "كاتب رئيسي",
-                  bio: "متخصص في استراتيجية الأعمال وتحليل السوق مع خبرة تزيد عن 10 سنوات في مجال الاستشارات.",
-                  avatar: "https://randomuser.me/api/portraits/men/54.jpg"
+                  name: "م.أحمد العظم",
+                  role: "خبير تقني",
+                  bio: "خبير تقني يتمتع بخبرة تتجاوز 13 عامًا في مجالات البرمجيات والتحول الرقمي، مع تركيز خاص على الذكاء الاصطناعي وأدواته الحديثة.",
+                  avatar: "/lovable-uploads/cf263ba1-adf9-4592-8ef5-27d8f634093a.png"
                 },
                 {
                   name: "ميا جونسون",

@@ -5,8 +5,8 @@ import { Facebook, Mail } from 'lucide-react';
 
 const Footer = () => {
   return (
-    <footer className="bg-neutral-800 text-neutral-300 pt-16 pb-8">
-      <div className="container">
+    <footer className="bg-neutral-800 text-neutral-300 pt-12 pb-8">
+      <div className="container px-4 md:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
           <div>
             <Link to="/" className="inline-block mb-4">

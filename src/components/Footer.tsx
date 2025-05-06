@@ -7,7 +7,7 @@ const Footer = () => {
   return (
     <footer className="bg-neutral-800 text-neutral-300 pt-16 pb-8">
       <div className="container">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
           <div>
             <Link to="/" className="inline-block mb-4">
               <span className="font-serif font-bold text-2xl text-white">نشرة<span className="text-purple-400">سولو</span></span>
@@ -15,6 +15,23 @@ const Footer = () => {
             <p className="text-neutral-400 mb-4">
               ملخصات منتقاة من أخبار وأدوات الذكاء الاصطناعي تُرسل إليك دون إزعاج، وبتوقيت يناسبك.
             </p>
+          </div>
+          
+          <div>
+            <ul className="space-y-2 mt-4">
+              <li>
+                <Link to="/" className="hover:text-white transition-colors">الرئيسية</Link>
+              </li>
+              <li>
+                <Link to="/archives" className="hover:text-white transition-colors">الأرشيف</Link>
+              </li>
+              <li>
+                <Link to="/about" className="hover:text-white transition-colors">من نحن</Link>
+              </li>
+              <li>
+                <Link to="/subscribe" className="hover:text-white transition-colors">اشترك الآن</Link>
+              </li>
+            </ul>
           </div>
           
           <div>

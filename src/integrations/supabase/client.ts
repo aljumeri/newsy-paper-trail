@@ -40,7 +40,7 @@ supabase.auth.getSession().then(({ data, error }) => {
     console.log("User email:", data.session.user.email);
     console.log("User ID:", data.session.user.id);
     console.log("Session expires:", new Date(data.session.expires_at * 1000).toLocaleString());
-    console.log("Access token expires:", new Date(data.session.access_token_expires_at * 1000).toLocaleString());
+    // Remove the reference to access_token_expires_at as it doesn't exist on Session type
   } else {
     console.log("Initial Supabase session check: No active session");
   }

@@ -5,6 +5,10 @@ import App from './App.tsx'
 import './index.css'
 import { AdminAuthProvider } from './contexts/AdminAuthContext.tsx'
 
+// Log the domain on app start
+console.log("Initializing app on domain:", window.location.hostname);
+console.log("Full URL:", window.location.href);
+
 // Global error handler for uncaught promise rejections
 window.addEventListener('unhandledrejection', (event) => {
   // Suppress specific known errors that are handled elsewhere

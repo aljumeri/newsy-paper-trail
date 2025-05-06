@@ -4,17 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from '@/hooks/use-toast';
 import AuthErrorAlert from '@/components/admin/AuthErrorAlert';
 import AuthLoadingState from '@/components/admin/AuthLoadingState';
 import LoginForm from '@/components/admin/LoginForm';
 import RegisterForm from '@/components/admin/RegisterForm';
+import AuthSessionChecker from '@/components/admin/AuthSessionChecker';
 
 const AdminControl = () => {
   const [email, setEmail] = useState('');
@@ -23,68 +20,45 @@ const AdminControl = () => {
   const [authError, setAuthError] = useState<string | null>(null);
   const [isSessionChecking, setIsSessionChecking] = useState(true);
   const [activeTab, setActiveTab] = useState('login');
+  const [sessionCheckCompleted, setSessionCheckCompleted] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const sessionCheckComplete = useRef(false);
   const domainName = window.location.hostname;
+
+  console.log("AdminControl: Rendering with domain:", domainName);
+  console.log("AdminControl: Current URL:", window.location.href);
+
+  const handleSessionCheckComplete = () => {
+    console.log("Session check completed");
+    setSessionCheckCompleted(true);
+    setIsSessionChecking(false);
+  };
 
   // Log the domain for debugging
   useEffect(() => {
+    console.log("AdminControl: Domain check");
     console.log("Current domain:", domainName);
     console.log("Current pathname:", window.location.pathname);
     console.log("Current URL:", window.location.href);
   }, [domainName]);
 
-  // Check for existing session - only once
-  useEffect(() => {
-    // Skip if already checked to prevent multiple checks
-    if (sessionCheckComplete.current) return;
-    
-    const checkSession = async () => {
-      try {
-        console.log("Checking session once...");
-        sessionCheckComplete.current = true;
-        
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("Session check error:", error);
-          setIsSessionChecking(false);
-          return;
-        }
-        
-        if (data.session) {
-          console.log("Valid session found, navigating to control panel");
-          navigate('/admin-control/panel', { replace: true });
-        } else {
-          setIsSessionChecking(false);
-        }
-      } catch (err) {
-        console.error("Session check failed:", err);
-        setIsSessionChecking(false);
-      }
-    };
-    
-    checkSession();
-  }, [navigate]);
-
   // Set up auth state change listener once
   useEffect(() => {
-    console.log("Setting up auth state listener");
+    console.log("AdminControl: Setting up auth state listener");
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log("Auth state changed:", event);
+        console.log("AdminControl: Auth state changed:", event);
         
         if (event === 'SIGNED_IN' && session) {
-          console.log("User signed in, navigating to control panel");
+          console.log("AdminControl: User signed in, navigating to control panel");
           navigate('/admin-control/panel', { replace: true });
         }
       }
     );
     
     return () => {
-      console.log("Cleaning up auth listener");
+      console.log("AdminControl: Cleaning up auth listener");
       subscription.unsubscribe();
     };
   }, [navigate]);
@@ -95,7 +69,9 @@ const AdminControl = () => {
     setAuthError(null);
     
     try {
-      console.log("Attempting login with:", email);
+      console.log("AdminControl: Attempting login with:", email);
+      console.log("AdminControl: On domain:", domainName);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -107,6 +83,9 @@ const AdminControl = () => {
         title: "تم تسجيل الدخول بنجاح",
         description: "مرحبًا بعودتك!"
       });
+      
+      console.log("AdminControl: Login successful, navigating to panel");
+      navigate('/admin-control/panel', { replace: true });
     } catch (error: any) {
       console.error('Login error:', error);
       setAuthError(error.message || "فشل تسجيل الدخول. يرجى التحقق من بيانات الاعتماد الخاصة بك.");
@@ -126,19 +105,25 @@ const AdminControl = () => {
     setAuthError(null);
     
     try {
-      console.log("Attempting registration with:", email);
+      console.log("AdminControl: Attempting registration with:", email);
+      console.log("AdminControl: On domain:", domainName);
+      
+      // Use the current domain for redirect
+      const redirectTo = `${window.location.origin}/admin-control/panel`;
+      console.log("AdminControl: Redirect URL set to:", redirectTo);
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: window.location.origin + '/admin-control/panel',
+          emailRedirectTo: redirectTo,
         }
       });
       
       if (error) {
         // Special handling for "User already registered" error
         if (error.message.includes("registered")) {
-          console.log("User already registered, attempting to sign in instead");
+          console.log("AdminControl: User already registered, attempting to sign in instead");
           toast({
             title: "المستخدم مسجل بالفعل",
             description: "سنحاول تسجيل الدخول تلقائيًا"
@@ -160,13 +145,15 @@ const AdminControl = () => {
             title: "تم تسجيل الدخول بنجاح",
             description: "تم تسجيل الدخول بحساب موجود مسبقًا"
           });
+          
+          navigate('/admin-control/panel', { replace: true });
           return;
         } else {
           throw error;
         }
       }
       
-      console.log("Registration successful:", data);
+      console.log("AdminControl: Registration successful:", data);
       
       toast({
         title: "تم التسجيل بنجاح",
@@ -175,21 +162,23 @@ const AdminControl = () => {
       
       // Try immediate sign in after registration
       try {
-        console.log("Attempting automatic login after registration");
+        console.log("AdminControl: Attempting automatic login after registration");
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password
         });
         
         if (!signInError) {
-          console.log("Auto-login successful, redirecting to dashboard");
+          console.log("AdminControl: Auto-login successful, redirecting to dashboard");
           toast({
             title: "تم التسجيل والدخول بنجاح",
             description: "تم إنشاء حساب المسؤول الخاص بك وتسجيل الدخول."
           });
+          
+          navigate('/admin-control/panel', { replace: true });
         }
       } catch (signInErr) {
-        console.error("Auto-login error:", signInErr);
+        console.error("AdminControl: Auto-login error:", signInErr);
       }
     } catch (error: any) {
       console.error('Registration error:', error);
@@ -209,10 +198,6 @@ const AdminControl = () => {
     }
   };
 
-  if (isSessionChecking) {
-    return <AuthLoadingState />;
-  }
-
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -221,39 +206,45 @@ const AdminControl = () => {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">لوحة التحكم</CardTitle>
             <CardDescription>قم بتسجيل الدخول أو أنشئ حساب مسؤول جديد</CardDescription>
-            <CardDescription className="mt-2 text-blue-600">الموقع الحالي: {domainName}</CardDescription>
+            <CardDescription className="mt-2 text-blue-600 font-bold">الموقع الحالي: {domainName}</CardDescription>
           </CardHeader>
           <CardContent>
-            <AuthErrorAlert error={authError} />
-            
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="login">تسجيل الدخول</TabsTrigger>
-                <TabsTrigger value="register">إنشاء حساب جديد</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="login">
-                <LoginForm 
-                  email={email}
-                  setEmail={setEmail}
-                  password={password}
-                  setPassword={setPassword}
-                  onSubmit={handleLogin}
-                  isLoading={isLoading}
-                />
-              </TabsContent>
-              
-              <TabsContent value="register">
-                <RegisterForm
-                  email={email}
-                  setEmail={setEmail}
-                  password={password}
-                  setPassword={setPassword}
-                  onSubmit={handleRegister}
-                  isLoading={isLoading}
-                />
-              </TabsContent>
-            </Tabs>
+            {!sessionCheckCompleted ? (
+              <AuthSessionChecker onSessionCheckComplete={handleSessionCheckComplete} />
+            ) : (
+              <>
+                <AuthErrorAlert error={authError} />
+                
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 mb-4">
+                    <TabsTrigger value="login">تسجيل الدخول</TabsTrigger>
+                    <TabsTrigger value="register">إنشاء حساب جديد</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="login">
+                    <LoginForm 
+                      email={email}
+                      setEmail={setEmail}
+                      password={password}
+                      setPassword={setPassword}
+                      onSubmit={handleLogin}
+                      isLoading={isLoading}
+                    />
+                  </TabsContent>
+                  
+                  <TabsContent value="register">
+                    <RegisterForm
+                      email={email}
+                      setEmail={setEmail}
+                      password={password}
+                      setPassword={setPassword}
+                      onSubmit={handleRegister}
+                      isLoading={isLoading}
+                    />
+                  </TabsContent>
+                </Tabs>
+              </>
+            )}
           </CardContent>
         </Card>
       </main>

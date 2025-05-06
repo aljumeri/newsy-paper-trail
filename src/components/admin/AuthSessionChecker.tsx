@@ -17,6 +17,7 @@ const AuthSessionChecker: React.FC<AuthSessionCheckerProps> = ({ onSessionCheckC
         console.log("AuthSessionChecker: Checking session");
         console.log("Current domain:", domain);
         console.log("Full URL:", window.location.href);
+        console.log("Current path:", window.location.pathname);
         
         const { data, error } = await supabase.auth.getSession();
         
@@ -29,7 +30,7 @@ const AuthSessionChecker: React.FC<AuthSessionCheckerProps> = ({ onSessionCheckC
         
         if (data.session) {
           console.log("AuthSessionChecker: Valid session found");
-          // Simply redirect to panel page
+          // Simply redirect to panel page using relative path that works on any domain
           window.location.href = '/admin-control/panel';
           return;
         } else {

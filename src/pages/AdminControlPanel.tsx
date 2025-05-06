@@ -39,30 +39,43 @@ const AdminControlPanel = () => {
   // Use our admin auth hook
   const { user, isAdmin, loading, handleSignOut } = useAdminAuth();
 
+  // Log panel information
+  useEffect(() => {
+    console.log("AdminControlPanel: Component mounted");
+    console.log("AdminControlPanel: Current domain:", domain);
+    console.log("AdminControlPanel: Current path:", window.location.pathname);
+    console.log("AdminControlPanel: Auth state - isAdmin:", isAdmin, "user:", user ? "exists" : "null", "loading:", loading);
+  }, [domain, isAdmin, loading, user]);
+
   // Redirect if not admin
   useEffect(() => {
-    console.log("AdminControlPanel: Current domain:", domain);
-    console.log("AdminControlPanel: Checking auth state - isAdmin:", isAdmin, "user:", user ? "exists" : "null", "loading:", loading);
+    console.log("AdminControlPanel: Checking auth permissions");
     
-    if (!loading && !isAdmin && user === null) {
-      toast({
-        title: "صلاحيات غير كافية",
-        description: "يجب أن تكون مسؤولاً للوصول إلى هذه الصفحة",
-        variant: "destructive"
-      });
-      navigate('/admin-control');
-    } else if (!loading && isAdmin && user !== null) {
-      fetchData();
+    if (!loading) {
+      console.log("AdminControlPanel: Auth loading complete, user:", user?.email, "isAdmin:", isAdmin);
+      
+      if (!isAdmin && user === null) {
+        console.log("AdminControlPanel: Unauthorized access, redirecting to login");
+        toast({
+          title: "صلاحيات غير كافية",
+          description: "يجب أن تكون مسؤولاً للوصول إلى هذه الصفحة",
+          variant: "destructive"
+        });
+        navigate('/admin-control');
+      } else if (!loading && isAdmin && user !== null) {
+        console.log("AdminControlPanel: Authorized access, fetching data");
+        fetchData();
+      }
     }
   }, [isAdmin, loading, navigate, toast, user, domain]);
 
   const fetchData = async () => {
     setDataLoading(true);
-    console.log("Fetching admin dashboard data...");
+    console.log("AdminControlPanel: Fetching admin dashboard data...");
     
     try {
       // Direct query to fetch subscribers
-      console.log("Fetching subscribers data...");
+      console.log("AdminControlPanel: Fetching subscribers data...");
       const { data: subscribersData, error: subscribersError } = await supabase
         .from('subscribers')
         .select('*')
@@ -76,12 +89,12 @@ const AdminControlPanel = () => {
           variant: "destructive"
         });
       } else {
-        console.log("Successfully fetched subscribers data:", subscribersData);
+        console.log("AdminControlPanel: Successfully fetched subscribers data:", subscribersData);
         setSubscribers(subscribersData || []);
       }
       
       // Direct query to fetch newsletters
-      console.log("Fetching newsletters data...");
+      console.log("AdminControlPanel: Fetching newsletters data...");
       const { data: newslettersData, error: newslettersError } = await supabase
         .from('newsletters')
         .select('*')
@@ -95,7 +108,7 @@ const AdminControlPanel = () => {
           variant: "destructive"
         });
       } else {
-        console.log("Successfully fetched newsletters data:", newslettersData);
+        console.log("AdminControlPanel: Successfully fetched newsletters data:", newslettersData);
         setNewsletters(newslettersData || []);
       }
     } catch (error: any) {
@@ -113,7 +126,7 @@ const AdminControlPanel = () => {
   
   // Add manual refresh button functionality
   const handleRefreshData = () => {
-    console.log("Manual refresh requested");
+    console.log("AdminControlPanel: Manual refresh requested");
     setRefreshing(true);
     fetchData();
   };
@@ -125,7 +138,7 @@ const AdminControlPanel = () => {
         <div className="text-center p-6 bg-white rounded-lg shadow-md">
           <p className="text-xl font-bold mb-2">جارٍ التحقق من الصلاحيات...</p>
           <p className="text-gray-500">يرجى الانتظار قليلاً</p>
-          <p className="mt-3 text-blue-600">الموقع الحالي: {domain}</p>
+          <p className="mt-3 text-blue-600 font-bold">الموقع الحالي: {domain}</p>
         </div>
       </div>
     );
@@ -142,6 +155,15 @@ const AdminControlPanel = () => {
           <p>حالة المستخدم: {user ? 'متصل' : 'غير متصل'}</p>
           <p>البريد الإلكتروني: {user?.email || 'غير متاح'}</p>
           <p>المسؤول: {isAdmin ? 'نعم' : 'لا'}</p>
+          <Button 
+            onClick={handleRefreshData}
+            disabled={refreshing}
+            className="mt-2"
+            variant="outline"
+            size="sm"
+          >
+            {refreshing ? 'جارِ التحديث...' : 'تحديث البيانات'} {!refreshing && <RefreshCw className="ml-2 h-4 w-4" />}
+          </Button>
         </div>
 
         <StatisticsCards 

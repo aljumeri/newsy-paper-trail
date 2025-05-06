@@ -16,11 +16,16 @@ const useAdminAuth = () => {
   const isUnmounted = useRef(false);
   const domain = window.location.hostname;
 
+  // Add debugging for domains
+  useEffect(() => {
+    console.log("useAdminAuth: Current domain:", domain);
+    console.log("useAdminAuth: Current URL:", window.location.href);
+    console.log("useAdminAuth: Current path:", window.location.pathname);
+  }, [domain]);
+
   // Handle session and admin status check
   useEffect(() => {
     console.log("Starting auth check in useAdminAuth...");
-    console.log("Current domain:", domain);
-    console.log("Current path:", window.location.pathname);
     
     // Setup unmount flag for cleanup
     isUnmounted.current = false;

@@ -3,8 +3,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from '@/hooks/use-toast';
+import { User } from '@supabase/supabase-js';
 
 export function useAdminAuth() {
+  const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -29,11 +31,13 @@ export function useAdminAuth() {
         
         if (!data.session) {
           console.log("No active session found, redirecting to login");
+          setIsLoading(false);
           navigate('/admin-control');
           return;
         }
         
         console.log("Valid session found for user:", data.session.user.email);
+        setUser(data.session.user);
         
         // Check admin status immediately
         try {
@@ -92,7 +96,12 @@ export function useAdminAuth() {
     };
   }, [navigate, toast]);
 
-  return { isAdmin, isLoading };
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate('/admin-control');
+  };
+
+  return { user, isAdmin, loading: isLoading, handleSignOut };
 }
 
 export default useAdminAuth;

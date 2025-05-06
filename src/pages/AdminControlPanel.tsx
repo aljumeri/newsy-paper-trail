@@ -70,6 +70,7 @@ const AdminControlPanel = () => {
         });
       } else {
         console.log("Successfully fetched subscribers data:", subscribersData);
+        // Ensure we have an array, even if empty
         setSubscribers(subscribersData || []);
       }
       

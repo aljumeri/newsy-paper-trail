@@ -14,13 +14,13 @@ const HeroSection = () => {
         <div className="space-y-6 max-w-lg animate-fade-in">
           <div className="flex items-center gap-2 text-blue-600 font-medium">
             <Bell size={20} />
-            <span>نشرة أسبوعية</span>
+            <span>نشرة دورية</span>
           </div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight whitespace-nowrap">
             نشرة سولو للذكاء الاصطناعي
           </h1>
           <p className="text-lg text-neutral-600">
-            انضم إلى آلاف المشتركين الذين يتلقون رؤى مختارة بعناية حول الذكاء الاصطناعي والتكنولوجيا والأعمال — تُرسل مباشرة إلى بريدك الإلكتروني كل أسبوع.
+            انضم إلى أصدقاء سولو الذي يحرصون على متابعة أحدث ما يهمهم في الذكاء الاصطناعي والتقنية والأدوات المفيدة — تُرسل إليك مختاراتنا بعناية إلى بريدك الإلكتروني من وقت لآخر.
           </p>
           
           <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-3 pt-2">
@@ -42,7 +42,7 @@ const HeroSection = () => {
           </form>
           
           <div className="text-neutral-500 text-sm">
-            انضم إلى أكثر من 10,000 مشترك. بدون رسائل مزعجة، يمكنك إلغاء الاشتراك في أي وقت.
+            انضم إلى قراء يفضلون المحتوى المختصر والمفيد. لا رسائل مزعجة، ويمكنك الإلغاء متى أردت.
           </div>
         </div>
         

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { X, Facebook, Mail } from 'lucide-react';
+import { Facebook, Mail } from 'lucide-react';
 
 const Footer = () => {
   return (
@@ -39,7 +39,9 @@ const Footer = () => {
             <h4 className="font-medium text-white mb-4 text-lg">تواصل معنا</h4>
             <div className="flex gap-4">
               <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors p-2 bg-neutral-700 rounded-full">
-                <X size={20} />
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 3 L3 21 M3 3 L18 21" />
+                </svg>
                 <span className="sr-only">تويتر</span>
               </a>
               <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors p-2 bg-neutral-700 rounded-full">

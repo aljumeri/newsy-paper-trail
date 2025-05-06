@@ -29,7 +29,7 @@ const DashboardHeader = ({ user, handleSignOut }: DashboardHeaderProps) => {
         <div className="flex gap-2">
           <Button 
             variant="outline" 
-            onClick={() => navigate('/admin/compose')}
+            onClick={() => navigate('/admin-control/compose')}
           >
             إنشاء نشرة إخبارية جديدة
           </Button>

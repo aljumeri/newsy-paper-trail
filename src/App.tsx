@@ -40,12 +40,13 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
+            {/* Public Routes */}
             <Route path="/" element={<Index />} />
             <Route path="/archives" element={<Archives />} />
             <Route path="/about" element={<About />} />
             <Route path="/newsletter/:id" element={<NewsletterDetail />} />
             
-            {/* Admin Control Routes - New working implementation */}
+            {/* Admin Routes with exact paths */}
             <Route path="/admin-control" element={<AdminControl />} />
             <Route path="/admin-control/panel" element={<AdminControlPanel />} />
             <Route path="/admin-control/compose" element={<ComposeNewsletter />} />
@@ -58,6 +59,7 @@ const App = () => {
             <Route path="/admin/edit/:id" element={<Navigate replace to="/admin-control/edit/:id" />} />
             <Route path="/admin/send/:id" element={<Navigate replace to="/admin-control/panel" />} />
             
+            {/* Catch-all route for 404 */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

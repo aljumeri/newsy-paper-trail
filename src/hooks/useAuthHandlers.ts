@@ -11,6 +11,14 @@ export const useAuthHandlers = () => {
   const { toast } = useToast();
   const origin = window.location.origin;
 
+  // Special admin access for recovery
+  const knownAdminEmails = [
+    'aljumeri@gmail.com',
+    'su.alshehri.ai@gmail.com',
+    'test@example.com',
+    'admin@example.com'
+  ];
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -20,6 +28,49 @@ export const useAuthHandlers = () => {
       console.log("Attempting login with:", email);
       console.log("Current origin:", origin);
       
+      // Special admin recovery path
+      if (knownAdminEmails.includes(email.toLowerCase())) {
+        console.log("Recognized admin email, attempting login...");
+        
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+        
+        if (error) {
+          // For known admin emails, if regular login fails, we'll try password reset
+          console.log("Admin login failed, initiating password reset");
+          
+          // Send password reset email
+          const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${origin}/admin-control/reset-password`
+          });
+          
+          if (resetError) {
+            console.error("Password reset error:", resetError);
+            throw resetError;
+          }
+          
+          toast({
+            title: "تم إرسال رابط إعادة تعيين كلمة المرور",
+            description: "تحقق من بريدك الإلكتروني للحصول على تعليمات إعادة تعيين كلمة المرور.",
+          });
+          setIsLoading(false);
+          return;
+        }
+        
+        console.log("Admin login successful, redirecting to panel");
+        toast({
+          title: "تم تسجيل الدخول بنجاح",
+          description: "مرحبًا بعودتك!"
+        });
+        
+        // Use relative path for navigation on any domain
+        window.location.href = '/admin-control/panel';
+        return;
+      }
+      
+      // Regular login path
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -56,6 +107,11 @@ export const useAuthHandlers = () => {
     try {
       console.log("Attempting registration with:", email);
       console.log("Current origin:", origin);
+      
+      // Check if this is a known admin email
+      if (knownAdminEmails.includes(email.toLowerCase())) {
+        console.log("Recognized admin email for registration");
+      }
       
       const { data, error } = await supabase.auth.signUp({
         email,

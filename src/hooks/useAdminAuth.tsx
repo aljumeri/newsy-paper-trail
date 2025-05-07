@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -13,6 +14,14 @@ const useAdminAuth = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const isUnmounted = useRef(false);
+
+  // List of known admin emails
+  const adminEmails = [
+    'aljumeri@gmail.com',
+    'su.alshehri.ai@gmail.com',
+    'admin@example.com',
+    'test@example.com'
+  ];
 
   // Handle session and admin status check
   useEffect(() => {
@@ -42,14 +51,13 @@ const useAdminAuth = () => {
         setUser(currentSession.user);
         setSession(currentSession);
         
-        // Check admin status directly without using database calls
-        // This fixes the infinite recursion issue
+        // Check admin status directly by email pattern
+        // This avoids the infinite recursion in the admin_users RLS policy
         if (currentSession.user && currentSession.user.email) {
           const email = currentSession.user.email.toLowerCase();
-          // Hardcode admin check for now - you can replace this with a different method
-          // that doesn't trigger the recursive policy
-          const isAdminUser = email.includes('admin') || 
-                             email === 'test@example.com' || 
+          // Hardcode admin check for now - replace with a better solution later
+          const isAdminUser = adminEmails.includes(email) || 
+                             email.includes('admin') || 
                              email.endsWith('@supabase.com');
           
           console.log("Admin status determined by email pattern:", isAdminUser);
@@ -64,10 +72,10 @@ const useAdminAuth = () => {
             navigate('/admin-control');
           }
         }
+        
+        setLoading(false);
+        setIsLoading(false);
       }
-      
-      setLoading(false);
-      setIsLoading(false);
     });
     
     // Check for existing session
@@ -98,8 +106,8 @@ const useAdminAuth = () => {
           if (data.session.user && data.session.user.email) {
             const email = data.session.user.email.toLowerCase();
             // Hardcode admin check for now - replace with a better solution later
-            const isAdminUser = email.includes('admin') || 
-                               email === 'test@example.com' || 
+            const isAdminUser = adminEmails.includes(email) || 
+                               email.includes('admin') || 
                                email.endsWith('@supabase.com');
             
             console.log("Admin status determined by email pattern:", isAdminUser);  
@@ -114,6 +122,9 @@ const useAdminAuth = () => {
               navigate('/admin-control');
             }
           }
+          
+          setLoading(false);
+          setIsLoading(false);
         } else {
           setLoading(false);
           setIsLoading(false);

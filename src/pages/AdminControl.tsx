@@ -15,6 +15,14 @@ const AdminControl = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Known admin emails for direct access
+  const adminEmails = [
+    'aljumeri@gmail.com',
+    'su.alshehri.ai@gmail.com',
+    'admin@example.com',
+    'test@example.com'
+  ];
+
   // Simple check for existing session without any redirects
   useEffect(() => {
     const checkSession = async () => {
@@ -32,8 +40,8 @@ const AdminControl = () => {
           
           // Check admin status by email pattern without redirecting
           const email = data.session.user.email?.toLowerCase() || '';
-          const isAdminUser = email.includes('admin') || 
-                              email === 'test@example.com' || 
+          const isAdminUser = adminEmails.includes(email) || 
+                              email.includes('admin') || 
                               email.endsWith('@supabase.com');
           
           if (isAdminUser) {
@@ -57,6 +65,47 @@ const AdminControl = () => {
     
     try {
       console.log("AdminControl: Attempting login with email:", email);
+
+      // Special handling for known admin emails
+      if (adminEmails.includes(email.toLowerCase())) {
+        console.log("AdminControl: Known admin email detected");
+        
+        // Try to login first
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+        
+        if (error) {
+          console.error("Login error:", error);
+          
+          // For known admin emails, if regular login fails, we'll offer password reset
+          console.log("AdminControl: Login failed for known admin, offering password reset");
+          setAuthError("هذا حساب مسؤول معروف. إذا نسيت كلمة المرور، يمكنك إعادة تعيينها.");
+          
+          // Show toast for password reset option
+          toast({
+            title: "حساب مسؤول معروف",
+            description: "إذا نسيت كلمة المرور، يمكنك النقر على 'نسيت كلمة المرور' في الأسفل",
+          });
+          
+          setIsLoading(false);
+          return;
+        }
+        
+        if (data.user) {
+          console.log("AdminControl: Admin login successful");
+          
+          toast({
+            title: "تم تسجيل الدخول بنجاح",
+            description: `مرحبًا بك ${data.user.email}`,
+          });
+          navigate('/admin-control/panel');
+          return;
+        }
+      }
+      
+      // Regular login flow
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -74,9 +123,10 @@ const AdminControl = () => {
         
         // Check admin status by email pattern
         const userEmail = data.user.email?.toLowerCase() || '';
-        const isAdminUser = userEmail.includes('admin') || 
-                            userEmail === 'test@example.com' || 
-                            userEmail.endsWith('@supabase.com');
+        const isAdminUser = adminEmails.includes(userEmail) || 
+                          userEmail.includes('admin') || 
+                          userEmail === 'test@example.com' || 
+                          userEmail.endsWith('@supabase.com');
         
         if (isAdminUser) {
           toast({
@@ -111,6 +161,13 @@ const AdminControl = () => {
     
     try {
       console.log("AdminControl: Attempting registration with email:", email);
+      
+      // Special handling for known admin emails
+      if (adminEmails.includes(email.toLowerCase())) {
+        console.log("AdminControl: Known admin email detected for registration");
+        // Allow registration for known admin emails without extra checks
+      }
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password
@@ -138,9 +195,10 @@ const AdminControl = () => {
       } else if (data.session) {
         // Check admin status by email pattern
         const userEmail = data.user?.email?.toLowerCase() || '';
-        const isAdminUser = userEmail.includes('admin') || 
-                            userEmail === 'test@example.com' || 
-                            userEmail.endsWith('@supabase.com');
+        const isAdminUser = adminEmails.includes(userEmail) || 
+                          userEmail.includes('admin') || 
+                          userEmail === 'test@example.com' || 
+                          userEmail.endsWith('@supabase.com');
         
         if (isAdminUser) {
           navigate('/admin-control/panel');
@@ -170,6 +228,41 @@ const AdminControl = () => {
           <div className="text-center mb-6">
             <h1 className="text-2xl font-bold mb-2">لوحة تحكم المسؤول</h1>
             <p className="text-gray-500">يرجى تسجيل الدخول للوصول إلى لوحة التحكم</p>
+            
+            {/* Admin recovery information */}
+            {adminEmails.includes(email.toLowerCase()) && (
+              <div className="mt-2 p-2 bg-blue-50 text-blue-700 rounded-md text-sm">
+                <p>تم التعرف على حساب المسؤول</p>
+                <button 
+                  className="text-blue-600 hover:text-blue-800 underline mt-1"
+                  onClick={async () => {
+                    try {
+                      setIsLoading(true);
+                      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                        redirectTo: `${window.location.origin}/admin-control/reset-password`
+                      });
+                      
+                      if (error) throw error;
+                      
+                      toast({
+                        title: "تم إرسال رابط إعادة تعيين كلمة المرور",
+                        description: "يرجى التحقق من بريدك الإلكتروني لإعادة تعيين كلمة المرور",
+                      });
+                    } catch (error: any) {
+                      toast({
+                        title: "خطأ في إرسال رابط إعادة التعيين",
+                        description: error.message,
+                        variant: "destructive"
+                      });
+                    } finally {
+                      setIsLoading(false);
+                    }
+                  }}
+                >
+                  نسيت كلمة المرور؟ انقر هنا لإعادة تعيينها
+                </button>
+              </div>
+            )}
           </div>
           
           <AuthTabs

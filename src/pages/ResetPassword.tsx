@@ -6,32 +6,76 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const ResetPassword = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [resetCodeVerified, setResetCodeVerified] = useState(false);
   const { toast } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
-
-  // Handle password reset errors from URL params
+  
+  // Check for the code in the URL
   useEffect(() => {
-    const url = new URL(window.location.href);
-    const errorDescription = url.searchParams.get('error_description');
-    
-    if (errorDescription) {
-      toast({
-        title: "خطأ في إعادة تعيين كلمة المرور",
-        description: errorDescription,
-        variant: "destructive"
+    const handleResetCode = async () => {
+      const searchParams = new URLSearchParams(location.search);
+      const code = searchParams.get('code');
+      const errorDesc = searchParams.get('error_description');
+      
+      console.log("ResetPassword: URL parameters detected", {
+        code: code ? "present" : "not present",
+        error: errorDesc || "none"
       });
       
-      // Clear error params from URL to prevent showing the error toast repeatedly
-      navigate('/admin-control/reset-password', { replace: true });
-    }
-  }, [toast, navigate]);
-  
+      // Handle errors from the URL
+      if (errorDesc) {
+        toast({
+          title: "خطأ في إعادة تعيين كلمة المرور",
+          description: errorDesc,
+          variant: "destructive"
+        });
+        navigate('/admin-control', { replace: true });
+        return;
+      }
+      
+      // If there's a reset code, try to verify it
+      if (code) {
+        try {
+          console.log("Verifying password reset code");
+          const { error } = await supabase.auth.verifyOtp({
+            token_hash: code,
+            type: 'recovery'
+          });
+          
+          if (error) {
+            console.error("Error verifying reset code:", error);
+            toast({
+              title: "رمز إعادة تعيين غير صالح",
+              description: "رابط إعادة تعيين كلمة المرور غير صالح أو انتهت صلاحيته. يرجى طلب رابط جديد.",
+              variant: "destructive"
+            });
+            navigate('/admin-control', { replace: true });
+            return;
+          }
+          
+          console.log("Reset code verified successfully");
+          setResetCodeVerified(true);
+        } catch (error: any) {
+          console.error("Exception during reset code verification:", error);
+          toast({
+            title: "خطأ في التحقق من رمز إعادة التعيين",
+            description: error.message || "حدث خطأ أثناء التحقق من رابط إعادة التعيين",
+            variant: "destructive"
+          });
+          navigate('/admin-control', { replace: true });
+        }
+      }
+    };
+    
+    handleResetCode();
+  }, [location.search, toast, navigate]);
+
   const handleSetNewPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -72,28 +116,37 @@ const ResetPassword = () => {
             <p className="text-gray-500">أدخل كلمة المرور الجديدة الخاصة بك</p>
           </div>
           
-          <form onSubmit={handleSetNewPassword} className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="new-password" className="block text-sm font-medium">كلمة المرور الجديدة</label>
-              <Input
-                id="new-password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="*****"
-                required
-                className="w-full"
-                minLength={6}
-              />
+          {resetCodeVerified ? (
+            <form onSubmit={handleSetNewPassword} className="space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="new-password" className="block text-sm font-medium">كلمة المرور الجديدة</label>
+                <Input
+                  id="new-password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="*****"
+                  required
+                  className="w-full"
+                  minLength={6}
+                />
+              </div>
+              <Button
+                type="submit"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                disabled={isLoading}
+              >
+                {isLoading ? "جاري التحديث..." : "تحديث كلمة المرور"}
+              </Button>
+            </form>
+          ) : (
+            <div className="py-4 text-center">
+              <div className="animate-pulse flex justify-center">
+                <div className="h-4 w-24 bg-gray-300 rounded"></div>
+              </div>
+              <p className="mt-4 text-gray-500">جارِ التحقق من رمز إعادة التعيين...</p>
             </div>
-            <Button
-              type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-              disabled={isLoading}
-            >
-              {isLoading ? "جاري التحديث..." : "تحديث كلمة المرور"}
-            </Button>
-          </form>
+          )}
         </div>
       </main>
       <Footer />

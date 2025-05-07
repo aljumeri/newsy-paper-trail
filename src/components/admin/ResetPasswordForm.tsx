@@ -23,10 +23,11 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
     
     const hostname = window.location.hostname;
     if (hostname === 'solo4ai.com' || hostname.includes('solo4ai.com')) {
+      // For solo4ai.com, we need the full URL with the admin-control/reset-password path
       return 'https://solo4ai.com/admin-control/reset-password';
     }
     
-    // Fallback to current origin
+    // Fallback to current origin with the correct path
     return `${window.location.origin}/admin-control/reset-password`;
   };
 

@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import Archives from "./pages/Archives";
 import About from "./pages/About";
@@ -45,6 +45,26 @@ const App = () => {
   console.log("Current path:", currentPath);
   console.log("User agent:", navigator.userAgent);
   console.log("=============================================");
+
+  // Check for password reset code in URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const resetCode = urlParams.get('code');
+  
+  // If there's a reset code in the root URL, redirect to the reset password page
+  if (currentPath === '/' && resetCode) {
+    console.log("Reset code detected in URL, redirecting to reset password page");
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Navigate to={`/admin-control/reset-password?code=${resetCode}`} replace />
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
   
   return (
     <QueryClientProvider client={queryClient}>

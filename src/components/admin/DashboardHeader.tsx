@@ -14,7 +14,7 @@ const DashboardHeader = ({ user, handleSignOut }: DashboardHeaderProps) => {
   
   return (
     <div className="bg-white shadow">
-      <div className="container py-4 flex flex-col sm:flex-row justify-between items-center gap-3">
+      <div className="container py-4 flex justify-between items-center">
         <div className="flex items-center">
           <img 
             src="/lovable-uploads/b40e2534-e282-4e60-9ca0-91070f9c6ad7.png" 
@@ -22,22 +22,20 @@ const DashboardHeader = ({ user, handleSignOut }: DashboardHeaderProps) => {
             className="h-10 mr-3"
           />
           <div>
-            <h1 className="text-xl md:text-2xl font-bold">لوحة تحكم المسؤول</h1>
+            <h1 className="text-2xl font-bold">لوحة تحكم المسؤول</h1>
             <p className="text-sm text-gray-500">مرحبًا، {user?.email}</p>
           </div>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2">
+        <div className="flex gap-2">
           <Button 
             variant="outline" 
             onClick={() => navigate('/admin-control/compose')}
-            className="whitespace-nowrap"
           >
             إنشاء نشرة إخبارية جديدة
           </Button>
           <Button 
             variant="outline" 
             onClick={handleSignOut}
-            className="whitespace-nowrap"
           >
             تسجيل الخروج
           </Button>

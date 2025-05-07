@@ -9,10 +9,10 @@ const CallToAction = () => {
 
   return (
     <section className="section bg-gradient-to-br from-blue-600 to-blue-800 text-white">
-      <div className="container px-4 md:px-8">
+      <div className="container">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4">هل تود البقاء على اطلاع بآخر أخبار الذكاء الاصطناعي؟</h2>
-          <p className="text-lg md:text-xl opacity-90 mb-8 max-w-2xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 whitespace-nowrap">هل تود البقاء على اطلاع بآخر أخبار الذكاء الاصطناعي؟</h2>
+          <p className="text-xl opacity-90 mb-8 max-w-2xl mx-auto">
             اشترك معنا لتصلك مختارات من الأخبار والأدوات والمصادر المفيدة مباشرة إلى بريدك الإلكتروني
           </p>
           

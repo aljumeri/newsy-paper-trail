@@ -43,11 +43,6 @@ const App = () => {
   console.log("Current protocol:", currentProtocol);
   console.log("Current path:", currentPath);
   console.log("User agent:", navigator.userAgent);
-  console.log("Device pixel ratio:", window.devicePixelRatio);
-  console.log("Screen width:", window.screen.width);
-  console.log("Screen height:", window.screen.height);
-  console.log("Viewport width:", window.innerWidth);
-  console.log("Viewport height:", window.innerHeight);
   console.log("=============================================");
   
   return (

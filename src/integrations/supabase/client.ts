@@ -6,7 +6,7 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://vqkdadugmkwnthkfjbla.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxa2RhZHVnbWt3bnRoa2ZqYmxhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYxNDQwOTUsImV4cCI6MjA2MTcyMDA5NX0.AyZpQgkaypIz2thFdO2K5WF7WFXog2tw-t_9RLBapY4";
 
-// Enhanced Supabase client with more robust auth settings
+// Enhanced Supabase client with more robust auth settings and reduced rate limiting
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     autoRefreshToken: true,
@@ -14,7 +14,12 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: typeof localStorage !== 'undefined' ? localStorage : undefined,
     detectSessionInUrl: true, // Enable session detection in URL
     flowType: 'pkce',
-    debug: true // Enable debug logging for auth
+    debug: true, // Enable debug logging for auth
+    // Update rate limiting for password reset to 10 seconds
+    resetPasswordForEmailRateLimit: {
+      maxAttempts: 3,
+      cooldownDuration: 10 * 1000, // 10 seconds in milliseconds
+    }
   },
   global: {
     headers: {

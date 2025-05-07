@@ -1,8 +1,9 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
+import ResetPasswordForm from './ResetPasswordForm';
 import AuthErrorAlert from './AuthErrorAlert';
 
 interface AuthTabsProps {
@@ -26,15 +27,18 @@ const AuthTabs: React.FC<AuthTabsProps> = ({
   isLoading,
   authError
 }) => {
-  console.log("AuthTabs rendering, email:", email ? "present" : "empty");
+  const [currentTab, setCurrentTab] = useState<string>("login");
+  
+  console.log("AuthTabs rendering, email:", email ? "present" : "empty", "current tab:", currentTab);
   
   return (
     <>
       {authError && <AuthErrorAlert error={authError} />}
-      <Tabs defaultValue="login" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-4">
+      <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-3 mb-4">
           <TabsTrigger value="login">تسجيل الدخول</TabsTrigger>
           <TabsTrigger value="register">إنشاء حساب جديد</TabsTrigger>
+          <TabsTrigger value="reset">نسيت كلمة المرور</TabsTrigger>
         </TabsList>
         
         <TabsContent value="login">
@@ -46,6 +50,15 @@ const AuthTabs: React.FC<AuthTabsProps> = ({
             onSubmit={handleLogin}
             isLoading={isLoading}
           />
+          <div className="mt-4 text-center">
+            <button 
+              type="button"
+              className="text-blue-600 hover:text-blue-800 underline text-sm"
+              onClick={() => setCurrentTab("reset")}
+            >
+              نسيت كلمة المرور؟ انقر هنا لإعادة تعيينها
+            </button>
+          </div>
         </TabsContent>
         
         <TabsContent value="register">
@@ -57,6 +70,22 @@ const AuthTabs: React.FC<AuthTabsProps> = ({
             onSubmit={handleRegister}
             isLoading={isLoading}
           />
+        </TabsContent>
+
+        <TabsContent value="reset">
+          <ResetPasswordForm
+            email={email}
+            setEmail={setEmail}
+          />
+          <div className="mt-4 text-center">
+            <button 
+              type="button"
+              className="text-blue-600 hover:text-blue-800 underline text-sm"
+              onClick={() => setCurrentTab("login")}
+            >
+              العودة إلى تسجيل الدخول
+            </button>
+          </div>
         </TabsContent>
       </Tabs>
     </>

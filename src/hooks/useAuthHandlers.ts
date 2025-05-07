@@ -28,48 +28,6 @@ export const useAuthHandlers = () => {
       console.log("Attempting login with:", email);
       console.log("Current origin:", origin);
       
-      // Special admin recovery path
-      if (knownAdminEmails.includes(email.toLowerCase())) {
-        console.log("Recognized admin email, attempting login...");
-        
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
-        
-        if (error) {
-          // For known admin emails, if regular login fails, we'll try password reset
-          console.log("Admin login failed, initiating password reset");
-          
-          // Send password reset email
-          const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: `${origin}/admin-control/reset-password`
-          });
-          
-          if (resetError) {
-            console.error("Password reset error:", resetError);
-            throw resetError;
-          }
-          
-          toast({
-            title: "تم إرسال رابط إعادة تعيين كلمة المرور",
-            description: "تحقق من بريدك الإلكتروني للحصول على تعليمات إعادة تعيين كلمة المرور.",
-          });
-          setIsLoading(false);
-          return;
-        }
-        
-        console.log("Admin login successful, redirecting to panel");
-        toast({
-          title: "تم تسجيل الدخول بنجاح",
-          description: "مرحبًا بعودتك!"
-        });
-        
-        // Use relative path for navigation on any domain
-        window.location.href = '/admin-control/panel';
-        return;
-      }
-      
       // Regular login path
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -164,6 +122,37 @@ export const useAuthHandlers = () => {
     }
   };
 
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setAuthError(null);
+    
+    try {
+      console.log("Attempting password reset for:", email);
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${origin}/admin-control/reset-password`
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "تم إرسال رابط إعادة تعيين كلمة المرور",
+        description: "يرجى التحقق من بريدك الإلكتروني للحصول على تعليمات إعادة تعيين كلمة المرور.",
+      });
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      setAuthError(error.message || "فشل إرسال رابط إعادة تعيين كلمة المرور.");
+      toast({
+        title: "خطأ في إعادة تعيين كلمة المرور",
+        description: error.message || "فشل إرسال رابط إعادة تعيين كلمة المرور.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     email,
     setEmail,
@@ -172,6 +161,7 @@ export const useAuthHandlers = () => {
     isLoading,
     authError,
     handleLogin,
-    handleRegister
+    handleRegister,
+    handlePasswordReset
   };
 };

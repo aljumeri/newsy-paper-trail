@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -80,14 +79,8 @@ const AdminControl = () => {
           console.error("Login error:", error);
           
           // For known admin emails, if regular login fails, we'll offer password reset
-          console.log("AdminControl: Login failed for known admin, offering password reset");
-          setAuthError("هذا حساب مسؤول معروف. إذا نسيت كلمة المرور، يمكنك إعادة تعيينها.");
-          
-          // Show toast for password reset option
-          toast({
-            title: "حساب مسؤول معروف",
-            description: "إذا نسيت كلمة المرور، يمكنك النقر على 'نسيت كلمة المرور' في الأسفل",
-          });
+          console.log("AdminControl: Login failed for known admin");
+          setAuthError("هذا حساب مسؤول معروف. يمكنك استخدام خيار 'نسيت كلمة المرور' لإعادة تعيينها.");
           
           setIsLoading(false);
           return;
@@ -228,41 +221,6 @@ const AdminControl = () => {
           <div className="text-center mb-6">
             <h1 className="text-2xl font-bold mb-2">لوحة تحكم المسؤول</h1>
             <p className="text-gray-500">يرجى تسجيل الدخول للوصول إلى لوحة التحكم</p>
-            
-            {/* Admin recovery information */}
-            {adminEmails.includes(email.toLowerCase()) && (
-              <div className="mt-2 p-2 bg-blue-50 text-blue-700 rounded-md text-sm">
-                <p>تم التعرف على حساب المسؤول</p>
-                <button 
-                  className="text-blue-600 hover:text-blue-800 underline mt-1"
-                  onClick={async () => {
-                    try {
-                      setIsLoading(true);
-                      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                        redirectTo: `${window.location.origin}/admin-control/reset-password`
-                      });
-                      
-                      if (error) throw error;
-                      
-                      toast({
-                        title: "تم إرسال رابط إعادة تعيين كلمة المرور",
-                        description: "يرجى التحقق من بريدك الإلكتروني لإعادة تعيين كلمة المرور",
-                      });
-                    } catch (error: any) {
-                      toast({
-                        title: "خطأ في إرسال رابط إعادة التعيين",
-                        description: error.message,
-                        variant: "destructive"
-                      });
-                    } finally {
-                      setIsLoading(false);
-                    }
-                  }}
-                >
-                  نسيت كلمة المرور؟ انقر هنا لإعادة تعيينها
-                </button>
-              </div>
-            )}
           </div>
           
           <AuthTabs

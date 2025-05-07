@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +28,19 @@ export const useAuthHandlers = () => {
     
     // Fallback to current origin
     return window.location.origin;
+  };
+  
+  // Get the reset password URL
+  const getResetPasswordURL = () => {
+    if (typeof window === 'undefined') return '';
+    
+    const hostname = window.location.hostname;
+    if (hostname === 'solo4ai.com' || hostname.includes('solo4ai.com')) {
+      return 'https://solo4ai.com/admin-control/reset-password';
+    }
+    
+    // Fallback to current origin
+    return `${window.location.origin}/admin-control/reset-password`;
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -141,12 +153,12 @@ export const useAuthHandlers = () => {
     setAuthError(null);
     
     try {
-      const siteURL = getSiteURL();
+      const resetURL = getResetPasswordURL();
       console.log("Attempting password reset for:", email);
-      console.log("Site URL for reset:", siteURL);
+      console.log("Reset password URL:", resetURL);
       
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${siteURL}/admin-control/reset-password`
+        redirectTo: resetURL
       });
       
       if (error) throw error;

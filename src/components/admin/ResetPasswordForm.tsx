@@ -17,8 +17,8 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   
-  // Get the current site URL, preferring solo4ai.com if it's in the hostname
-  const getSiteURL = () => {
+  // Get the correct reset password URL based on the current hostname
+  const getResetPasswordURL = () => {
     if (typeof window === 'undefined') return '';
     
     const hostname = window.location.hostname;
@@ -35,15 +35,15 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
     setIsLoading(true);
     
     try {
-      const redirectURL = getSiteURL();
+      const resetURL = getResetPasswordURL();
       console.log("Attempting password reset for:", email);
-      console.log("Redirect URL:", redirectURL);
+      console.log("Reset password URL:", resetURL);
       
       // Add a small delay to ensure UI feedback
       setTimeout(async () => {
         try {
           const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: redirectURL
+            redirectTo: resetURL
           });
           
           if (error) throw error;

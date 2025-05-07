@@ -13,6 +13,7 @@ import ComposeNewsletter from "./pages/ComposeNewsletter";
 import EditNewsletter from "./pages/EditNewsletter";
 import NewsletterDetail from "./pages/NewsletterDetail";
 import AdminControl from "./pages/AdminControl";
+import ResetPassword from "./pages/ResetPassword";
 
 // Configure QueryClient with error handling
 const queryClient = new QueryClient({
@@ -63,6 +64,7 @@ const App = () => {
             <Route path="/admin-control/panel" element={<AdminControlPanel />} />
             <Route path="/admin-control/compose" element={<ComposeNewsletter />} />
             <Route path="/admin-control/edit/:id" element={<EditNewsletter />} />
+            <Route path="/admin-control/reset-password" element={<ResetPassword />} />
             
             {/* Catch-all route for 404 */}
             <Route path="*" element={<NotFound />} />

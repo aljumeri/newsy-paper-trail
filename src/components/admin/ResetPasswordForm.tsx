@@ -23,16 +23,45 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
     setIsLoading(true);
     
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${origin}/admin-control/reset-password`
-      });
+      console.log("Attempting password reset for:", email);
+      console.log("Redirect URL:", `${origin}/admin-control/reset-password`);
       
-      if (error) throw error;
-      
-      toast({
-        title: "تم إرسال رابط إعادة تعيين كلمة المرور",
-        description: "يرجى التحقق من بريدك الإلكتروني لإعادة تعيين كلمة المرور",
-      });
+      // Add a small delay to ensure UI feedback
+      setTimeout(async () => {
+        try {
+          const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${origin}/admin-control/reset-password`
+          });
+          
+          if (error) throw error;
+          
+          toast({
+            title: "تم إرسال رابط إعادة تعيين كلمة المرور",
+            description: "يرجى التحقق من بريدك الإلكتروني لإعادة تعيين كلمة المرور",
+          });
+          
+          console.log("Password reset email sent successfully");
+        } catch (error: any) {
+          console.error("Reset password error:", error);
+          
+          // Handle rate limiting errors more specifically
+          if (error.message?.includes("security purposes") || error.message?.includes("rate limit")) {
+            toast({
+              title: "يرجى الانتظار قليلاً",
+              description: "لأسباب أمنية، يمكنك طلب إعادة تعيين كلمة المرور مرة واحدة كل 10 ثوان",
+              variant: "destructive"
+            });
+          } else {
+            toast({
+              title: "خطأ في إرسال رابط إعادة التعيين",
+              description: error.message,
+              variant: "destructive"
+            });
+          }
+        } finally {
+          setIsLoading(false);
+        }
+      }, 500);
     } catch (error: any) {
       console.error("Reset password error:", error);
       toast({
@@ -40,7 +69,6 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
         description: error.message,
         variant: "destructive"
       });
-    } finally {
       setIsLoading(false);
     }
   };

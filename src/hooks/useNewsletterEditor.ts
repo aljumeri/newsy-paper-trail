@@ -72,14 +72,19 @@ export const useNewsletterEditor = () => {
           const { data: newsletter, error } = await supabase
             .from('newsletters')
             .select('*')
-            .eq('id', id as any)
+            .eq('id', id)
             .maybeSingle();
           
           if (error) throw error;
           
           if (newsletter) {
-            setSubject(newsletter.subject);
-            setContent(newsletter.content);
+            // Type check to ensure we have the correct data structure
+            if ('subject' in newsletter && 'content' in newsletter) {
+              setSubject(newsletter.subject);
+              setContent(newsletter.content);
+            } else {
+              throw new Error("Newsletter data structure is invalid");
+            }
           } else {
             toast({
               title: "لم يتم العثور على النشرة الإخبارية",

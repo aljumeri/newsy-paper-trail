@@ -16,8 +16,18 @@ const ComposeNewsletter = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isPreview, setIsPreview] = useState(false);
   const [authChecking, setAuthChecking] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  
+  // Apply theme when dark mode changes
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
   
   // Check auth directly in component with timeout
   useEffect(() => {
@@ -141,26 +151,34 @@ const ComposeNewsletter = () => {
     setIsPreview(!isPreview);
   };
 
+  const toggleDarkMode = () => {
+    setIsDarkMode(prevMode => !prevMode);
+  };
+
   // Show loading state while checking auth
   if (authChecking) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center p-6 bg-white rounded-lg shadow-md">
-          <p className="text-xl font-bold mb-2">جارٍ التحقق من الصلاحيات...</p>
-          <p className="text-gray-500">يرجى الانتظار قليلاً</p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="text-center p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+          <p className="text-xl font-bold mb-2 dark:text-white">جارٍ التحقق من الصلاحيات...</p>
+          <p className="text-gray-500 dark:text-gray-400">يرجى الانتظار قليلاً</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <NewsletterHeader title="إنشاء نشرة إخبارية جديدة" />
+    <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 ${isDarkMode ? 'dark' : ''}`}>
+      <NewsletterHeader 
+        title="إنشاء نشرة إخبارية جديدة" 
+        onThemeToggle={toggleDarkMode}
+        isDarkMode={isDarkMode}
+      />
       
       <div className="container py-8">
-        <Card>
+        <Card className="dark:bg-gray-800 dark:border-gray-700">
           <CardHeader>
-            <CardTitle>إنشاء نشرة إخبارية جديدة</CardTitle>
+            <CardTitle className="dark:text-white">إنشاء نشرة إخبارية جديدة</CardTitle>
           </CardHeader>
           <CardContent>
             {isPreview ? (

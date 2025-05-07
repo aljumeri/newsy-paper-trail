@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -21,8 +21,10 @@ const EditNewsletter = () => {
     isLoading: editorLoading,
     isSaving,
     isPreview,
+    isDarkMode,
     handleUpdateNewsletter,
-    handlePreview
+    handlePreview,
+    toggleDarkMode
   } = useNewsletterEditor();
   
   const [authChecking, setAuthChecking] = useState(true);
@@ -96,13 +98,17 @@ const EditNewsletter = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <NewsletterHeader title="تعديل النشرة الإخبارية" />
+    <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 ${isDarkMode ? 'dark' : ''}`}>
+      <NewsletterHeader 
+        title="تعديل النشرة الإخبارية" 
+        onThemeToggle={toggleDarkMode}
+        isDarkMode={isDarkMode}
+      />
       
       <div className="container py-8">
-        <Card>
+        <Card className="dark:bg-gray-800 dark:border-gray-700">
           <CardHeader>
-            <CardTitle>تعديل النشرة الإخبارية</CardTitle>
+            <CardTitle className="dark:text-white">تعديل النشرة الإخبارية</CardTitle>
           </CardHeader>
           <CardContent>
             {isPreview ? (
@@ -130,15 +136,15 @@ const EditNewsletter = () => {
                         {isSaving ? "جارِ التحديث..." : "تحديث النشرة الإخبارية"}
                       </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent>
+                    <AlertDialogContent className="dark:bg-gray-800 dark:text-white">
                       <AlertDialogHeader>
-                        <AlertDialogTitle>تحديث النشرة الإخبارية</AlertDialogTitle>
-                        <AlertDialogDescription>
+                        <AlertDialogTitle className="dark:text-white">تحديث النشرة الإخبارية</AlertDialogTitle>
+                        <AlertDialogDescription className="dark:text-gray-300">
                           هل أنت متأكد من أنك تريد تحديث هذه النشرة الإخبارية؟
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                        <AlertDialogCancel className="dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600">إلغاء</AlertDialogCancel>
                         <AlertDialogAction onClick={handleUpdateNewsletter}>تحديث</AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>

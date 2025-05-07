@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,6 +30,46 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
   const [showImageDialog, setShowImageDialog] = useState(false);
   const [showLinkDialog, setShowLinkDialog] = useState(false);
   const [textAlignment, setTextAlignment] = useState<'left' | 'center' | 'right'>('right');
+  const [textDirection, setTextDirection] = useState<'rtl' | 'ltr'>('rtl');
+  const [editHistory, setEditHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState<number>(-1);
+  
+  // Initial history state
+  useEffect(() => {
+    if (content && editHistory.length === 0) {
+      setEditHistory([content]);
+      setHistoryIndex(0);
+    }
+  }, []);
+
+  // Add to history when content changes significantly
+  const addToHistory = (newContent: string) => {
+    // Only add to history if content changed significantly (more than 10 chars difference)
+    if (
+      editHistory.length === 0 || 
+      Math.abs(editHistory[historyIndex].length - newContent.length) > 10
+    ) {
+      const newHistory = editHistory.slice(0, historyIndex + 1);
+      newHistory.push(newContent);
+      setEditHistory(newHistory);
+      setHistoryIndex(newHistory.length - 1);
+    }
+  };
+  
+  // Undo/Redo handlers
+  const handleUndo = () => {
+    if (historyIndex > 0) {
+      setHistoryIndex(historyIndex - 1);
+      setContent(editHistory[historyIndex - 1]);
+    }
+  };
+  
+  const handleRedo = () => {
+    if (historyIndex < editHistory.length - 1) {
+      setHistoryIndex(historyIndex + 1);
+      setContent(editHistory[historyIndex + 1]);
+    }
+  };
   
   // Text formatting handlers
   const handleBold = () => {
@@ -46,6 +87,7 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
         content.substring(end);
       
       setContent(newContent);
+      addToHistory(newContent);
       
       // Reset selection after formatting
       setTimeout(() => {
@@ -71,6 +113,7 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
         content.substring(end);
       
       setContent(newContent);
+      addToHistory(newContent);
       
       // Reset selection after formatting
       setTimeout(() => {
@@ -96,6 +139,7 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
         content.substring(end);
       
       setContent(newContent);
+      addToHistory(newContent);
       
       // Reset selection after formatting
       setTimeout(() => {
@@ -116,16 +160,94 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
     const selectedText = content.substring(start, end);
     
     if (selectedText) {
-      // Use the exact font size value passed from the dropdown
       const newContent = 
         content.substring(0, start) + 
         `<span style="font-size: ${size};">${selectedText}</span>` + 
         content.substring(end);
       
       setContent(newContent);
+      addToHistory(newContent);
     }
   };
   
+  // Text color handler
+  const handleTextColor = (color: string) => {
+    const textarea = document.getElementById('content') as HTMLTextAreaElement;
+    if (!textarea) return;
+    
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = content.substring(start, end);
+    
+    if (selectedText) {
+      const newContent = 
+        content.substring(0, start) + 
+        `<span style="color: ${color};">${selectedText}</span>` + 
+        content.substring(end);
+      
+      setContent(newContent);
+      addToHistory(newContent);
+    }
+  };
+  
+  // Heading handler
+  const handleHeading = (level: number) => {
+    const textarea = document.getElementById('content') as HTMLTextAreaElement;
+    if (!textarea) return;
+    
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = content.substring(start, end);
+    
+    if (selectedText) {
+      const newContent = 
+        content.substring(0, start) + 
+        `<h${level}>${selectedText}</h${level}>` + 
+        content.substring(end);
+      
+      setContent(newContent);
+      addToHistory(newContent);
+    }
+  };
+  
+  // List handler
+  const handleList = (type: 'ordered' | 'unordered') => {
+    const textarea = document.getElementById('content') as HTMLTextAreaElement;
+    if (!textarea) return;
+    
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = content.substring(start, end);
+    
+    if (selectedText) {
+      let listItems = selectedText.split('\n').filter(item => item.trim() !== '');
+      
+      // Create HTML list
+      let listHtml = type === 'ordered' ? '<ol>' : '<ul>';
+      listItems.forEach(item => {
+        listHtml += `<li>${item}</li>`;
+      });
+      listHtml += type === 'ordered' ? '</ol>' : '</ul>';
+      
+      const newContent = 
+        content.substring(0, start) + 
+        listHtml + 
+        content.substring(end);
+      
+      setContent(newContent);
+      addToHistory(newContent);
+    }
+  };
+  
+  // Text direction handler
+  const handleTextDirection = () => {
+    const newDirection = textDirection === 'rtl' ? 'ltr' : 'rtl';
+    setTextDirection(newDirection);
+    
+    const textarea = document.getElementById('content') as HTMLTextAreaElement;
+    textarea.style.direction = newDirection;
+  };
+
   // Link handler
   const handleLink = (url: string, text: string) => {
     const textarea = document.getElementById('content') as HTMLTextAreaElement;
@@ -143,6 +265,7 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
         content.substring(end);
       
       setContent(newContent);
+      addToHistory(newContent);
     }
   };
   
@@ -164,6 +287,7 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
         content.substring(end);
       
       setContent(newContent);
+      addToHistory(newContent);
     }
   };
   
@@ -233,13 +357,13 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
       
       if (textarea) {
         const cursorPos = textarea.selectionStart;
-        setContent(
-          content.substring(0, cursorPos) + 
-          embedCode + 
-          content.substring(cursorPos)
-        );
+        const newContent = content.substring(0, cursorPos) + embedCode + content.substring(cursorPos);
+        setContent(newContent);
+        addToHistory(newContent);
       } else {
-        setContent(content + embedCode);
+        const newContent = content + embedCode;
+        setContent(newContent);
+        addToHistory(newContent);
       }
     }
   };
@@ -280,13 +404,13 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
     
     if (textarea) {
       const cursorPos = textarea.selectionStart;
-      setContent(
-        content.substring(0, cursorPos) + 
-        imageHtml + 
-        content.substring(cursorPos)
-      );
+      const newContent = content.substring(0, cursorPos) + imageHtml + content.substring(cursorPos);
+      setContent(newContent);
+      addToHistory(newContent);
     } else {
-      setContent(content + imageHtml);
+      const newContent = content + imageHtml;
+      setContent(newContent);
+      addToHistory(newContent);
     }
   };
 
@@ -356,6 +480,7 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
             tempDiv.innerHTML.substring(cursorPos);
           
           setContent(newContent);
+          addToHistory(newContent);
         }
       };
       
@@ -436,22 +561,43 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
             onYoutubeEmbed={() => setShowYoutubeDialog(true)}
             onLink={() => setShowLinkDialog(true)}
             onFontSize={handleFontSize}
+            onHeading={handleHeading}
+            onList={handleList}
+            onTextColor={handleTextColor}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+            onTextDirection={handleTextDirection}
           />
           
           <div className={`border rounded-md ${textAlignment === 'right' ? 'text-right' : textAlignment === 'center' ? 'text-center' : 'text-left'}`}>
             <textarea
               id="content"
               value={content}
-              onChange={(e) => setContent(e.target.value)}
+              onChange={(e) => {
+                setContent(e.target.value);
+                // Don't add to history for every keystroke
+                if (e.target.value.length % 50 === 0) { // Every ~50 chars
+                  addToHistory(e.target.value);
+                }
+              }}
               placeholder="أدخل محتوى النشرة الإخبارية..."
               className={`min-h-[300px] w-full p-2 rounded-md resize-y focus:outline-none focus:ring-1 focus:ring-primary`}
-              style={{direction: 'rtl'}}
+              style={{direction: textDirection}}
             />
           </div>
           
-          <p className="text-xs text-gray-500 mt-1">
-            يمكنك استخدام وسوم HTML الأساسية وسيظهر النص بالتنسيق المطلوب في النشرة الإخبارية. اسحب الصور ومقاطع الفيديو لتغيير موقعها.
-          </p>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-1">
+            <p className="text-xs text-gray-500">
+              يمكنك استخدام وسوم HTML الأساسية وسيظهر النص بالتنسيق المطلوب في النشرة الإخبارية. اسحب الصور ومقاطع الفيديو لتغيير موقعها.
+            </p>
+            <div className="text-xs text-gray-500 mt-2 sm:mt-0">
+              {editHistory.length > 0 && (
+                <span>
+                  تغييرات: {historyIndex + 1}/{editHistory.length}
+                </span>
+              )}
+            </div>
+          </div>
         </div>
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={onPreview}>

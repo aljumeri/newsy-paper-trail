@@ -10,9 +10,19 @@ export const useNewsletterEditor = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isPreview, setIsPreview] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+
+  useEffect(() => {
+    // Apply theme class to body
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
 
   useEffect(() => {
     const loadNewsletter = async () => {
@@ -152,6 +162,10 @@ export const useNewsletterEditor = () => {
     setIsPreview(!isPreview);
   };
 
+  const toggleDarkMode = () => {
+    setIsDarkMode(prevMode => !prevMode);
+  };
+
   return {
     subject,
     setSubject,
@@ -160,7 +174,9 @@ export const useNewsletterEditor = () => {
     isLoading,
     isSaving,
     isPreview,
+    isDarkMode,
     handleUpdateNewsletter,
-    handlePreview
+    handlePreview,
+    toggleDarkMode
   };
 };

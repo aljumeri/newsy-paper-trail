@@ -9,7 +9,6 @@ export const useAuthHandlers = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const { toast } = useToast();
-  const origin = window.location.origin;
 
   // Special admin access for recovery
   const knownAdminEmails = [
@@ -19,6 +18,19 @@ export const useAuthHandlers = () => {
     'admin@example.com'
   ];
 
+  // Get the current site URL, preferring solo4ai.com if it's in the hostname
+  const getSiteURL = () => {
+    if (typeof window === 'undefined') return '';
+    
+    const hostname = window.location.hostname;
+    if (hostname === 'solo4ai.com' || hostname.includes('solo4ai.com')) {
+      return 'https://solo4ai.com';
+    }
+    
+    // Fallback to current origin
+    return window.location.origin;
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -26,7 +38,7 @@ export const useAuthHandlers = () => {
     
     try {
       console.log("Attempting login with:", email);
-      console.log("Current origin:", origin);
+      console.log("Current origin:", getSiteURL());
       
       // Regular login path
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -63,8 +75,9 @@ export const useAuthHandlers = () => {
     setAuthError(null);
     
     try {
+      const siteURL = getSiteURL();
       console.log("Attempting registration with:", email);
-      console.log("Current origin:", origin);
+      console.log("Current site URL:", siteURL);
       
       // Check if this is a known admin email
       if (knownAdminEmails.includes(email.toLowerCase())) {
@@ -75,7 +88,7 @@ export const useAuthHandlers = () => {
         email,
         password,
         options: {
-          emailRedirectTo: `${origin}/admin-control/panel`,
+          emailRedirectTo: `${siteURL}/admin-control/panel`,
         }
       });
       
@@ -128,10 +141,12 @@ export const useAuthHandlers = () => {
     setAuthError(null);
     
     try {
+      const siteURL = getSiteURL();
       console.log("Attempting password reset for:", email);
+      console.log("Site URL for reset:", siteURL);
       
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${origin}/admin-control/reset-password`
+        redirectTo: `${siteURL}/admin-control/reset-password`
       });
       
       if (error) throw error;

@@ -13,7 +13,7 @@ import {
   Link,
   Type,
   ListOrdered,
-  ListUl,
+  List,
   Heading1,
   Heading2,
   Heading3,
@@ -166,7 +166,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
           <ListOrdered className="h-4 w-4" />
         </Button>
         <Button variant="ghost" size="icon" onClick={() => onList('unordered')} title="قائمة نقطية">
-          <ListUl className="h-4 w-4" />
+          <List className="h-4 w-4" />
         </Button>
       </div>
 

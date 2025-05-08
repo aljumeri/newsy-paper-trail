@@ -38,68 +38,33 @@ const AdminControlPanel = () => {
   const { formatDate } = useFormatDate();
   const { toast } = useToast();
   
-  // Check auth state directly in this component with timeout for network issues
-  // ✅ 1. Auth check effect (what you already had)
-useEffect(() => {
-  const checkAuth = async () => {
-    try {
-      console.log("AdminPanel: Checking authentication");
+  // Check auth state directly in this component
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        console.log("AdminPanel: Checking authentication");
 
-      const timeoutId = setTimeout(() => {
-        console.log("AdminPanel: Auth check timeout reached");
-        setAuthChecking(false);
-        navigate('/admin-control');
-      }, 5000);
+        const timeoutId = setTimeout(() => {
+          console.log("AdminPanel: Auth check timeout reached");
+          setAuthChecking(false);
+          navigate('/admin-control');
+        }, 5000);
 
-      const { data, error } = await supabase.auth.getSession();
-      clearTimeout(timeoutId);
+        const { data, error } = await supabase.auth.getSession();
+        clearTimeout(timeoutId);
 
-      if (error) {
-        console.error("Auth check error:", error);
-        navigate('/admin-control');
-        return;
-      }
-
-      if (!data.session) {
-        console.log("AdminPanel: No session, redirecting");
-        navigate('/admin-control');
-        return;
-      }
-
-      setUser(data.session.user);
-      // Optional: fetchData();
-      setAuthChecking(false);
-    } catch (err) {
-      console.error("Unexpected error:", err);
-      navigate('/admin-control');
-    }
-  };
-
-  checkAuth();
-}, [navigate]);
-
-// ✅ 2. onAuthStateChange listener (top level)
-useEffect(() => {
-  const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-    if (session?.user) {
-      console.log("✅ Session restored (onAuthStateChange):", session.user.email);
-      setUser(session.user);
-       fetchData(); // ✅ Refetch data when session is restored
-    }
-  });
-
-  return () => {
-    listener?.subscription.unsubscribe();
-  };
-}, []);
-   
-        if (!data.session) {
-          console.log("AdminPanel: No session found, redirecting to login");
+        if (error) {
+          console.error("Auth check error:", error);
           navigate('/admin-control');
           return;
         }
-        
-        // Set user
+
+        if (!data.session) {
+          console.log("AdminPanel: No session, redirecting");
+          navigate('/admin-control');
+          return;
+        }
+
         setUser(data.session.user);
         
         // Check admin status directly by email pattern
@@ -118,7 +83,11 @@ useEffect(() => {
             description: "ليس لديك صلاحيات الوصول إلى هذه الصفحة",
             variant: "destructive"
           });
-          await supabase.auth.signOut();
+          // Make this async function properly await the signout
+          const { error: signOutError } = await supabase.auth.signOut();
+          if (signOutError) {
+            console.error("Sign out error during admin check:", signOutError);
+          }
           navigate('/admin-control');
           return;
         }
@@ -134,14 +103,26 @@ useEffect(() => {
     checkAuth();
   }, [navigate, toast]);
 
+  // Add listener for auth state changes
+  useEffect(() => {
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        console.log("✅ Session restored (onAuthStateChange):", session.user.email);
+        setUser(session.user);
+        fetchData(); // Refetch data when session is restored
+      }
+    });
+
+    return () => {
+      listener?.subscription.unsubscribe();
+    };
+  }, []);
+
   const fetchData = async () => {
     setDataLoading(true);
     console.log("AdminPanel: Fetching admin dashboard data...");
     
     try {
-      // Fix: Use service role key for admin access by using the server-side function endpoint
-      // This ensures we bypass RLS policies that might be restricting access
-      
       // Direct query to fetch subscribers with more detailed logging
       console.log("AdminPanel: Fetching subscribers data...");
       
@@ -184,7 +165,7 @@ useEffect(() => {
         });
       } else {
         console.log("AdminPanel: Successfully fetched newsletters data:", newslettersData);
-        setNewsletters(newslettersData as any || []);
+        setNewsletters(newslettersData as Newsletter[] || []);
       }
     } catch (error: any) {
       console.error('Unexpected error fetching data:', error);

@@ -23,6 +23,9 @@ interface SubscribersTableProps {
 }
 
 const SubscribersTable = ({ subscribers, formatDate }: SubscribersTableProps) => {
+  // Debug logging to verify data
+  console.log("SubscribersTable rendering with subscribers:", subscribers);
+  
   return (
     <Card className="border-2 border-green-500">
       <CardHeader className="bg-green-50">
@@ -42,7 +45,7 @@ const SubscribersTable = ({ subscribers, formatDate }: SubscribersTableProps) =>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {subscribers.length > 0 ? (
+            {Array.isArray(subscribers) && subscribers.length > 0 ? (
               subscribers.map((subscriber) => (
                 <TableRow key={subscriber.id} className="hover:bg-gray-50">
                   <TableCell>{subscriber.email}</TableCell>

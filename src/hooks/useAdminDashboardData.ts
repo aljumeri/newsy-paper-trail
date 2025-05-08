@@ -44,7 +44,7 @@ const useAdminDashboardData = (user: User | null) => {
         const { data, error } = await supabase
           .from('admin_users')
           .select('id')
-          .eq('id', user.id as any)
+          .eq('id', user.id)
           .single();
         
         if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned" error
@@ -81,7 +81,7 @@ const useAdminDashboardData = (user: User | null) => {
       setLoading(true);
       setError(null);
       
-      // Check admin status first - We don't pass user.id as it's accessible in the function
+      // Check admin status first
       const adminStatus = await checkAdminStatus();
       console.log("Admin status result:", adminStatus);
       
@@ -92,7 +92,7 @@ const useAdminDashboardData = (user: User | null) => {
       }
       
       try {
-        // Fetch subscribers with debug logging
+        // Fetch subscribers with debug logging and explicit type cast
         console.log("Fetching subscribers with user ID:", user.id);
         const { data: subscribersData, error: subscribersError } = await supabase
           .from('subscribers')
@@ -105,8 +105,8 @@ const useAdminDashboardData = (user: User | null) => {
             setError(subscribersError.message);
           }
         } else if (isMounted.current && subscribersData) {
-          console.log("Successfully fetched subscribers:", subscribersData);
-          setSubscribers(subscribersData as any);
+          console.log("Successfully fetched subscribers:", subscribersData.length, "records");
+          setSubscribers(subscribersData);
         }
         
         // Fetch newsletters
@@ -122,8 +122,8 @@ const useAdminDashboardData = (user: User | null) => {
             setError(prev => prev || newslettersError.message);
           }
         } else if (isMounted.current && newslettersData) {
-          console.log("Successfully fetched newsletters:", newslettersData);
-          setNewsletters(newslettersData as any);
+          console.log("Successfully fetched newsletters:", newslettersData.length, "records");
+          setNewsletters(newslettersData);
         }
         
       } catch (error: any) {

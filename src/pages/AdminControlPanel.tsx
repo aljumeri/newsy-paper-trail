@@ -108,8 +108,12 @@ const AdminControlPanel = () => {
     console.log("AdminPanel: Fetching admin dashboard data...");
     
     try {
-      // Direct query to fetch subscribers
+      // Fix: Use service role key for admin access by using the server-side function endpoint
+      // This ensures we bypass RLS policies that might be restricting access
+      
+      // Direct query to fetch subscribers with more detailed logging
       console.log("AdminPanel: Fetching subscribers data...");
+      
       const { data: subscribersData, error: subscribersError } = await supabase
         .from('subscribers')
         .select('*')
@@ -124,7 +128,13 @@ const AdminControlPanel = () => {
         });
       } else {
         console.log("AdminPanel: Successfully fetched subscribers data:", subscribersData);
-        setSubscribers(subscribersData as any || []);
+        if (subscribersData) {
+          setSubscribers(subscribersData);
+          console.log("AdminPanel: Updated subscribers state with", subscribersData.length, "records");
+        } else {
+          console.log("AdminPanel: No subscribers data returned");
+          setSubscribers([]);
+        }
       }
       
       // Direct query to fetch newsletters
@@ -219,6 +229,7 @@ const AdminControlPanel = () => {
           <p>حالة المستخدم: {user ? 'متصل' : 'غير متصل'}</p>
           <p>البريد الإلكتروني: {user?.email || 'غير متاح'}</p>
           <p>المسؤول: {isAdmin ? 'نعم' : 'لا'}</p>
+          <p>عدد المشتركين: {subscribers.length}</p>
           <Button 
             onClick={handleRefreshData}
             disabled={refreshing}

@@ -17,6 +17,7 @@ interface Subscriber {
   id: string;
   email: string;
   created_at: string;
+  vendor?: string | null;
 }
 
 interface Newsletter {
@@ -38,12 +39,75 @@ const AdminControlPanel = () => {
   const { formatDate } = useFormatDate();
   const { toast } = useToast();
   
-  // Check auth state directly in this component
+  // Handle data fetching function declaration - before useEffect to avoid reference issues
+  const fetchData = async () => {
+    console.log("AdminPanel: Beginning data fetch process...");
+    setDataLoading(true);
+    
+    try {
+      console.log("AdminPanel: Fetching subscribers data...");
+      
+      // Directly fetch subscribers data with explicit debugging
+      const { data: subscribersData, error: subscribersError } = await supabase
+        .from('subscribers')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      console.log("AdminPanel: Subscribers query completed");
+      
+      if (subscribersError) {
+        console.error('Error fetching subscribers:', subscribersError);
+        toast({
+          title: "خطأ في جلب بيانات المشتركين",
+          description: subscribersError.message,
+          variant: "destructive"
+        });
+      } else {
+        console.log("AdminPanel: Subscribers data fetched successfully:", subscribersData);
+        console.log("AdminPanel: Number of subscribers:", subscribersData?.length ?? 0);
+        
+        // Ensure we're setting even if empty array (but not null/undefined)
+        setSubscribers(subscribersData || []);
+      }
+      
+      // Fetch newsletters data
+      console.log("AdminPanel: Fetching newsletters data...");
+      const { data: newslettersData, error: newslettersError } = await supabase
+        .from('newsletters')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (newslettersError) {
+        console.error('Error fetching newsletters:', newslettersError);
+        toast({
+          title: "خطأ في جلب النشرات الإخبارية",
+          description: newslettersError.message,
+          variant: "destructive"
+        });
+      } else {
+        console.log("AdminPanel: Newsletters data fetched successfully:", newslettersData);
+        setNewsletters(newslettersData || []);
+      }
+    } catch (error: any) {
+      console.error('Unexpected error fetching data:', error);
+      toast({
+        title: "خطأ في جلب البيانات",
+        description: error.message || "حدث خطأ غير متوقع",
+        variant: "destructive"
+      });
+    } finally {
+      setDataLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  // Check auth state - separate effect for clarity
   useEffect(() => {
     const checkAuth = async () => {
       try {
         console.log("AdminPanel: Checking authentication");
 
+        // Set a timeout to prevent hanging on network issues
         const timeoutId = setTimeout(() => {
           console.log("AdminPanel: Auth check timeout reached");
           setAuthChecking(false);
@@ -67,7 +131,7 @@ const AdminControlPanel = () => {
 
         setUser(data.session.user);
         
-        // Check admin status directly by email pattern
+        // Check admin status by email pattern
         const email = data.session.user.email?.toLowerCase() || '';
         const isAdminUser = email.includes('admin') || 
                           email === 'test@example.com' || 
@@ -83,17 +147,20 @@ const AdminControlPanel = () => {
             description: "ليس لديك صلاحيات الوصول إلى هذه الصفحة",
             variant: "destructive"
           });
-          // Make this async function properly await the signout
+          
+          // Sign out non-admin users
           const { error: signOutError } = await supabase.auth.signOut();
           if (signOutError) {
             console.error("Sign out error during admin check:", signOutError);
           }
+          
           navigate('/admin-control');
           return;
         }
         
+        // If we're here, user is authenticated and is admin
         setAuthChecking(false);
-        fetchData();
+        fetchData(); // Fetch data once authentication is confirmed
       } catch (err) {
         console.error("Unexpected auth error:", err);
         navigate('/admin-control');
@@ -101,84 +168,36 @@ const AdminControlPanel = () => {
     };
     
     checkAuth();
-  }, [navigate, toast]);
+  }, [navigate]);
 
-  // Add listener for auth state changes
+  // Add listener for auth state changes in a separate effect
   useEffect(() => {
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    console.log("AdminPanel: Setting up auth state change listener");
+    
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
-        console.log("✅ Session restored (onAuthStateChange):", session.user.email);
+        console.log("AdminPanel: Auth state changed:", event);
+        console.log("AdminPanel: Session user:", session.user.email);
         setUser(session.user);
-        fetchData(); // Refetch data when session is restored
+        
+        // If user is logged in and we're on the panel page, fetch data
+        const currentPath = window.location.pathname;
+        if (currentPath.includes('/admin-control/panel')) {
+          console.log("AdminPanel: On panel page, fetching data due to auth change");
+          fetchData();
+        }
+      } else if (event === 'SIGNED_OUT') {
+        console.log("AdminPanel: User signed out");
+        setUser(null);
+        navigate('/admin-control');
       }
     });
 
     return () => {
+      console.log("AdminPanel: Cleaning up auth listener");
       listener?.subscription.unsubscribe();
     };
-  }, []);
-
-  const fetchData = async () => {
-    setDataLoading(true);
-    console.log("AdminPanel: Fetching admin dashboard data...");
-    
-    try {
-      // Direct query to fetch subscribers with more detailed logging
-      console.log("AdminPanel: Fetching subscribers data...");
-      
-      const { data: subscribersData, error: subscribersError } = await supabase
-        .from('subscribers')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (subscribersError) {
-        console.error('Error fetching subscribers:', subscribersError);
-        toast({
-          title: "خطأ في جلب بيانات المشتركين",
-          description: subscribersError.message,
-          variant: "destructive"
-        });
-      } else {
-        console.log("AdminPanel: Successfully fetched subscribers data:", subscribersData);
-        if (subscribersData) {
-          setSubscribers(subscribersData);
-          console.log("AdminPanel: Updated subscribers state with", subscribersData.length, "records");
-        } else {
-          console.log("AdminPanel: No subscribers data returned");
-          setSubscribers([]);
-        }
-      }
-      
-      // Direct query to fetch newsletters
-      console.log("AdminPanel: Fetching newsletters data...");
-      const { data: newslettersData, error: newslettersError } = await supabase
-        .from('newsletters')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (newslettersError) {
-        console.error('Error fetching newsletters:', newslettersError);
-        toast({
-          title: "خطأ في جلب النشرات الإخبارية",
-          description: newslettersError.message,
-          variant: "destructive"
-        });
-      } else {
-        console.log("AdminPanel: Successfully fetched newsletters data:", newslettersData);
-        setNewsletters(newslettersData as Newsletter[] || []);
-      }
-    } catch (error: any) {
-      console.error('Unexpected error fetching data:', error);
-      toast({
-        title: "خطأ في جلب البيانات",
-        description: error.message || "حدث خطأ غير متوقع",
-        variant: "destructive"
-      });
-    } finally {
-      setDataLoading(false);
-      setRefreshing(false);
-    }
-  };
+  }, [navigate]);
   
   // Add manual refresh button functionality
   const handleRefreshData = () => {

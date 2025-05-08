@@ -15,6 +15,7 @@ interface Subscriber {
   id: string;
   email: string;
   created_at: string;
+  vendor?: string | null;
 }
 
 interface SubscribersTableProps {
@@ -24,7 +25,14 @@ interface SubscribersTableProps {
 
 const SubscribersTable = ({ subscribers, formatDate }: SubscribersTableProps) => {
   // Debug logging to verify data
-  console.log("SubscribersTable rendering with subscribers:", subscribers);
+  console.log("SubscribersTable: Rendering with subscribers count:", subscribers?.length || 0);
+  console.log("SubscribersTable: Subscriber data:", subscribers);
+  
+  // Filter subscribers for solo4ai.com if needed (uncomment if you want to filter)
+  // const solo4aiSubscribers = subscribers.filter(sub => 
+  //   sub.email?.includes('@solo4ai.com') || 
+  //   sub.vendor === 'solo4ai.com'
+  // );
   
   return (
     <Card className="border-2 border-green-500">
@@ -41,6 +49,7 @@ const SubscribersTable = ({ subscribers, formatDate }: SubscribersTableProps) =>
           <TableHeader>
             <TableRow>
               <TableHead className="text-right">البريد الإلكتروني</TableHead>
+              <TableHead className="text-right">المصدر</TableHead>
               <TableHead className="text-right">تاريخ الاشتراك</TableHead>
             </TableRow>
           </TableHeader>
@@ -49,12 +58,13 @@ const SubscribersTable = ({ subscribers, formatDate }: SubscribersTableProps) =>
               subscribers.map((subscriber) => (
                 <TableRow key={subscriber.id} className="hover:bg-gray-50">
                   <TableCell>{subscriber.email}</TableCell>
+                  <TableCell>{subscriber.vendor || 'solo4ai.com'}</TableCell>
                   <TableCell>{formatDate(subscriber.created_at)}</TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={2}>
+                <TableCell colSpan={3}>
                   <div className="flex flex-col items-center justify-center py-8 text-center">
                     <div className="rounded-full bg-muted p-3 mb-2">
                       <Info className="h-6 w-6 text-muted-foreground" />

@@ -39,29 +39,60 @@ const AdminControlPanel = () => {
   const { toast } = useToast();
   
   // Check auth state directly in this component with timeout for network issues
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        console.log("AdminPanel: Checking authentication");
-        
-        // Add a timeout to prevent infinite loading
-        const timeoutId = setTimeout(() => {
-          console.log("AdminPanel: Auth check timeout reached");
-          setAuthChecking(false);
-          navigate('/admin-control');
-        }, 5000); // 5 seconds timeout
-        
-        const { data, error } = await supabase.auth.getSession();
-        
-        // Clear the timeout since we got a response
-        clearTimeout(timeoutId);
-        
-        if (error) {
-          console.error("Auth check error:", error);
-          navigate('/admin-control');
-          return;
-        }
-        
+  // ✅ 1. Auth check effect (what you already had)
+useEffect(() => {
+  const checkAuth = async () => {
+    try {
+      console.log("AdminPanel: Checking authentication");
+
+      const timeoutId = setTimeout(() => {
+        console.log("AdminPanel: Auth check timeout reached");
+        setAuthChecking(false);
+        navigate('/admin-control');
+      }, 5000);
+
+      const { data, error } = await supabase.auth.getSession();
+      clearTimeout(timeoutId);
+
+      if (error) {
+        console.error("Auth check error:", error);
+        navigate('/admin-control');
+        return;
+      }
+
+      if (!data.session) {
+        console.log("AdminPanel: No session, redirecting");
+        navigate('/admin-control');
+        return;
+      }
+
+      setUser(data.session.user);
+      // Optional: fetchData();
+      setAuthChecking(false);
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      navigate('/admin-control');
+    }
+  };
+
+  checkAuth();
+}, [navigate]);
+
+// ✅ 2. onAuthStateChange listener (top level)
+useEffect(() => {
+  const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    if (session?.user) {
+      console.log("✅ Session restored (onAuthStateChange):", session.user.email);
+      setUser(session.user);
+       fetchData(); // ✅ Refetch data when session is restored
+    }
+  });
+
+  return () => {
+    listener?.subscription.unsubscribe();
+  };
+}, []);
+   
         if (!data.session) {
           console.log("AdminPanel: No session found, redirecting to login");
           navigate('/admin-control');

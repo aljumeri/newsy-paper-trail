@@ -25,8 +25,8 @@ const Navbar = () => {
 
   return (
     <nav className="border-b border-gray-100 py-4 bg-white/95 sticky top-0 z-50 backdrop-blur-sm">
-      <div className="container flex flex-col lg:flex-row items-center">
-        <Link to="/" className="flex items-center mb-4 lg:mb-0">
+      <div className="container flex items-center justify-between">
+        <Link to="/" className="flex items-center">
           <img 
             src="/lovable-uploads/b40e2534-e282-4e60-9ca0-91070f9c6ad7.png" 
             alt="نشرة سولو"
@@ -36,14 +36,23 @@ const Navbar = () => {
         </Link>
 
         {/* قائمة سطح المكتب */}
-        <div className="hidden lg:flex items-center justify-center flex-1 gap-8">
+        <div className="hidden lg:flex items-center justify-center absolute left-1/2 transform -translate-x-1/2 gap-8">
           <Link to="/" className="text-neutral-600 hover:text-purple-500 transition-colors">الرئيسية</Link>
           <Link to="/archives" className="text-neutral-600 hover:text-purple-500 transition-colors">الأرشيف</Link>
           <Link to="/about" className="text-neutral-600 hover:text-purple-500 transition-colors">من نحن</Link>
         </div>
 
+        {/* زر القائمة للجوال */}
+        <button 
+          className="lg:hidden"
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          aria-label={isMenuOpen ? "إغلاق القائمة" : "فتح القائمة"}
+        >
+          {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+
         {/* زر الاشتراك (سطح المكتب) */}
-        <div className="hidden lg:block">
+        <div className="hidden lg:flex items-center">
           <Button 
             variant="default" 
             className="bg-purple-500 hover:bg-purple-600"
@@ -52,15 +61,6 @@ const Navbar = () => {
             اشترك الآن
           </Button>
         </div>
-
-        {/* زر القائمة للجوال */}
-        <button 
-          className="lg:hidden absolute right-4 top-4"
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          aria-label={isMenuOpen ? "إغلاق القائمة" : "فتح القائمة"}
-        >
-          {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
 
         {/* قائمة الجوال */}
         {isMenuOpen && (

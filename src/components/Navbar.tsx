@@ -35,7 +35,7 @@ const Navbar = () => {
           <span className="font-serif font-bold text-2xl text-purple-500">نشرة<span className="text-neutral-800">سولو</span></span>
         </Link>
 
-        {/* قائمة سطح المكتب */}
+        {/* قائمة سطح المكتب - وسط الشاشة */}
         <div className="hidden lg:flex items-center justify-center absolute left-1/2 transform -translate-x-1/2 gap-8">
           <Link to="/" className="text-neutral-600 hover:text-purple-500 transition-colors">الرئيسية</Link>
           <Link to="/archives" className="text-neutral-600 hover:text-purple-500 transition-colors">الأرشيف</Link>

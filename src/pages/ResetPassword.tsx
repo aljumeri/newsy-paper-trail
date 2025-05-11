@@ -10,6 +10,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 
 const ResetPassword = () => {
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [resetCodeVerified, setResetCodeVerified] = useState(false);
   const { toast } = useToast();
@@ -21,10 +22,12 @@ const ResetPassword = () => {
     const handleResetCode = async () => {
       const searchParams = new URLSearchParams(location.search);
       const code = searchParams.get('code');
+      const type = searchParams.get('type');
       const errorDesc = searchParams.get('error_description');
       
       console.log("ResetPassword: URL parameters detected", {
         code: code ? "present" : "not present",
+        type: type || "none",
         error: errorDesc || "none"
       });
       
@@ -40,7 +43,7 @@ const ResetPassword = () => {
       }
       
       // If there's a reset code, try to verify it
-      if (code) {
+      if (code && type === 'recovery') {
         try {
           console.log("Verifying password reset code");
           const { error } = await supabase.auth.verifyOtp({
@@ -70,6 +73,15 @@ const ResetPassword = () => {
           });
           navigate('/admin-control', { replace: true });
         }
+      } else if (!code || !type) {
+        // No reset code or type in URL
+        console.error("Missing reset code or type in URL parameters");
+        toast({
+          title: "رابط غير صالح",
+          description: "رابط إعادة تعيين كلمة المرور غير مكتمل. يرجى طلب رابط جديد.",
+          variant: "destructive"
+        });
+        navigate('/admin-control', { replace: true });
       }
     };
     
@@ -78,6 +90,27 @@ const ResetPassword = () => {
 
   const handleSetNewPassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate passwords match
+    if (password !== confirmPassword) {
+      toast({
+        title: "كلمات المرور غير متطابقة",
+        description: "يرجى التأكد من تطابق كلمتي المرور",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Validate password length
+    if (password.length < 6) {
+      toast({
+        title: "كلمة المرور قصيرة جدًا",
+        description: "يجب أن تتكون كلمة المرور من 6 أحرف على الأقل",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
@@ -131,6 +164,21 @@ const ResetPassword = () => {
                   minLength={6}
                 />
               </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="confirm-password" className="block text-sm font-medium">تأكيد كلمة المرور</label>
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="*****"
+                  required
+                  className="w-full"
+                  minLength={6}
+                />
+              </div>
+              
               <Button
                 type="submit"
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white"

@@ -49,9 +49,10 @@ const App = () => {
   // Check for password reset code in URL
   const urlParams = new URLSearchParams(window.location.search);
   const resetCode = urlParams.get('code');
+  const tokenType = urlParams.get('type');
   
-  // If there's a reset code in the root URL, redirect to the reset password page
-  if (currentPath === '/' && resetCode) {
+  // If there's a reset code in the URL at any path
+  if (resetCode && tokenType === 'recovery') {
     console.log("Reset code detected in URL, redirecting to reset password page");
     return (
       <QueryClientProvider client={queryClient}>
@@ -59,7 +60,7 @@ const App = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Navigate to={`/admin-control/reset-password?code=${resetCode}`} replace />
+            <Navigate to={`/admin-control/reset-password?code=${resetCode}&type=${tokenType}`} replace />
           </BrowserRouter>
         </TooltipProvider>
       </QueryClientProvider>

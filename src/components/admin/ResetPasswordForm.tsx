@@ -21,8 +21,12 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
   const getResetPasswordURL = () => {
     if (typeof window === 'undefined') return '';
     
+    const hostname = window.location.hostname;
+    const origin = window.location.origin;
+    
     // Always use the full URL instead of a relative path to ensure proper redirects
-    return `${window.location.origin}/admin-control/reset-password`;
+    console.log(`Reset password URL: ${origin}/admin-control/reset-password`);
+    return `${origin}/admin-control/reset-password`;
   };
 
   const handleResetPassword = async (e: React.FormEvent) => {

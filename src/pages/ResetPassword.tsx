@@ -7,12 +7,16 @@ import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const ResetPassword = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [resetCodeVerified, setResetCodeVerified] = useState(false);
+  const [verificationInProgress, setVerificationInProgress] = useState(true);
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const { toast } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
@@ -33,12 +37,9 @@ const ResetPassword = () => {
       
       // Handle errors from the URL
       if (errorDesc) {
-        toast({
-          title: "خطأ في إعادة تعيين كلمة المرور",
-          description: errorDesc,
-          variant: "destructive"
-        });
-        navigate('/admin-control', { replace: true });
+        setErrorMessage(errorDesc);
+        setShowErrorDialog(true);
+        setVerificationInProgress(false);
         return;
       }
       
@@ -53,40 +54,32 @@ const ResetPassword = () => {
           
           if (error) {
             console.error("Error verifying reset code:", error);
-            toast({
-              title: "رمز إعادة تعيين غير صالح",
-              description: "رابط إعادة تعيين كلمة المرور غير صالح أو انتهت صلاحيته. يرجى طلب رابط جديد.",
-              variant: "destructive"
-            });
-            navigate('/admin-control', { replace: true });
+            setErrorMessage("رابط إعادة تعيين كلمة المرور غير صالح أو انتهت صلاحيته. يرجى طلب رابط جديد.");
+            setShowErrorDialog(true);
+            setVerificationInProgress(false);
             return;
           }
           
           console.log("Reset code verified successfully");
           setResetCodeVerified(true);
+          setVerificationInProgress(false);
         } catch (error: any) {
           console.error("Exception during reset code verification:", error);
-          toast({
-            title: "خطأ في التحقق من رمز إعادة التعيين",
-            description: error.message || "حدث خطأ أثناء التحقق من رابط إعادة التعيين",
-            variant: "destructive"
-          });
-          navigate('/admin-control', { replace: true });
+          setErrorMessage(error.message || "حدث خطأ أثناء التحقق من رابط إعادة التعيين");
+          setShowErrorDialog(true);
+          setVerificationInProgress(false);
         }
       } else if (!code || !type) {
         // No reset code or type in URL
         console.error("Missing reset code or type in URL parameters");
-        toast({
-          title: "رابط غير صالح",
-          description: "رابط إعادة تعيين كلمة المرور غير مكتمل. يرجى طلب رابط جديد.",
-          variant: "destructive"
-        });
-        navigate('/admin-control', { replace: true });
+        setErrorMessage("رابط إعادة تعيين كلمة المرور غير مكتمل. يرجى طلب رابط جديد.");
+        setShowErrorDialog(true);
+        setVerificationInProgress(false);
       }
     };
     
     handleResetCode();
-  }, [location.search, toast, navigate]);
+  }, [location.search]);
 
   const handleSetNewPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,6 +131,11 @@ const ResetPassword = () => {
       setIsLoading(false);
     }
   };
+
+  const handleCloseErrorDialog = () => {
+    setShowErrorDialog(false);
+    navigate('/admin-control');
+  };
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -149,7 +147,14 @@ const ResetPassword = () => {
             <p className="text-gray-500">أدخل كلمة المرور الجديدة الخاصة بك</p>
           </div>
           
-          {resetCodeVerified ? (
+          {verificationInProgress ? (
+            <div className="py-8 text-center">
+              <div className="animate-pulse flex justify-center">
+                <div className="h-6 w-32 bg-gray-300 rounded"></div>
+              </div>
+              <p className="mt-4 text-gray-500">جارِ التحقق من رمز إعادة التعيين...</p>
+            </div>
+          ) : resetCodeVerified ? (
             <form onSubmit={handleSetNewPassword} className="space-y-4">
               <div className="space-y-2">
                 <label htmlFor="new-password" className="block text-sm font-medium">كلمة المرور الجديدة</label>
@@ -189,14 +194,34 @@ const ResetPassword = () => {
             </form>
           ) : (
             <div className="py-4 text-center">
-              <div className="animate-pulse flex justify-center">
-                <div className="h-4 w-24 bg-gray-300 rounded"></div>
-              </div>
-              <p className="mt-4 text-gray-500">جارِ التحقق من رمز إعادة التعيين...</p>
+              <p className="text-red-500 mb-4">خطأ في رمز إعادة التعيين</p>
+              <Button
+                onClick={() => navigate('/admin-control')}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                العودة إلى صفحة تسجيل الدخول
+              </Button>
             </div>
           )}
         </div>
       </main>
+
+      <Dialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center">رمز إعادة تعيين غير صالح</DialogTitle>
+            <DialogDescription className="text-center">
+              {errorMessage}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-center mt-4">
+            <Button onClick={handleCloseErrorDialog}>
+              العودة إلى صفحة تسجيل الدخول
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
       <Footer />
     </div>
   );

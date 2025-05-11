@@ -14,6 +14,7 @@ import EditNewsletter from "./pages/EditNewsletter";
 import NewsletterDetail from "./pages/NewsletterDetail";
 import AdminControl from "./pages/AdminControl";
 import ResetPassword from "./pages/ResetPassword";
+import { useEffect, useState } from "react";
 
 // Configure QueryClient with error handling
 const queryClient = new QueryClient({
@@ -36,6 +37,9 @@ const App = () => {
   const currentOrigin = window.location.origin;
   const currentPath = window.location.pathname;
   const currentProtocol = window.location.protocol;
+  const [hasResetCode, setHasResetCode] = useState(false);
+  const [resetCode, setResetCode] = useState<string | null>(null);
+  const [tokenType, setTokenType] = useState<string | null>(null);
   
   console.log("=============================================");
   console.log("App component rendering with routes");
@@ -47,13 +51,24 @@ const App = () => {
   console.log("=============================================");
 
   // Check for password reset code in URL
-  const urlParams = new URLSearchParams(window.location.search);
-  const resetCode = urlParams.get('code');
-  const tokenType = urlParams.get('type');
-  
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const type = urlParams.get('type');
+    
+    console.log("URL Parameters:", { code: code ? "present" : "not present", type });
+    
+    if (code && type === 'recovery') {
+      console.log("Reset code detected in URL, setting state for redirect");
+      setHasResetCode(true);
+      setResetCode(code);
+      setTokenType(type);
+    }
+  }, []);
+
   // If there's a reset code in the URL at any path
-  if (resetCode && tokenType === 'recovery') {
-    console.log("Reset code detected in URL, redirecting to reset password page");
+  if (hasResetCode && resetCode && tokenType) {
+    console.log("Redirecting to reset password page with code:", resetCode);
     return (
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>

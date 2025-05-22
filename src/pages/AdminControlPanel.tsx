@@ -48,27 +48,42 @@ const AdminControlPanel = () => {
       console.log("AdminPanel: Fetching subscribers data...");
       
       // Directly fetch subscribers data with explicit debugging
-      const { data: subscribersData, error: subscribersError } = await supabase
-        .from('subscribers')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      console.log("AdminPanel: Subscribers query completed");
-      
-      if (subscribersError) {
-        console.error('Error fetching subscribers:', subscribersError);
-        toast({
-          title: "خطأ في جلب بيانات المشتركين",
-          description: subscribersError.message,
-          variant: "destructive"
-        });
-      } else {
-        console.log("AdminPanel: Subscribers data fetched successfully:", subscribersData);
-        console.log("AdminPanel: Number of subscribers:", subscribersData?.length ?? 0);
-        
-        // Ensure we're setting even if empty array (but not null/undefined)
-        setSubscribers(subscribersData || []);
-      }
+      // Directly fetch subscribers data with explicit debugging
+const { data: subscribersData, error: subscribersError } = await supabase
+  .from('subscribers')
+  .select('*')
+  .order('created_at', { ascending: false });
+
+console.log("AdminPanel: Subscribers query completed");
+
+if (subscribersError) {
+  console.error('Error fetching subscribers:', subscribersError);
+  toast({
+    title: "خطأ في جلب بيانات المشتركين",
+    description: subscribersError.message,
+    variant: "destructive"
+  });
+  
+  // Even if there's an error, set subscribers to empty array to avoid undefined
+  setSubscribers([]);
+  
+  // Check if this is a permissions error and show more specific message
+  if (subscribersError.code === '42501' || subscribersError.message.includes('permission')) {
+    console.error('This appears to be a permissions error. Please check RLS policies.');
+    toast({
+      title: "خطأ في الصلاحيات",
+      description: "يرجى التحقق من إعدادات الصلاحيات في Supabase",
+      variant: "destructive"
+    });
+  }
+} else {
+  console.log("AdminPanel: Subscribers data fetched successfully:", subscribersData);
+  console.log("AdminPanel: Number of subscribers:", subscribersData?.length ?? 0);
+  
+  // Ensure we're setting even if empty array (but not null/undefined)
+  setSubscribers(Array.isArray(subscribersData) ? subscribersData : []);
+}
+
       
       // Fetch newsletters data
       console.log("AdminPanel: Fetching newsletters data...");

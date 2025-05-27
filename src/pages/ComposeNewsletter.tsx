@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -19,6 +18,34 @@ const ComposeNewsletter = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  
+  // Add the consistent checkAdminStatus function
+  const checkAdminStatus = async () => {
+    try {
+      const { data } = await supabase.auth.getSession();
+      
+      if (!data.session) {
+        console.log("ComposeNewsletter: No session found during admin check");
+        return false;
+      }
+      
+      // Check admin status by email pattern
+      const email = data.session.user.email?.toLowerCase() || '';
+      console.log("ComposeNewsletter: Checking admin status for email:", email);
+      
+      const isAdmin = email.includes('admin') || 
+             email === 'test@example.com' || 
+             email === 'aljumeri@gmail.com' ||
+             email === 'su.alshehri.ai@gmail.com' ||
+             email.endsWith('@solo4ai.com');
+             
+      console.log("ComposeNewsletter: Admin status check result:", isAdmin);
+      return isAdmin;
+    } catch (error) {
+      console.error("Error checking admin status:", error);
+      return false;
+    }
+  };
   
   // Apply theme when dark mode changes
   useEffect(() => {
@@ -58,19 +85,16 @@ const ComposeNewsletter = () => {
           return;
         }
         
-        // Check admin status by email pattern
-        const email = data.session.user.email?.toLowerCase() || '';
-        const isAdminUser = email.includes('admin') || 
-                            email === 'test@example.com' || 
-                            email.endsWith('@supabase.com');
+        // Use the consistent admin check method
+        const isAdminUser = await checkAdminStatus();
         
         if (!isAdminUser) {
+          console.log("ComposeNewsletter: User is not admin, redirecting");
           toast({
             title: "صلاحيات غير كافية",
             description: "ليس لديك صلاحيات الوصول إلى هذه الصفحة",
             variant: "destructive"
           });
-          await supabase.auth.signOut();
           navigate('/admin-control');
           return;
         }
@@ -116,18 +140,22 @@ const ComposeNewsletter = () => {
       console.log("Attempting to save newsletter with user ID:", userId);
       
       // Save newsletter
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('newsletters')
         .insert({
           subject, 
           content, 
-          created_by: userId
-        } as any);
+          created_by: userId,
+          created_at: new Date().toISOString()
+        })
+        .select();
       
       if (error) {
         console.error('Newsletter save error:', error);
         throw error;
       }
+      
+      console.log('Newsletter saved successfully:', data);
       
       toast({
         title: "تم الحفظ بنجاح",
@@ -135,11 +163,12 @@ const ComposeNewsletter = () => {
       });
       
       navigate('/admin-control/panel');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving newsletter:', error);
+      const errorMessage = error instanceof Error ? error.message : "حدث خطأ أثناء حفظ النشرة الإخبارية";
       toast({
         title: "خطأ في الحفظ",
-        description: error.message || "حدث خطأ أثناء حفظ النشرة الإخبارية",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {

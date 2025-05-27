@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -30,49 +29,60 @@ const ResetPassword = () => {
       const errorDesc = searchParams.get('error_description');
       
       console.log("ResetPassword: URL parameters detected", {
-        code: code ? "present" : "not present",
+        code: code ? `present (length: ${code.length})` : "not present",
         type: type || "none",
-        error: errorDesc || "none"
+        error: errorDesc || "none",
+        fullSearch: location.search
       });
       
       // Handle errors from the URL
       if (errorDesc) {
-        setErrorMessage(errorDesc);
+        setErrorMessage(decodeURIComponent(errorDesc));
         setShowErrorDialog(true);
         setVerificationInProgress(false);
         return;
       }
       
-      // If there's a reset code, try to verify it
-      if (code && type === 'recovery') {
-        try {
-          console.log("Verifying password reset code");
-          const { error } = await supabase.auth.verifyOtp({
-            token_hash: code,
-            type: 'recovery'
-          });
+      // If there's no reset code, show error
+      if (!code || type !== 'recovery') {
+        console.error("Missing or invalid reset code in URL parameters");
+        setErrorMessage("رابط إعادة تعيين كلمة المرور غير مكتمل. يرجى طلب رابط جديد.");
+        setShowErrorDialog(true);
+        setVerificationInProgress(false);
+        return;
+      }
+      
+      try {
+        console.log("Verifying password reset code");
+        
+        // Try to verify the OTP token
+        const { error } = await supabase.auth.verifyOtp({
+          token_hash: code,
+          type: 'recovery'
+        });
+        
+        if (error) {
+          console.error("Error verifying reset code:", error);
           
-          if (error) {
-            console.error("Error verifying reset code:", error);
-            setErrorMessage("رابط إعادة تعيين كلمة المرور غير صالح أو انتهت صلاحيته. يرجى طلب رابط جديد.");
-            setShowErrorDialog(true);
-            setVerificationInProgress(false);
-            return;
+          // More descriptive error message
+          let errorMsg = "رابط إعادة تعيين كلمة المرور غير صالح أو انتهت صلاحيته. يرجى طلب رابط جديد.";
+          if (error.message.includes("expired")) {
+            errorMsg = "انتهت صلاحية رابط إعادة تعيين كلمة المرور. يرجى طلب رابط جديد.";
           }
           
-          console.log("Reset code verified successfully");
-          setResetCodeVerified(true);
-          setVerificationInProgress(false);
-        } catch (error: any) {
-          console.error("Exception during reset code verification:", error);
-          setErrorMessage(error.message || "حدث خطأ أثناء التحقق من رابط إعادة التعيين");
+          setErrorMessage(errorMsg);
           setShowErrorDialog(true);
           setVerificationInProgress(false);
+          return;
         }
-      } else if (!code || !type) {
-        // No reset code or type in URL
-        console.error("Missing reset code or type in URL parameters");
-        setErrorMessage("رابط إعادة تعيين كلمة المرور غير مكتمل. يرجى طلب رابط جديد.");
+        
+        console.log("Reset code verified successfully");
+        setResetCodeVerified(true);
+        setVerificationInProgress(false);
+      } catch (error: unknown) {
+        console.error("Exception during reset code verification:", error);
+        const errorMessage = error instanceof Error ? error.message : "حدث خطأ أثناء التحقق من رابط إعادة التعيين";
+        setErrorMessage(errorMessage);
         setShowErrorDialog(true);
         setVerificationInProgress(false);
       }
@@ -118,13 +128,14 @@ const ResetPassword = () => {
       
       // Redirect to admin panel after successful password reset
       setTimeout(() => {
-        navigate('/admin-control/panel');
+        navigate('/admin-control');
       }, 1500);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error updating password:', error);
+      const errorMessage = error instanceof Error ? error.message : "حدث خطأ أثناء تحديث كلمة المرور.";
       toast({
         title: "خطأ في تحديث كلمة المرور",
-        description: error.message || "حدث خطأ أثناء تحديث كلمة المرور.",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -136,92 +147,121 @@ const ResetPassword = () => {
     setShowErrorDialog(false);
     navigate('/admin-control');
   };
-  
-  return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-      <main className="flex-grow flex items-center justify-center py-16 px-4">
-        <div className="bg-white p-6 rounded-lg shadow-md max-w-md w-full">
-          <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold mb-2">إعادة تعيين كلمة المرور</h1>
-            <p className="text-gray-500">أدخل كلمة المرور الجديدة الخاصة بك</p>
-          </div>
-          
-          {verificationInProgress ? (
-            <div className="py-8 text-center">
-              <div className="animate-pulse flex justify-center">
-                <div className="h-6 w-32 bg-gray-300 rounded"></div>
-              </div>
-              <p className="mt-4 text-gray-500">جارِ التحقق من رمز إعادة التعيين...</p>
+
+  // Show loading state while verifying reset code
+  if (verificationInProgress) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-md">
+            <div>
+              <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                جارٍ التحقق من الرابط
+              </h2>
+              <p className="mt-2 text-center text-sm text-gray-600">
+                يرجى الانتظار قليلاً...
+              </p>
             </div>
-          ) : resetCodeVerified ? (
-            <form onSubmit={handleSetNewPassword} className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="new-password" className="block text-sm font-medium">كلمة المرور الجديدة</label>
-                <Input
-                  id="new-password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="*****"
-                  required
-                  className="w-full"
-                  minLength={6}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label htmlFor="confirm-password" className="block text-sm font-medium">تأكيد كلمة المرور</label>
-                <Input
-                  id="confirm-password"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="*****"
-                  required
-                  className="w-full"
-                  minLength={6}
-                />
-              </div>
-              
-              <Button
-                type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                disabled={isLoading}
-              >
-                {isLoading ? "جاري التحديث..." : "تحديث كلمة المرور"}
-              </Button>
-            </form>
-          ) : (
-            <div className="py-4 text-center">
-              <p className="text-red-500 mb-4">خطأ في رمز إعادة التعيين</p>
-              <Button
-                onClick={() => navigate('/admin-control')}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
+            <div className="flex justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Show error dialog if verification failed
+  if (showErrorDialog) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-md">
+            <div>
+              <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                خطأ في إعادة تعيين كلمة المرور
+              </h2>
+              <p className="mt-2 text-center text-sm text-gray-600">
+                {errorMessage}
+              </p>
+            </div>
+            <div className="flex justify-center">
+              <Button onClick={handleCloseErrorDialog}>
                 العودة إلى صفحة تسجيل الدخول
               </Button>
             </div>
-          )}
-        </div>
-      </main>
-
-      <Dialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-center">رمز إعادة تعيين غير صالح</DialogTitle>
-            <DialogDescription className="text-center">
-              {errorMessage}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-center mt-4">
-            <Button onClick={handleCloseErrorDialog}>
-              العودة إلى صفحة تسجيل الدخول
-            </Button>
           </div>
-        </DialogContent>
-      </Dialog>
-      
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Show password reset form if the reset code was verified successfully
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
+      <div className="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-md">
+          <div>
+            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+              إعادة تعيين كلمة المرور
+            </h2>
+            <p className="mt-2 text-center text-sm text-gray-600">
+              الرجاء إدخال كلمة المرور الجديدة
+            </p>
+          </div>
+          <form className="mt-8 space-y-6" onSubmit={handleSetNewPassword}>
+            <div className="rounded-md shadow-sm -space-y-px">
+              <div className="mb-4">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                  كلمة المرور الجديدة
+                </label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                  placeholder="كلمة المرور الجديدة"
+                />
+              </div>
+              <div>
+                <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700 mb-1">
+                  تأكيد كلمة المرور
+                </label>
+                <Input
+                  id="confirm-password"
+                  name="confirm-password"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                  placeholder="تأكيد كلمة المرور الجديدة"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Button
+                type="submit"
+                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                disabled={isLoading}
+              >
+                {isLoading ? "جارِ تحديث كلمة المرور..." : "تحديث كلمة المرور"}
+              </Button>
+            </div>
+          </form>
+        </div>
+      </div>
       <Footer />
     </div>
   );

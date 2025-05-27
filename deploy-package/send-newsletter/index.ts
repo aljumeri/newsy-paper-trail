@@ -20,10 +20,6 @@ interface SubscriberData {
   email: string;
 }
 
-// Fallback values for local development
-const FALLBACK_SUPABASE_URL = "https://vqkdadugmkwnthkfjbla.supabase.co";
-const FALLBACK_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxa2RhZHVnbWt3bnRoa2ZqYmxhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYxNDQwOTUsImV4cCI6MjA2MTcyMDA5NX0.AyZpQgkaypIz2thFdO2K5WF7WFXog2tw-t_9RLBapY4";
-
 serve(async (req: Request) => {
   console.log("Edge Function: send-newsletter invoked");
   
@@ -81,21 +77,21 @@ serve(async (req: Request) => {
     
     console.log(`Edge Function: Newsletter found: ${newsletter.subject}`);
     
-    // Get subscriber count only to avoid column issues
-    console.log("Edge Function: Counting subscribers");
-    const { count: subscribersCount, error: subscribersError } = await supabase
+    // Get all subscribers - explicitly only select email field
+    console.log("Edge Function: Fetching subscribers");
+    const { data: subscribers, error: subscribersError } = await supabase
       .from("subscribers")
-      .select("*", { count: 'exact', head: true });
+      .select("email")
+      .order("created_at", { ascending: false });
       
     if (subscribersError) {
-      console.error(`Edge Function: Subscribers count error: ${subscribersError.message}`);
-      throw new Error(`Failed to count subscribers: ${subscribersError.message}`);
+      console.error(`Edge Function: Subscribers fetch error: ${subscribersError.message}`);
+      throw new Error(`Failed to fetch subscribers: ${subscribersError.message}`);
     }
     
-    const subscriberCount = subscribersCount || 0;
-    console.log(`Edge Function: Found ${subscriberCount} subscribers`);
+    console.log(`Edge Function: Found ${subscribers?.length || 0} subscribers`);
     
-    if (subscriberCount === 0) {
+    if (!subscribers || subscribers.length === 0) {
       console.log("Edge Function: No subscribers found");
       return new Response(
         JSON.stringify({ message: "No subscribers found", success: true, subscribers: 0 }),
@@ -109,7 +105,7 @@ serve(async (req: Request) => {
       .from("newsletters")
       .update({ 
         sent_at: new Date().toISOString(),
-        recipients_count: subscriberCount,
+        recipients_count: subscribers.length,
         status: 'sent' 
       })
       .eq("id", newsletterId);
@@ -124,14 +120,14 @@ serve(async (req: Request) => {
     // In a real application, you would use an email service API here
     // to actually send emails to all subscribers
     // For this example, we'll just return a success message
-    console.log(`Edge Function: Newsletter "${newsletter.subject}" would be sent to ${subscriberCount} subscribers`);
+    console.log(`Edge Function: Newsletter "${newsletter.subject}" would be sent to ${subscribers.length} subscribers`);
     
     // Return success response
     console.log("Edge Function: Returning success response");
     return new Response(
       JSON.stringify({ 
-        message: `Newsletter sent to ${subscriberCount} subscribers`,
-        subscribers: subscriberCount,
+        message: `Newsletter sent to ${subscribers.length} subscribers`,
+        subscribers: subscribers.length,
         success: true
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }

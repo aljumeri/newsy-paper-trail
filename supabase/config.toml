@@ -1,4 +1,3 @@
-
 # project_id = "vqkdadugmkwnthkfjbla"
 # A string used to distinguish different Supabase projects on the same host. Defaults to the working
 # directory name when running `supabase init`.
@@ -43,7 +42,14 @@ file_size_limit = "50MiB"
 # in emails.
 site_url = "https://solo4ai.com"
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["https://localhost:3000", "https://newsy-paper-trail.lovable.app", "https://solo4ai.com"]
+additional_redirect_urls = [
+  "https://localhost:3000", 
+  "https://localhost:3000/admin-control/reset-password",
+  "https://newsy-paper-trail.lovable.app", 
+  "https://newsy-paper-trail.lovable.app/admin-control/reset-password",
+  "https://solo4ai.com",
+  "https://solo4ai.com/admin-control/reset-password"
+]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # If disabled, the refresh token will never expire.

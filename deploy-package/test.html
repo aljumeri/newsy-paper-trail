@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار النشرة الإخبارية</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>اختبار النشرة الإخبارية</h1>
+        
+        <div class="form-group">
+            <label for="email">البريد الإلكتروني:</label>
+            <input type="email" id="email" placeholder="أدخل بريدك الإلكتروني">
+        </div>
+        
+        <div class="form-group">
+            <button id="subscribeBtn">اشترك في النشرة الإخبارية</button>
+        </div>
+        
+        <div class="form-group">
+            <label for="newsletterId">معرف النشرة الإخبارية:</label>
+            <input type="text" id="newsletterId" placeholder="أدخل معرف النشرة الإخبارية">
+        </div>
+        
+        <div class="form-group">
+            <button id="sendBtn">إرسال النشرة الإخبارية</button>
+        </div>
+        
+        <div id="result" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://vqkdadugmkwnthkfjbla.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxa2RhZHVnbWt3bnRoa2ZqYmxhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYxNDQwOTUsImV4cCI6MjA2MTcyMDA5NX0.AyZpQgkaypIz2thFdO2K5WF7WFXog2tw-t_9RLBapY4";
+        
+        document.getElementById('subscribeBtn').addEventListener('click', async () => {
+            const email = document.getElementById('email').value;
+            if (!email) {
+                showResult('يرجى إدخال بريد إلكتروني صالح', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/add-subscriber`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    },
+                    body: JSON.stringify({ email })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showResult('تم الاشتراك بنجاح!', 'success');
+                } else {
+                    showResult(data.message || 'حدث خطأ أثناء الاشتراك', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showResult('حدث خطأ أثناء الاشتراك', 'error');
+            }
+        });
+        
+        document.getElementById('sendBtn').addEventListener('click', async () => {
+            const newsletterId = document.getElementById('newsletterId').value;
+            if (!newsletterId) {
+                showResult('يرجى إدخال معرف النشرة الإخبارية', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/send-newsletter`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    },
+                    body: JSON.stringify({ newsletterId })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showResult(`تم إرسال النشرة الإخبارية بنجاح إلى ${data.subscribers} مشترك!`, 'success');
+                } else {
+                    showResult(data.error || 'حدث خطأ أثناء إرسال النشرة الإخبارية', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showResult('حدث خطأ أثناء إرسال النشرة الإخبارية', 'error');
+            }
+        });
+        
+        function showResult(message, type) {
+            const resultElement = document.getElementById('result');
+            resultElement.textContent = message;
+            resultElement.className = `result ${type}`;
+            resultElement.style.display = 'block';
+        }
+    </script>
+</body>
+</html> 

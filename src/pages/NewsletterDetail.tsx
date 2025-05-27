@@ -1,13 +1,23 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { ChevronRight } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
-// Define the newsletter content data structure
-interface NewsletterContent {
+// Define the newsletter data structure
+interface NewsletterData {
+  id: string;
+  subject: string;
+  content: string;
+  created_at: string;
+  sent_at: string | null;
+  recipients_count?: number;
+}
+
+// Newsletter static examples (as fallback)
+interface StaticNewsletterData {
   id: number;
   title: string;
   date: string;
@@ -15,8 +25,7 @@ interface NewsletterContent {
   content: React.ReactNode;
 }
 
-// Newsletter data with full content
-const newsletterData: Record<number, NewsletterContent> = {
+const newsletterData: Record<number, StaticNewsletterData> = {
   1: {
     id: 1,
     title: "مستقبل الذكاء الاصطناعي في الصناعات الإبداعية",
@@ -558,15 +567,67 @@ const newsletterData: Record<number, NewsletterContent> = {
 
 const NewsletterDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const [newsletter, setNewsletter] = useState<NewsletterContent | null>(null);
+  const [newsletter, setNewsletter] = useState<NewsletterData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (id && newsletterData[parseInt(id)]) {
-      setNewsletter(newsletterData[parseInt(id)]);
-    }
-    setLoading(false);
+    const fetchNewsletter = async () => {
+      try {
+        if (!id) {
+          throw new Error("Newsletter ID is missing");
+        }
+
+        console.log("Fetching newsletter with ID:", id);
+        
+        // Attempt to fetch from database
+        const { data, error } = await supabase
+          .from('newsletters')
+          .select('*')
+          .eq('id', id)
+          .single();
+        
+        if (error) {
+          console.error("Error fetching newsletter:", error);
+          throw error;
+        }
+        
+        if (data) {
+          console.log("Newsletter fetched successfully:", data.subject);
+          setNewsletter(data);
+        } else {
+          // Fallback to static data if available
+          const staticId = parseInt(id);
+          if (newsletterData[staticId]) {
+            console.log("Using static newsletter data as fallback");
+            setNewsletter(newsletterData[staticId]);
+          } else {
+            throw new Error("Newsletter not found");
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch newsletter:", err);
+        setError(err instanceof Error ? err.message : "Failed to load newsletter");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNewsletter();
   }, [id]);
+
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return new Intl.DateTimeFormat('ar-SA', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }).format(date);
+    } catch (e) {
+      return dateString;
+    }
+  };
 
   if (loading) {
     return (
@@ -580,13 +641,14 @@ const NewsletterDetail = () => {
     );
   }
 
-  if (!newsletter) {
+  if (error || !newsletter) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
         <main className="flex-grow container py-16">
           <div className="text-center">
             <h1 className="text-2xl font-bold mb-4">عذراً، لم يتم العثور على النشرة المطلوبة</h1>
+            <p className="text-red-500 mb-4">{error}</p>
             <Link to="/archives">
               <Button>العودة إلى الأرشيف</Button>
             </Link>
@@ -605,20 +667,15 @@ const NewsletterDetail = () => {
         <div className="bg-blue-50 py-12">
           <div className="container">
             <div className="flex flex-col md:flex-row gap-8 items-center">
-              <div className="md:w-2/3">
-                <div className="text-sm text-blue-600 mb-2">{newsletter.date}</div>
-                <h1 className="text-3xl md:text-4xl font-bold mb-4">{newsletter.title}</h1>
+              <div className="md:w-full">
+                <div className="text-sm text-blue-600 mb-2">
+                  {newsletter.created_at ? formatDate(newsletter.created_at) : ""}
+                </div>
+                <h1 className="text-3xl md:text-4xl font-bold mb-4">{newsletter.subject}</h1>
                 <Link to="/archives" className="inline-flex items-center text-blue-600 hover:text-blue-700">
                   <ChevronRight className="mr-1" size={16} />
                   <span>العودة إلى الأرشيف</span>
                 </Link>
-              </div>
-              <div className="md:w-1/3">
-                <img 
-                  src={newsletter.imageUrl} 
-                  alt={newsletter.title} 
-                  className="rounded-lg shadow-lg max-h-64 w-full object-cover"
-                />
               </div>
             </div>
           </div>
@@ -627,9 +684,7 @@ const NewsletterDetail = () => {
         {/* Newsletter content */}
         <div className="container py-12">
           <div className="max-w-3xl mx-auto bg-white p-6 md:p-8 rounded-lg shadow">
-            <article className="prose prose-lg max-w-none">
-              {newsletter.content}
-            </article>
+            <article className="prose prose-lg max-w-none" dangerouslySetInnerHTML={{ __html: newsletter.content }}></article>
             
             <div className="mt-12 pt-8 border-t border-gray-200">
               <h3 className="text-xl font-semibold mb-4">شارك هذا العدد</h3>

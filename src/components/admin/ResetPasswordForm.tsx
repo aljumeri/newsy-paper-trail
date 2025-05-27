@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -21,12 +20,11 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
   const getResetPasswordURL = () => {
     if (typeof window === 'undefined') return '';
     
-    const hostname = window.location.hostname;
+    // Use the current origin directly - this makes it work on any domain
     const origin = window.location.origin;
-    
-    // Always use the full URL instead of a relative path to ensure proper redirects
-    console.log(`Reset password URL: ${origin}/admin-control/reset-password`);
-    return `${origin}/admin-control/reset-password`;
+    const resetUrl = `${origin}/admin-control/reset-password`;
+    console.log(`Reset password URL: ${resetUrl}`);
+    return resetUrl;
   };
 
   const handleResetPassword = async (e: React.FormEvent) => {
@@ -53,11 +51,13 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
           });
           
           console.log("Password reset email sent successfully");
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error("Reset password error:", error);
           
           // Handle rate limiting errors more specifically
-          if (error.message?.includes("security purposes") || error.message?.includes("rate limit")) {
+          const errorMessage = error instanceof Error ? error.message : "حدث خطأ أثناء إرسال رابط إعادة التعيين";
+          
+          if (errorMessage.includes("security purposes") || errorMessage.includes("rate limit")) {
             toast({
               title: "يرجى الانتظار قليلاً",
               description: "لأسباب أمنية، يمكنك طلب إعادة تعيين كلمة المرور مرة واحدة كل 10 ثوان",
@@ -66,7 +66,7 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
           } else {
             toast({
               title: "خطأ في إرسال رابط إعادة التعيين",
-              description: error.message,
+              description: errorMessage,
               variant: "destructive"
             });
           }
@@ -74,11 +74,12 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
           setIsLoading(false);
         }
       }, 500);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Reset password error:", error);
+      const errorMessage = error instanceof Error ? error.message : "حدث خطأ أثناء إرسال رابط إعادة التعيين";
       toast({
         title: "خطأ في إرسال رابط إعادة التعيين",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive"
       });
       setIsLoading(false);

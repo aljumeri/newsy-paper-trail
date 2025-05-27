@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,6 +5,8 @@ import EditorToolbar from '@/components/newsletter/EditorToolbar';
 import YoutubeDialog from '@/components/newsletter/YoutubeDialog';
 import ImageUploadDialog from '@/components/newsletter/ImageUploadDialog';
 import LinkDialog from '@/components/newsletter/LinkDialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Send } from 'lucide-react';
 
 interface NewsletterFormProps {
   subject: string;
@@ -15,6 +16,8 @@ interface NewsletterFormProps {
   onSave: () => void;
   onPreview: () => void;
   isLoading: boolean;
+  newsletterId?: string;
+  onSend?: (id: string) => Promise<void>;
 }
 
 const NewsletterForm: React.FC<NewsletterFormProps> = ({
@@ -24,15 +27,18 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
   setContent,
   onSave,
   onPreview,
-  isLoading
+  isLoading,
+  newsletterId,
+  onSend
 }) => {
   const [showYoutubeDialog, setShowYoutubeDialog] = useState(false);
-  const [showImageDialog, setShowImageDialog] = useState(false);
+  const [showImageUploadDialog, setShowImageUploadDialog] = useState(false);
   const [showLinkDialog, setShowLinkDialog] = useState(false);
   const [textAlignment, setTextAlignment] = useState<'left' | 'center' | 'right'>('right');
   const [textDirection, setTextDirection] = useState<'rtl' | 'ltr'>('rtl');
   const [editHistory, setEditHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState<number>(-1);
+  const [isSending, setIsSending] = useState(false);
   
   // Initial history state
   useEffect(() => {
@@ -220,7 +226,7 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
     const selectedText = content.substring(start, end);
     
     if (selectedText) {
-      let listItems = selectedText.split('\n').filter(item => item.trim() !== '');
+      const listItems = selectedText.split('\n').filter(item => item.trim() !== '');
       
       // Create HTML list
       let listHtml = type === 'ordered' ? '<ol>' : '<ul>';
@@ -513,103 +519,134 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
     return () => clearTimeout(timer);
   }, [content, setContent]);
 
-  return (
-    <>
-      {/* YouTube Dialog with Size and Position Control */}
-      <YoutubeDialog 
-        isOpen={showYoutubeDialog} 
-        onClose={() => setShowYoutubeDialog(false)} 
-        onEmbed={handleYoutubeEmbed} 
-      />
-      
-      {/* Image Upload Dialog with Size Control */}
-      <ImageUploadDialog 
-        isOpen={showImageDialog} 
-        onClose={() => setShowImageDialog(false)} 
-        onInsertImage={handleImageInsert} 
-      />
-
-      {/* Link Dialog */}
-      <LinkDialog 
-        isOpen={showLinkDialog} 
-        onClose={() => setShowLinkDialog(false)} 
-        onInsertLink={handleLink} 
-      />
+  const handleInsertYoutubeEmbed = (embedCode: string) => {
+    setContent(prev => prev + embedCode);
+    setShowYoutubeDialog(false);
+  };
+  
+  const handleInsertImage = (imageUrl: string, altText: string) => {
+    const imageHtml = `<img src="${imageUrl}" alt="${altText}" class="rounded-lg my-4 max-w-full" />`;
+    setContent(prev => prev + imageHtml);
+    setShowImageUploadDialog(false);
+  };
+  
+  const handleInsertLink = (url: string, text: string) => {
+    const linkHtml = `<a href="${url}" class="text-blue-600 hover:underline" target="_blank">${text}</a>`;
+    setContent(prev => prev + linkHtml);
+    setShowLinkDialog(false);
+  };
+  
+  const handleSendNewsletter = async () => {
+    if (!newsletterId || !onSend) return;
     
-      <div className="space-y-4">
-        <div>
-          <label htmlFor="subject" className="block text-sm font-medium mb-1">عنوان النشرة الإخبارية</label>
-          <Input
-            id="subject"
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            placeholder="أدخل عنوان النشرة الإخبارية"
-            className="w-full"
-          />
-        </div>
-        <div>
-          <label htmlFor="content" className="block text-sm font-medium mb-1">محتوى النشرة الإخبارية</label>
+    try {
+      setIsSending(true);
+      await onSend(newsletterId);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <label htmlFor="subject" className="block text-sm font-medium mb-1 dark:text-white">
+          عنوان النشرة
+        </label>
+        <Input
+          id="subject"
+          value={subject}
+          onChange={(e) => setSubject(e.target.value)}
+          placeholder="أدخل عنوان النشرة الإخبارية هنا"
+          className="dark:bg-gray-700 dark:text-white"
+        />
+      </div>
+      
+      <div>
+        <label className="block text-sm font-medium mb-2 dark:text-white">
+          محتوى النشرة
+        </label>
+        <EditorToolbar 
+          onYoutubeClick={() => setShowYoutubeDialog(true)}
+          onImageClick={() => setShowImageUploadDialog(true)}
+          onLinkClick={() => setShowLinkDialog(true)}
+        />
+        <textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          rows={10}
+          className="w-full p-3 border rounded-md mt-2 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+          placeholder="اكتب محتوى النشرة هنا..."
+        />
+      </div>
+      
+      <div className="flex justify-between items-center">
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={onPreview}
+          className="dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
+        >
+          معاينة
+        </Button>
+        
+        <div className="flex gap-2">
+          {newsletterId && onSend && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  type="button" 
+                  variant="outline"
+                  className="flex items-center gap-1"
+                  disabled={isSending || isLoading}
+                >
+                  <Send size={16} />
+                  {isSending ? "جار الإرسال..." : "إرسال النشرة"}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="dark:bg-gray-800 dark:text-white">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="dark:text-white">تأكيد إرسال النشرة</AlertDialogTitle>
+                  <AlertDialogDescription className="dark:text-gray-300">
+                    هل أنت متأكد من رغبتك في إرسال هذه النشرة إلى جميع المشتركين؟ لا يمكن التراجع عن هذا الإجراء.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600">إلغاء</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleSendNewsletter}>إرسال</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
           
-          <EditorToolbar 
-            onBold={handleBold}
-            onItalic={handleItalic}
-            onUnderline={handleUnderline}
-            onAlignLeft={() => handleAlignment('left')}
-            onAlignCenter={() => handleAlignment('center')}
-            onAlignRight={() => handleAlignment('right')}
-            onImageUpload={() => setShowImageDialog(true)}
-            onYoutubeEmbed={() => setShowYoutubeDialog(true)}
-            onLink={() => setShowLinkDialog(true)}
-            onFontSize={handleFontSize}
-            onHeading={handleHeading}
-            onList={handleList}
-            onTextColor={handleTextColor}
-            onUndo={handleUndo}
-            onRedo={handleRedo}
-            onTextDirection={handleTextDirection}
-          />
-          
-          <div className={`border rounded-md ${textAlignment === 'right' ? 'text-right' : textAlignment === 'center' ? 'text-center' : 'text-left'}`}>
-            <textarea
-              id="content"
-              value={content}
-              onChange={(e) => {
-                setContent(e.target.value);
-                // Don't add to history for every keystroke
-                if (e.target.value.length % 50 === 0) { // Every ~50 chars
-                  addToHistory(e.target.value);
-                }
-              }}
-              placeholder="أدخل محتوى النشرة الإخبارية..."
-              className={`min-h-[300px] w-full p-2 rounded-md resize-y focus:outline-none focus:ring-1 focus:ring-primary`}
-              style={{direction: textDirection}}
-            />
-          </div>
-          
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-1">
-            <p className="text-xs text-gray-500">
-              يمكنك استخدام وسوم HTML الأساسية وسيظهر النص بالتنسيق المطلوب في النشرة الإخبارية. اسحب الصور ومقاطع الفيديو لتغيير موقعها.
-            </p>
-            <div className="text-xs text-gray-500 mt-2 sm:mt-0">
-              {editHistory.length > 0 && (
-                <span>
-                  تغييرات: {historyIndex + 1}/{editHistory.length}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={onPreview}>
-            معاينة
-          </Button>
-          
-          <Button onClick={onSave} disabled={isLoading}>
-            {isLoading ? "جارِ الحفظ..." : "حفظ النشرة الإخبارية"}
+          <Button 
+            type="button" 
+            onClick={onSave}
+            disabled={isLoading}
+          >
+            {isLoading ? "جار الحفظ..." : "حفظ النشرة"}
           </Button>
         </div>
       </div>
-    </>
+      
+      <YoutubeDialog 
+        open={showYoutubeDialog}
+        onClose={() => setShowYoutubeDialog(false)}
+        onInsert={handleInsertYoutubeEmbed}
+      />
+      
+      <ImageUploadDialog
+        open={showImageUploadDialog}
+        onClose={() => setShowImageUploadDialog(false)}
+        onInsert={handleInsertImage}
+      />
+      
+      <LinkDialog
+        open={showLinkDialog}
+        onClose={() => setShowLinkDialog(false)}
+        onInsert={handleInsertLink}
+      />
+    </div>
   );
 };
 

@@ -139,9 +139,9 @@ const AdminControl = () => {
           setIsLoading(false);
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Unexpected login error:", error);
-      setAuthError(error.message || "حدث خطأ أثناء تسجيل الدخول");
+      setAuthError(error instanceof Error ? error.message : "حدث خطأ أثناء تسجيل الدخول");
       setIsLoading(false);
     }
   };
@@ -206,9 +206,9 @@ const AdminControl = () => {
           setIsLoading(false);
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Unexpected registration error:", error);
-      setAuthError(error.message || "حدث خطأ أثناء إنشاء الحساب");
+      setAuthError(error instanceof Error ? error.message : "حدث خطأ أثناء إنشاء الحساب");
       setIsLoading(false);
     }
   };

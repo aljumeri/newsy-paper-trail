@@ -1,4 +1,3 @@
-// @deno-types="../deno.d.ts"
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.43.1";
 
@@ -7,24 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface NewsletterRequest {
-  newsletterId: string;
-}
-
-interface NewsletterData {
-  subject: string;
-  content: string;
-}
-
-interface SubscriberData {
-  email: string;
-}
-
-// Fallback values for local development
-const FALLBACK_SUPABASE_URL = "https://vqkdadugmkwnthkfjbla.supabase.co";
-const FALLBACK_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxa2RhZHVnbWt3bnRoa2ZqYmxhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYxNDQwOTUsImV4cCI6MjA2MTcyMDA5NX0.AyZpQgkaypIz2thFdO2K5WF7WFXog2tw-t_9RLBapY4";
-
-serve(async (req: Request) => {
+serve(async (req) => {
   console.log("Edge Function: send-newsletter invoked");
   
   // Handle CORS preflight requests
@@ -38,7 +20,7 @@ serve(async (req: Request) => {
     const requestBody = await req.json();
     console.log("Edge Function: Request body received:", JSON.stringify(requestBody));
     
-    const { newsletterId } = requestBody as NewsletterRequest;
+    const { newsletterId } = requestBody;
     
     if (!newsletterId) {
       console.error("Edge Function: Missing newsletterId in request");
@@ -47,14 +29,12 @@ serve(async (req: Request) => {
     
     console.log(`Edge Function: Processing newsletter ID: ${newsletterId}`);
 
-    // Initialize Supabase client with Deno.env
+    // Initialize Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     
     if (!supabaseUrl || !supabaseKey) {
       console.error("Edge Function: Missing environment variables");
-      console.error(`SUPABASE_URL: ${supabaseUrl ? "set" : "missing"}`);
-      console.error(`SUPABASE_SERVICE_ROLE_KEY: ${supabaseKey ? "set" : "missing"}`);
       throw new Error("Server configuration error: Missing environment variables");
     }
     
@@ -79,23 +59,21 @@ serve(async (req: Request) => {
       throw new Error("Newsletter not found");
     }
     
-    console.log(`Edge Function: Newsletter found: ${newsletter.subject}`);
-    
-    // Get subscriber count only to avoid column issues
-    console.log("Edge Function: Counting subscribers");
-    const { count: subscribersCount, error: subscribersError } = await supabase
+    // IMPORTANT: Get all subscribers - explicitly only select email field
+    console.log("Edge Function: Fetching subscribers");
+    const { data: subscribers, error: subscribersError } = await supabase
       .from("subscribers")
-      .select("*", { count: 'exact', head: true });
+      .select("email")
+      .order("created_at", { ascending: false });
       
     if (subscribersError) {
-      console.error(`Edge Function: Subscribers count error: ${subscribersError.message}`);
-      throw new Error(`Failed to count subscribers: ${subscribersError.message}`);
+      console.error(`Edge Function: Subscribers fetch error: ${subscribersError.message}`);
+      throw new Error(`Failed to fetch subscribers: ${subscribersError.message}`);
     }
     
-    const subscriberCount = subscribersCount || 0;
-    console.log(`Edge Function: Found ${subscriberCount} subscribers`);
+    console.log(`Edge Function: Found ${subscribers?.length || 0} subscribers`);
     
-    if (subscriberCount === 0) {
+    if (!subscribers || subscribers.length === 0) {
       console.log("Edge Function: No subscribers found");
       return new Response(
         JSON.stringify({ message: "No subscribers found", success: true, subscribers: 0 }),
@@ -109,7 +87,7 @@ serve(async (req: Request) => {
       .from("newsletters")
       .update({ 
         sent_at: new Date().toISOString(),
-        recipients_count: subscriberCount,
+        recipients_count: subscribers.length,
         status: 'sent' 
       })
       .eq("id", newsletterId);
@@ -123,21 +101,19 @@ serve(async (req: Request) => {
     
     // In a real application, you would use an email service API here
     // to actually send emails to all subscribers
-    // For this example, we'll just return a success message
-    console.log(`Edge Function: Newsletter "${newsletter.subject}" would be sent to ${subscriberCount} subscribers`);
+    console.log(`Edge Function: Newsletter "${newsletter.subject}" would be sent to ${subscribers.length} subscribers`);
     
     // Return success response
-    console.log("Edge Function: Returning success response");
     return new Response(
       JSON.stringify({ 
-        message: `Newsletter sent to ${subscriberCount} subscribers`,
-        subscribers: subscriberCount,
+        message: `Newsletter sent to ${subscribers.length} subscribers`,
+        subscribers: subscribers.length,
         success: true
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
     
-  } catch (error: unknown) {
+  } catch (error) {
     console.error("Edge Function: Error sending newsletter:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
     
@@ -146,4 +122,4 @@ serve(async (req: Request) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
     );
   }
-});
+}); 

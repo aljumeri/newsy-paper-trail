@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -25,89 +24,59 @@ export const useNewsletterEditor = () => {
   }, [isDarkMode]);
 
   useEffect(() => {
-    const loadNewsletter = async () => {
+    const fetchNewsletter = async () => {
+      if (!id) {
+        setIsLoading(false);
+        return;
+      }
+      
       try {
-        // First check if user is authenticated
-        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        console.log("Fetching newsletter with ID:", id);
         
-        if (sessionError || !sessionData.session) {
+        const { data, error } = await supabase
+          .from('newsletters')
+          .select('*')
+          .eq('id', id)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching newsletter:', error);
           toast({
-            title: "يرجى تسجيل الدخول",
-            description: "يجب أن تكون مسجل الدخول للوصول إلى هذه الصفحة",
+            title: "خطأ في جلب النشرة الإخبارية",
+            description: error.message,
             variant: "destructive"
           });
-          navigate('/admin-control');
+          setIsLoading(false);
           return;
         }
         
-        // Use RPC to check admin status
-        const { data: adminData, error: adminError } = await supabase.rpc(
-          'is_admin_user', 
-          { user_id: sessionData.session.user.id }
-        );
-        
-        if (adminError) {
-          console.error('Admin check error:', adminError);
+        if (!data) {
+          console.error('Newsletter not found');
           toast({
-            title: "خطأ في التحقق من الصلاحيات",
-            description: "حدث خطأ أثناء التحقق من صلاحيات المسؤول",
+            title: "النشرة الإخبارية غير موجودة",
+            description: "تعذر العثور على النشرة الإخبارية المطلوبة",
             variant: "destructive"
           });
-          navigate('/admin-control');
+          navigate('/admin-control/panel');
           return;
         }
         
-        if (!adminData) {
-          toast({
-            title: "غير مصرح",
-            description: "ليس لديك صلاحيات المسؤول للوصول إلى هذه الصفحة",
-            variant: "destructive"
-          });
-          navigate('/admin-control');
-          return;
-        }
-        
-        // If an ID is provided, load the newsletter
-        if (id) {
-          const { data: newsletter, error } = await supabase
-            .from('newsletters')
-            .select('*')
-            .eq('id', id)
-            .maybeSingle();
-          
-          if (error) throw error;
-          
-          if (newsletter) {
-            // Type check to ensure we have the correct data structure
-            if ('subject' in newsletter && 'content' in newsletter) {
-              setSubject(newsletter.subject);
-              setContent(newsletter.content);
-            } else {
-              throw new Error("Newsletter data structure is invalid");
-            }
-          } else {
-            toast({
-              title: "لم يتم العثور على النشرة الإخبارية",
-              description: "لا يمكن العثور على النشرة الإخبارية المطلوبة",
-              variant: "destructive"
-            });
-            navigate('/admin-control/panel');
-          }
-        }
-        
+        console.log("Newsletter content loaded successfully");
+        setSubject(data.subject || '');
+        setContent(data.content || '');
         setIsLoading(false);
       } catch (error: any) {
-        console.error('Error loading newsletter:', error);
+        console.error('Exception fetching newsletter:', error);
         toast({
-          title: "خطأ في التحميل",
-          description: "حدث خطأ أثناء تحميل النشرة الإخبارية",
+          title: "خطأ غير متوقع",
+          description: error.message || "حدث خطأ أثناء جلب النشرة الإخبارية",
           variant: "destructive"
         });
-        navigate('/admin-control/panel');
+        setIsLoading(false);
       }
     };
     
-    loadNewsletter();
+    fetchNewsletter();
   }, [id, navigate, toast]);
 
   const handleUpdateNewsletter = async () => {
@@ -132,30 +101,63 @@ export const useNewsletterEditor = () => {
           description: "يجب أن تكون مسجل الدخول كمسؤول",
           variant: "destructive"
         });
+        setIsSaving(false);
         return;
       }
       
-      const { error } = await supabase
-        .from('newsletters')
-        .update({ 
-          subject, 
-          content 
-        } as any)
-        .eq('id', id as any);
+      const userId = sessionData.session.user.id;
       
-      if (error) throw error;
+      console.log("Newsletter update initiated for ID:", id || "new");
+      
+      // Update existing newsletter or create new one
+      let result;
+      
+      if (id) {
+        // Update existing newsletter
+        result = await supabase
+          .from('newsletters')
+          .update({ 
+            subject, 
+            content,
+            updated_at: new Date().toISOString(),
+            updated_by: userId
+          })
+          .eq('id', id);
+      } else {
+        // Create new newsletter
+        result = await supabase
+          .from('newsletters')
+          .insert({
+            subject, 
+            content, 
+            created_by: userId,
+            created_at: new Date().toISOString()
+          });
+      }
+      
+      const { error } = result;
+      
+      if (error) {
+        console.error('Newsletter save error:', error);
+        throw error;
+      }
+      
+      console.log('Newsletter saved successfully');
       
       toast({
-        title: "تم التحديث بنجاح",
-        description: "تم تحديث النشرة الإخبارية"
+        title: "تم الحفظ بنجاح",
+        description: "تم حفظ النشرة الإخبارية"
       });
       
-      navigate('/admin-control/panel');
+      if (!id) {
+        // If it was a new newsletter, redirect to admin panel
+        navigate('/admin-control/panel');
+      }
     } catch (error: any) {
-      console.error('Error updating newsletter:', error);
+      console.error('Error saving newsletter:', error);
       toast({
-        title: "خطأ في التحديث",
-        description: error.message || "حدث خطأ أثناء تحديث النشرة الإخبارية",
+        title: "خطأ في الحفظ",
+        description: error.message || "حدث خطأ أثناء حفظ النشرة الإخبارية",
         variant: "destructive"
       });
     } finally {
@@ -185,3 +187,5 @@ export const useNewsletterEditor = () => {
     toggleDarkMode
   };
 };
+
+export default useNewsletterEditor;

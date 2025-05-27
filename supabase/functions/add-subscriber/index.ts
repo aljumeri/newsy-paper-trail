@@ -1,13 +1,17 @@
+// @deno-types="../deno.d.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7'
 
-
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "https://solo4ai.com",
+  "Access-Control-Allow-Origin": "*", // Allow all origins for testing
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-client-domain",
   "Access-Control-Allow-Methods": "POST, OPTIONS"
 };
 
-Deno.serve(async (req) => {
+interface SubscriberRequest {
+  email: string;
+}
+
+Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, {
       headers: corsHeaders
@@ -15,7 +19,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { email } = await req.json();
+    const { email } = await req.json() as SubscriberRequest;
 
     if (!email || typeof email !== "string") {
       return new Response(JSON.stringify({
@@ -42,7 +46,7 @@ Deno.serve(async (req) => {
     if (existingSubscriber) {
       return new Response(JSON.stringify({
         success: false,
-        message: "Email already exists"
+        message: "البريد الإلكتروني موجود بالفعل في قائمة المشتركين"
       }), {
         headers: {
           ...corsHeaders,
@@ -54,10 +58,15 @@ Deno.serve(async (req) => {
 
     const { data, error } = await supabase
       .from("subscribers")
-      .insert([{ email }])
+      .insert([{ 
+        email,
+        created_at: new Date().toISOString(),
+        vendor: req.headers.get("origin") || null
+      }])
       .select();
 
     if (error) {
+      console.error("Error adding subscriber:", error);
       return new Response(JSON.stringify({
         success: false,
         error: error.message
@@ -72,7 +81,8 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({
       success: true,
-      subscriber: data[0]
+      subscriber: data[0],
+      message: "تم اشتراكك بنجاح في النشرة الإخبارية."
     }), {
       headers: {
         ...corsHeaders,
@@ -80,6 +90,7 @@ Deno.serve(async (req) => {
       }
     });
   } catch (err) {
+    console.error("Unexpected error in add-subscriber function:", err);
     return new Response(JSON.stringify({
       success: false,
       error: "Unexpected error occurred"

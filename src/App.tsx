@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -37,6 +36,7 @@ const App = () => {
   const currentOrigin = window.location.origin;
   const currentPath = window.location.pathname;
   const currentProtocol = window.location.protocol;
+  const currentSearch = window.location.search;
   const [hasResetCode, setHasResetCode] = useState(false);
   const [resetCode, setResetCode] = useState<string | null>(null);
   const [tokenType, setTokenType] = useState<string | null>(null);
@@ -47,35 +47,54 @@ const App = () => {
   console.log("Current origin:", currentOrigin);
   console.log("Current protocol:", currentProtocol);
   console.log("Current path:", currentPath);
+  console.log("Current search:", currentSearch);
   console.log("User agent:", navigator.userAgent);
   console.log("=============================================");
 
   // Check for password reset code in URL
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
-    const type = urlParams.get('type');
+    const checkForResetCode = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      const type = urlParams.get('type');
+      
+      console.log("URL Parameters:", { 
+        code: code ? "present (length: " + code.length + ")" : "not present", 
+        type,
+        fullSearch: window.location.search
+      });
+      
+      if (code && type === 'recovery') {
+        console.log("Reset code detected in URL, setting state for redirect");
+        
+        // If we're already on the reset password page with the right params, don't redirect
+        if (currentPath.includes('/admin-control/reset-password')) {
+          console.log("Already on reset password page, not setting redirect state");
+          return;
+        }
+        
+        setHasResetCode(true);
+        setResetCode(code);
+        setTokenType(type);
+      }
+    };
     
-    console.log("URL Parameters:", { code: code ? "present" : "not present", type });
-    
-    if (code && type === 'recovery') {
-      console.log("Reset code detected in URL, setting state for redirect");
-      setHasResetCode(true);
-      setResetCode(code);
-      setTokenType(type);
-    }
-  }, []);
+    checkForResetCode();
+  }, [currentPath]);
 
-  // If there's a reset code in the URL at any path
+  // If there's a reset code in the URL at any path other than the reset password page
   if (hasResetCode && resetCode && tokenType) {
-    console.log("Redirecting to reset password page with code:", resetCode);
+    console.log("Redirecting to reset password page with code:", resetCode.substring(0, 5) + "...");
+    // Create the full URL with all parameters
+    const resetUrl = `/admin-control/reset-password?code=${encodeURIComponent(resetCode)}&type=${encodeURIComponent(tokenType)}`;
+    
     return (
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Navigate to={`/admin-control/reset-password?code=${resetCode}&type=${tokenType}`} replace />
+            <Navigate to={resetUrl} replace />
           </BrowserRouter>
         </TooltipProvider>
       </QueryClientProvider>

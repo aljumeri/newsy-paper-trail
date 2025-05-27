@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -10,70 +9,68 @@ import {
   TableCell
 } from '@/components/ui/table';
 import { Info } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
 
 interface Subscriber {
   id: string;
   email: string;
+  name?: string;
   created_at: string;
-  vendor?: string | null;
 }
 
-interface SubscribersTableProps {
+export interface SubscribersTableProps {
   subscribers: Subscriber[];
   formatDate: (dateString: string) => string;
+  onRefresh?: () => Promise<void>;
+  isRefreshing?: boolean;
 }
 
-const SubscribersTable = ({ subscribers, formatDate }: SubscribersTableProps) => {
-  // Debug logging to verify data
-  console.log("SubscribersTable: Rendering with subscribers count:", subscribers?.length || 0);
-  console.log("SubscribersTable: Subscriber data:", subscribers);
-  
-  // Filter subscribers for solo4ai.com if needed (uncomment if you want to filter)
-  // const solo4aiSubscribers = subscribers.filter(sub => 
-  //   sub.email?.includes('@solo4ai.com') || 
-  //   sub.vendor === 'solo4ai.com'
-  // );
-  
+const SubscribersTable: React.FC<SubscribersTableProps> = ({ 
+  subscribers, 
+  formatDate,
+  onRefresh,
+  isRefreshing = false 
+}) => {
   return (
-    <Card className="border-2 border-green-500">
-      <CardHeader className="bg-green-50">
-        <CardTitle className="flex items-center justify-between">
-          <span>قائمة المشتركين <span className="text-xs text-green-600 font-bold">(تحديث SOLO4AI)</span></span>
-          <span className="text-sm font-normal text-muted-foreground">
-            {subscribers.length} مشترك
-          </span>
-        </CardTitle>
+    <Card className="border-2 border-emerald-500">
+      <CardHeader className="bg-emerald-50 flex flex-row items-center justify-between">
+        <CardTitle>المشتركين</CardTitle>
+        {onRefresh && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onRefresh} 
+            disabled={isRefreshing}
+            className="flex items-center"
+          >
+            <RefreshCw className={`h-4 w-4 ml-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'جارِ التحديث...' : 'تحديث'}
+          </Button>
+        )}
       </CardHeader>
       <CardContent className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead className="text-right">البريد الإلكتروني</TableHead>
-              <TableHead className="text-right">المصدر</TableHead>
+              <TableHead className="text-right">الاسم</TableHead>
               <TableHead className="text-right">تاريخ الاشتراك</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {Array.isArray(subscribers) && subscribers.length > 0 ? (
+            {subscribers.length > 0 ? (
               subscribers.map((subscriber) => (
                 <TableRow key={subscriber.id} className="hover:bg-gray-50">
-                  <TableCell>{subscriber.email}</TableCell>
-                  <TableCell>{subscriber.vendor || 'solo4ai.com'}</TableCell>
+                  <TableCell className="font-medium">{subscriber.email}</TableCell>
+                  <TableCell>{subscriber.name || '—'}</TableCell>
                   <TableCell>{formatDate(subscriber.created_at)}</TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={3}>
-                  <div className="flex flex-col items-center justify-center py-8 text-center">
-                    <div className="rounded-full bg-muted p-3 mb-2">
-                      <Info className="h-6 w-6 text-muted-foreground" />
-                    </div>
-                    <h3 className="text-lg font-semibold">لا يوجد مشتركين بعد.</h3>
-                    <p className="text-muted-foreground mb-4">
-                      عندما يقوم الأشخاص بالاشتراك في النشرة الإخبارية، ستظهر معلوماتهم هنا.
-                    </p>
-                  </div>
+                <TableCell colSpan={3} className="text-center py-4">
+                  لم يتم العثور على أي مشتركين.
                 </TableCell>
               </TableRow>
             )}

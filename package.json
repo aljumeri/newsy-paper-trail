@@ -9,7 +9,8 @@
     "postbuild": "cp -r public/* dist/ || copy public\\* dist\\ || echo 'Failed to copy public files'",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy:lovable": "vite build --base=/ && (cp -r public/* dist/ || copy public\\* dist\\ || echo 'Failed to copy public files')"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

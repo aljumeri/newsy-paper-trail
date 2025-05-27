@@ -77,21 +77,21 @@ serve(async (req: Request) => {
     
     console.log(`Edge Function: Newsletter found: ${newsletter.subject}`);
     
-    // Get all subscribers - explicitly only select email field
-    console.log("Edge Function: Fetching subscribers");
-    const { data: subscribers, error: subscribersError } = await supabase
+    // Get subscriber count only to avoid column issues
+    console.log("Edge Function: Counting subscribers");
+    const { count: subscribersCount, error: subscribersError } = await supabase
       .from("subscribers")
-      .select("email")
-      .order("created_at", { ascending: false });
+      .select("*", { count: 'exact', head: true });
       
     if (subscribersError) {
-      console.error(`Edge Function: Subscribers fetch error: ${subscribersError.message}`);
-      throw new Error(`Failed to fetch subscribers: ${subscribersError.message}`);
+      console.error(`Edge Function: Subscribers count error: ${subscribersError.message}`);
+      throw new Error(`Failed to count subscribers: ${subscribersError.message}`);
     }
     
-    console.log(`Edge Function: Found ${subscribers?.length || 0} subscribers`);
+    const subscriberCount = subscribersCount || 0;
+    console.log(`Edge Function: Found ${subscriberCount} subscribers`);
     
-    if (!subscribers || subscribers.length === 0) {
+    if (subscriberCount === 0) {
       console.log("Edge Function: No subscribers found");
       return new Response(
         JSON.stringify({ message: "No subscribers found", success: true, subscribers: 0 }),
@@ -105,7 +105,7 @@ serve(async (req: Request) => {
       .from("newsletters")
       .update({ 
         sent_at: new Date().toISOString(),
-        recipients_count: subscribers.length,
+        recipients_count: subscriberCount,
         status: 'sent' 
       })
       .eq("id", newsletterId);
@@ -120,14 +120,14 @@ serve(async (req: Request) => {
     // In a real application, you would use an email service API here
     // to actually send emails to all subscribers
     // For this example, we'll just return a success message
-    console.log(`Edge Function: Newsletter "${newsletter.subject}" would be sent to ${subscribers.length} subscribers`);
+    console.log(`Edge Function: Newsletter "${newsletter.subject}" would be sent to ${subscriberCount} subscribers`);
     
     // Return success response
     console.log("Edge Function: Returning success response");
     return new Response(
       JSON.stringify({ 
-        message: `Newsletter sent to ${subscribers.length} subscribers`,
-        subscribers: subscribers.length,
+        message: `Newsletter sent to ${subscriberCount} subscribers`,
+        subscribers: subscriberCount,
         success: true
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }

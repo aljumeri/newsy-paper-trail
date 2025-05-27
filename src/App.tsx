@@ -101,12 +101,22 @@ const App = () => {
     );
   }
   
+  // Detect if we're on Lovable, Netlify, Vercel, or local dev
+  const isLocalDev = currentDomain === 'localhost';
+  const isLovable = currentDomain.includes('lovable');
+  const isProdDeployment = !isLocalDev;
+  
+  // Base path for the router
+  const basePath = '/'; // Default base path
+  
+  console.log(`Using basePath: ${basePath} for ${isProdDeployment ? 'production' : 'development'} environment`);
+  
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter basename="/">
+        <BrowserRouter basename={basePath}>
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<Index />} />

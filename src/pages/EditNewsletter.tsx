@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -222,7 +223,7 @@ const EditNewsletter = () => {
                   setContent={setContent}
                   onSave={handleUpdateNewsletter}
                   onPreview={handlePreview}
-                  isLoading={isSaving}
+                  isSaving={isSaving}
                   newsletterId={id}
                   onSend={handleSendNewsletter}
                 />

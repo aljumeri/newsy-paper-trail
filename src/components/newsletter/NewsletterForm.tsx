@@ -15,7 +15,7 @@ interface NewsletterFormProps {
   setContent: (content: string) => void;
   onSave: () => void;
   onPreview: () => void;
-  isLoading: boolean;
+  isSaving?: boolean;
   newsletterId?: string;
   onSend?: (id: string) => Promise<void>;
 }
@@ -27,7 +27,7 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
   setContent,
   onSave,
   onPreview,
-  isLoading,
+  isSaving = false,
   newsletterId,
   onSend
 }) => {
@@ -255,7 +255,7 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
   };
 
   // Link handler
-  const handleLink = (url: string, text: string) => {
+  const handleLinkInsert = (url: string, text: string) => {
     const textarea = document.getElementById('content') as HTMLTextAreaElement;
     
     if (textarea) {
@@ -598,7 +598,7 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
                   type="button" 
                   variant="outline"
                   className="flex items-center gap-1"
-                  disabled={isSending || isLoading}
+                  disabled={isSending || isSaving}
                 >
                   <Send size={16} />
                   {isSending ? "جار الإرسال..." : "إرسال النشرة"}
@@ -622,29 +622,29 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
           <Button 
             type="button" 
             onClick={onSave}
-            disabled={isLoading}
+            disabled={isSaving}
           >
-            {isLoading ? "جار الحفظ..." : "حفظ النشرة"}
+            {isSaving ? "جار الحفظ..." : "حفظ النشرة"}
           </Button>
         </div>
       </div>
       
       <YoutubeDialog 
-        open={showYoutubeDialog}
+        isOpen={showYoutubeDialog}
         onClose={() => setShowYoutubeDialog(false)}
-        onInsert={handleInsertYoutubeEmbed}
+        onEmbed={handleYoutubeEmbed}
       />
       
       <ImageUploadDialog
-        open={showImageUploadDialog}
+        isOpen={showImageUploadDialog}
         onClose={() => setShowImageUploadDialog(false)}
-        onInsert={handleInsertImage}
+        onInsertImage={handleImageInsert}
       />
       
       <LinkDialog
-        open={showLinkDialog}
+        isOpen={showLinkDialog}
         onClose={() => setShowLinkDialog(false)}
-        onInsert={handleInsertLink}
+        onInsertLink={handleInsertLink}
       />
     </div>
   );

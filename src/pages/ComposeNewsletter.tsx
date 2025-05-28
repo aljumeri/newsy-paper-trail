@@ -224,7 +224,7 @@ const ComposeNewsletter = () => {
                 setContent={setContent}
                 onSave={handleSaveNewsletter}
                 onPreview={handlePreview}
-                isLoading={isLoading}
+                isSaving={isLoading}
               />
             )}
           </CardContent>

@@ -77,6 +77,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_subscriber: {
+        Args: { subscriber_email: string }
+        Returns: Json
+      }
       create_admin_user: {
         Args: { user_id: string }
         Returns: undefined

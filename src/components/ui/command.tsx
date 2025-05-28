@@ -1,3 +1,4 @@
+
 import * as React from "react"
 import { type DialogProps } from "@radix-ui/react-dialog"
 import { Command as CommandPrimitive } from "cmdk"
@@ -109,10 +110,6 @@ const CommandSeparator = React.forwardRef<
   />
 ))
 CommandSeparator.displayName = CommandPrimitive.Separator.displayName
-
-interface CommandItemProps extends CommandPrimitive.CommandItemProps {
-  customProp?: boolean;
-}
 
 const CommandItem = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.Item>,

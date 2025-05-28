@@ -520,19 +520,19 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
   }, [content, setContent]);
 
   const handleInsertYoutubeEmbed = (embedCode: string) => {
-    setContent(prev => prev + embedCode);
+    setContent(content + embedCode);
     setShowYoutubeDialog(false);
   };
   
   const handleInsertImage = (imageUrl: string, altText: string) => {
     const imageHtml = `<img src="${imageUrl}" alt="${altText}" class="rounded-lg my-4 max-w-full" />`;
-    setContent(prev => prev + imageHtml);
+    setContent(content + imageHtml);
     setShowImageUploadDialog(false);
   };
   
   const handleInsertLink = (url: string, text: string) => {
     const linkHtml = `<a href="${url}" class="text-blue-600 hover:underline" target="_blank">${text}</a>`;
-    setContent(prev => prev + linkHtml);
+    setContent(content + linkHtml);
     setShowLinkDialog(false);
   };
   
@@ -567,9 +567,9 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
           محتوى النشرة
         </label>
         <EditorToolbar 
-          onYoutubeClick={() => setShowYoutubeDialog(true)}
-          onImageClick={() => setShowImageUploadDialog(true)}
-          onLinkClick={() => setShowLinkDialog(true)}
+          onYouTube={() => setShowYoutubeDialog(true)}
+          onImage={() => setShowImageUploadDialog(true)}
+          onLink={() => setShowLinkDialog(true)}
         />
         <textarea
           value={content}
@@ -644,7 +644,7 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
       <LinkDialog
         isOpen={showLinkDialog}
         onClose={() => setShowLinkDialog(false)}
-        onInsertLink={handleInsertLink}
+        onInsertLink={handleLinkInsert}
       />
     </div>
   );

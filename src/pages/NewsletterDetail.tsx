@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -600,7 +601,16 @@ const NewsletterDetail = () => {
           const staticId = parseInt(id);
           if (newsletterData[staticId]) {
             console.log("Using static newsletter data as fallback");
-            setNewsletter(newsletterData[staticId]);
+            // Convert static data to match NewsletterData interface
+            const staticNewsletter = newsletterData[staticId];
+            const convertedNewsletter: NewsletterData = {
+              id: staticNewsletter.id.toString(),
+              subject: staticNewsletter.title,
+              content: typeof staticNewsletter.content === 'string' ? staticNewsletter.content : '',
+              created_at: staticNewsletter.date,
+              sent_at: null
+            };
+            setNewsletter(convertedNewsletter);
           } else {
             throw new Error("Newsletter not found");
           }

@@ -6,17 +6,15 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://vqkdadugmkwnthkfjbla.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxa2RhZHVnbWt3bnRoa2ZqYmxhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYxNDQwOTUsImV4cCI6MjA2MTcyMDA5NX0.AyZpQgkaypIz2thFdO2K5WF7WFXog2tw-t_9RLBapY4";
 
-// Enhanced Supabase client with more robust auth settings and reduced rate limiting
+// Enhanced Supabase client with security improvements
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
     storage: typeof localStorage !== 'undefined' ? localStorage : undefined,
-    detectSessionInUrl: true, // Enable session detection in URL
+    detectSessionInUrl: true,
     flowType: 'pkce',
-    debug: true, // Enable debug logging for auth
-    // Rate limiting configuration is handled server-side,
-    // client configuration removed due to type compatibility
+    debug: false, // Disabled debug logging for production security
   },
   global: {
     headers: {
@@ -30,39 +28,15 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   }
 });
 
-// Enhanced session check with more detailed logging
-console.log("=============================================");
-console.log("Initializing Supabase client and checking session...");
-console.log("Current domain:", typeof window !== 'undefined' ? window.location.hostname : 'server-side');
-console.log("Current origin:", typeof window !== 'undefined' ? window.location.origin : 'server-side');
-console.log("Current protocol:", typeof window !== 'undefined' ? window.location.protocol : 'unknown');
-
-supabase.auth.getSession().then(({ data, error }) => {
-  if (error) {
-    console.error("Initial Supabase session check error:", error);
-  } else if (data.session) {
-    console.log("Initial Supabase session check: Session found");
-    console.log("User email:", data.session.user.email);
-    console.log("User ID:", data.session.user.id);
-    console.log("Session expires:", new Date(data.session.expires_at * 1000).toLocaleString());
-  } else {
-    console.log("Initial Supabase session check: No active session");
-  }
-}).catch(err => {
-  console.error("Unhandled error during Supabase session check:", err);
-});
-
-// Setup auth change listener
-if (typeof window !== 'undefined') {
+// Reduced logging for security - only log essential information
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+  console.log("Supabase client initialized");
+  
+  // Setup auth change listener with minimal logging
   supabase.auth.onAuthStateChange((event, session) => {
-    console.log("=============================================");
-    console.log("Auth state changed:", event);
-    console.log("Session present:", session ? "Yes" : "No");
-    console.log("Current domain:", window.location.hostname);
-    console.log("Current origin:", window.location.origin);
-    if (session) {
-      console.log("User email:", session.user.email);
+    if (process.env.NODE_ENV === 'development') {
+      console.log("Auth state changed:", event);
+      console.log("Session present:", session ? "Yes" : "No");
     }
-    console.log("=============================================");
   });
 }

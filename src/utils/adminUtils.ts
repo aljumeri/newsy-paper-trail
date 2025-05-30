@@ -19,19 +19,19 @@ export const adminUtils = {
       });
 
       if (error) {
-        console.error('Error checking admin status:', error);
+        console.error('Error checking admin status');
         return false;
       }
 
       return Boolean(data);
     } catch (error) {
-      console.error('Error in admin check:', error);
+      console.error('Error in admin check');
       return false;
     }
   },
 
   /**
-   * Log security events for audit trail
+   * Log security events for audit trail with sanitized data
    */
   async logSecurityEvent(
     action: string,
@@ -39,19 +39,24 @@ export const adminUtils = {
     resourceId?: string
   ): Promise<void> {
     try {
+      // Sanitize resource ID to prevent injection
+      const sanitizedResourceId = resourceId ? 
+        resourceId.replace(/[<>'"&]/g, '').substring(0, 255) : null;
+      
       const { error } = await supabase.rpc('log_security_event', {
         _action: action,
         _resource_type: resourceType || null,
-        _resource_id: resourceId || null,
-        _ip_address: null, // Could be enhanced to capture real IP
-        _user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null
+        _resource_id: sanitizedResourceId,
+        _ip_address: null, // IP tracking handled server-side for privacy
+        _user_agent: typeof navigator !== 'undefined' ? 
+          navigator.userAgent.substring(0, 500) : null // Limit length
       });
 
       if (error) {
-        console.error('Failed to log security event:', error);
+        console.error('Failed to log security event');
       }
     } catch (error) {
-      console.error('Error logging security event:', error);
+      console.error('Error logging security event');
     }
   },
 
@@ -64,8 +69,26 @@ export const adminUtils = {
       if (error) throw error;
       return session.session?.user || null;
     } catch (error) {
-      console.error('Error getting current user:', error);
+      console.error('Error getting current user');
       return null;
+    }
+  },
+
+  /**
+   * Validate and sanitize input data
+   */
+  validateInput: {
+    email: (email: string): boolean => {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return emailRegex.test(email) && email.length <= 254;
+    },
+    
+    subject: (subject: string): boolean => {
+      return subject.length > 0 && subject.length <= 200;
+    },
+    
+    content: (content: string): boolean => {
+      return content.length > 0 && content.length <= 50000; // Reasonable limit
     }
   }
 };

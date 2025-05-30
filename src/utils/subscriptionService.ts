@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { adminUtils } from "@/utils/adminUtils";
+import { contentSanitizer } from "@/utils/contentSanitizer";
 
 interface SubscriptionResult {
   success: boolean;
@@ -9,7 +10,7 @@ interface SubscriptionResult {
 }
 
 /**
- * Enhanced subscription service with security logging
+ * Enhanced subscription service with security enhancements
  */
 export const subscriptionService = {
   /**
@@ -17,24 +18,15 @@ export const subscriptionService = {
    */
   async subscribe(email: string): Promise<SubscriptionResult> {
     try {
-      console.log("Subscription service: Attempting to subscribe email:", email);
+      await adminUtils.logSecurityEvent('newsletter_subscription_attempt', 'subscriber');
       
-      // Log subscription attempt
-      await adminUtils.logSecurityEvent('newsletter_subscription_attempt', 'subscriber', email);
-      
-      // Validate email format
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        return {
-          success: false,
-          message: "صيغة البريد الإلكتروني غير صحيحة"
-        };
-      }
+      // Sanitize and validate email
+      const sanitizedEmail = contentSanitizer.sanitizeEmail(email);
       
       // Try using the Edge Function first
       try {
         const { error, data } = await supabase.functions.invoke("add-subscriber", {
-          body: { email }
+          body: { email: sanitizedEmail }
         });
         
         if (error) {
@@ -42,8 +34,7 @@ export const subscriptionService = {
           throw error;
         }
         
-        console.log("Subscription successful via Edge Function:", data);
-        await adminUtils.logSecurityEvent('newsletter_subscription_success', 'subscriber', email);
+        await adminUtils.logSecurityEvent('newsletter_subscription_success', 'subscriber', sanitizedEmail);
         
         return { 
           success: true, 
@@ -56,7 +47,7 @@ export const subscriptionService = {
         const { data: existingSubscriber } = await supabase
           .from("subscribers")
           .select("*")
-          .eq("email", email)
+          .eq("email", sanitizedEmail)
           .maybeSingle();
           
         if (existingSubscriber) {
@@ -70,7 +61,7 @@ export const subscriptionService = {
         const { data, error } = await supabase
           .from("subscribers")
           .insert([{ 
-            email,
+            email: sanitizedEmail,
             created_at: new Date().toISOString(),
             vendor: typeof window !== 'undefined' ? window.location.origin : null
           }])
@@ -78,7 +69,7 @@ export const subscriptionService = {
           
         if (error) {
           console.error("Direct database subscription error:", error);
-          await adminUtils.logSecurityEvent('newsletter_subscription_failed', 'subscriber', email);
+          await adminUtils.logSecurityEvent('newsletter_subscription_failed', 'subscriber', sanitizedEmail);
           
           if (error.message && error.message.includes('duplicate')) {
             return { 
@@ -94,8 +85,7 @@ export const subscriptionService = {
           };
         }
         
-        console.log("Subscription successful via direct database access:", data);
-        await adminUtils.logSecurityEvent('newsletter_subscription_success', 'subscriber', email);
+        await adminUtils.logSecurityEvent('newsletter_subscription_success', 'subscriber', sanitizedEmail);
         
         return { 
           success: true, 
@@ -103,8 +93,16 @@ export const subscriptionService = {
         };
       }
     } catch (error: unknown) {
-      console.error("Unhandled error during subscription:", error);
-      await adminUtils.logSecurityEvent('newsletter_subscription_error', 'subscriber', email);
+      console.error("Subscription error:", error instanceof Error ? error.message : "Unknown error");
+      await adminUtils.logSecurityEvent('newsletter_subscription_error', 'subscriber');
+      
+      if (error instanceof Error && error.message.includes('Invalid email')) {
+        return { 
+          success: false, 
+          message: "صيغة البريد الإلكتروني غير صحيحة", 
+          error 
+        };
+      }
       
       return { 
         success: false, 

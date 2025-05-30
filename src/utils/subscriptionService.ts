@@ -21,12 +21,12 @@ export const subscriptionService = {
       
       // First try using the Edge Function
       try {
-        const { error, data } = await supabase.functions.invoke("add-subscriber", {
-          body: { email }
-        });
-        
-        // Handle various error scenarios
-        if (error) {
+      const { error, data } = await supabase.functions.invoke("add-subscriber", {
+        body: { email }
+      });
+      
+      // Handle various error scenarios
+      if (error) {
           console.error("Edge function error:", error);
           // Continue to fallback method
           throw error;
@@ -76,19 +76,19 @@ export const subscriptionService = {
             };
           }
           
-          return { 
-            success: false, 
-            message: "حدث خطأ أثناء الاشتراك. يرجى المحاولة مرة أخرى لاحقًا.", 
-            error 
-          };
-        }
-        
+        return { 
+          success: false, 
+          message: "حدث خطأ أثناء الاشتراك. يرجى المحاولة مرة أخرى لاحقًا.", 
+          error 
+        };
+      }
+      
         // Successful subscription via direct database access
         console.log("Subscription successful via direct database access:", data);
-        return { 
-          success: true, 
-          message: "تم اشتراكك بنجاح في النشرة الإخبارية." 
-        };
+      return { 
+        success: true, 
+        message: "تم اشتراكك بنجاح في النشرة الإخبارية." 
+      };
       }
     } catch (error: unknown) {
       console.error("Unhandled error during subscription:", error);

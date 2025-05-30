@@ -83,39 +83,39 @@ const AdminControlPanel = () => {
       }
       
       // Directly fetch subscribers data with explicit debugging
-      const { data: subscribersData, error: subscribersError } = await supabase
-        .from('subscribers')
-        .select('*')
-        .order('created_at', { ascending: false });
+const { data: subscribersData, error: subscribersError } = await supabase
+  .from('subscribers')
+  .select('*')
+  .order('created_at', { ascending: false });
 
-      console.log("AdminPanel: Subscribers query completed");
+console.log("AdminPanel: Subscribers query completed");
 
-      if (subscribersError) {
-        console.error('Error fetching subscribers:', subscribersError);
-        toast({
-          title: "خطأ في جلب بيانات المشتركين",
-          description: subscribersError.message,
-          variant: "destructive"
-        });
-        
-        // Even if there's an error, set subscribers to empty array to avoid undefined
-        setSubscribers([]);
-        
-        // Check if this is a permissions error and show more specific message
-        if (subscribersError.code === '42501' || subscribersError.message.includes('permission')) {
-          console.error('This appears to be a permissions error. Please check RLS policies.');
-          toast({
-            title: "خطأ في الصلاحيات",
-            description: "يرجى التحقق من إعدادات الصلاحيات في Supabase",
-            variant: "destructive"
-          });
-        }
-      } else {
-        console.log("AdminPanel: Subscribers data fetched successfully:", subscribersData);
-        console.log("AdminPanel: Number of subscribers:", subscribersData?.length ?? 0);
-        
-        // Ensure we're setting even if empty array (but not null/undefined)
-        setSubscribers(Array.isArray(subscribersData) ? subscribersData : []);
+if (subscribersError) {
+  console.error('Error fetching subscribers:', subscribersError);
+  toast({
+    title: "خطأ في جلب بيانات المشتركين",
+    description: subscribersError.message,
+    variant: "destructive"
+  });
+  
+  // Even if there's an error, set subscribers to empty array to avoid undefined
+  setSubscribers([]);
+  
+  // Check if this is a permissions error and show more specific message
+  if (subscribersError.code === '42501' || subscribersError.message.includes('permission')) {
+    console.error('This appears to be a permissions error. Please check RLS policies.');
+    toast({
+      title: "خطأ في الصلاحيات",
+      description: "يرجى التحقق من إعدادات الصلاحيات في Supabase",
+      variant: "destructive"
+    });
+  }
+} else {
+  console.log("AdminPanel: Subscribers data fetched successfully:", subscribersData);
+  console.log("AdminPanel: Number of subscribers:", subscribersData?.length ?? 0);
+  
+  // Ensure we're setting even if empty array (but not null/undefined)
+  setSubscribers(Array.isArray(subscribersData) ? subscribersData : []);
         
         // Log each subscriber for debugging
         if (Array.isArray(subscribersData)) {
@@ -226,7 +226,7 @@ const AdminControlPanel = () => {
   // Handle logout
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    navigate('/admin-control');
+      navigate('/admin-control');
   };
 
   // Show loading state while checking auth
@@ -291,7 +291,7 @@ const AdminControlPanel = () => {
             icon="plus"
           />
         </div>
-        
+
         {error && (
           <div className="bg-red-50 border border-red-500 text-red-700 px-4 py-3 rounded mb-6">
             <p className="text-center">{error}</p>
@@ -299,10 +299,10 @@ const AdminControlPanel = () => {
         )}
         
         <div className="space-y-6">
-          <NewslettersTable 
-            newsletters={newsletters} 
-            formatDate={formatDate}
-          />
+            <NewslettersTable 
+              newsletters={newsletters}
+              formatDate={formatDate}
+            />
           <SubscribersTable 
             subscribers={subscribers} 
             formatDate={formatDate}

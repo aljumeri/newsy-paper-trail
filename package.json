@@ -10,7 +10,7 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "deploy:lovable": "vite build --base=/ && (cp -r public/* dist/ || copy public\\* dist\\ || echo 'Failed to copy public files')"
+    "deploy:lovable": "vite build --base=/ && (xcopy /E /Y public dist\\ || cp -r public/* dist/ || echo 'Failed to copy public files')"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

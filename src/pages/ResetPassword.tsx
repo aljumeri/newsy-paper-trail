@@ -52,17 +52,17 @@ const ResetPassword = () => {
         return;
       }
       
-      try {
-        console.log("Verifying password reset code");
+        try {
+          console.log("Verifying password reset code");
         
         // Try to verify the OTP token
-        const { error } = await supabase.auth.verifyOtp({
-          token_hash: code,
-          type: 'recovery'
-        });
-        
-        if (error) {
-          console.error("Error verifying reset code:", error);
+          const { error } = await supabase.auth.verifyOtp({
+            token_hash: code,
+            type: 'recovery'
+          });
+          
+          if (error) {
+            console.error("Error verifying reset code:", error);
           
           // More descriptive error message
           let errorMsg = "رابط إعادة تعيين كلمة المرور غير صالح أو انتهت صلاحيته. يرجى طلب رابط جديد.";
@@ -71,16 +71,16 @@ const ResetPassword = () => {
           }
           
           setErrorMessage(errorMsg);
-          setShowErrorDialog(true);
+            setShowErrorDialog(true);
+            setVerificationInProgress(false);
+            return;
+          }
+          
+          console.log("Reset code verified successfully");
+          setResetCodeVerified(true);
           setVerificationInProgress(false);
-          return;
-        }
-        
-        console.log("Reset code verified successfully");
-        setResetCodeVerified(true);
-        setVerificationInProgress(false);
       } catch (error: unknown) {
-        console.error("Exception during reset code verification:", error);
+          console.error("Exception during reset code verification:", error);
         const errorMessage = error instanceof Error ? error.message : "حدث خطأ أثناء التحقق من رابط إعادة التعيين";
         setErrorMessage(errorMessage);
         setShowErrorDialog(true);
@@ -147,7 +147,7 @@ const ResetPassword = () => {
     setShowErrorDialog(false);
     navigate('/admin-control');
   };
-
+  
   // Show loading state while verifying reset code
   if (verificationInProgress) {
     return (
@@ -248,8 +248,8 @@ const ResetPassword = () => {
                   placeholder="تأكيد كلمة المرور الجديدة"
                 />
               </div>
-            </div>
-
+              </div>
+              
             <div>
               <Button
                 type="submit"
@@ -261,7 +261,7 @@ const ResetPassword = () => {
             </div>
           </form>
         </div>
-      </div>
+          </div>
       <Footer />
     </div>
   );

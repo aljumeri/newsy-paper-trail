@@ -20,9 +20,10 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
   const getResetPasswordURL = () => {
     if (typeof window === 'undefined') return '';
     
-    // Use the current origin directly - this makes it work on any domain
+    // Use the site URL with a proper hash format that Supabase expects
     const origin = window.location.origin;
-    const resetUrl = `${origin}/admin-control/reset-password`;
+    // Supabase expects the hash format for password reset redirects
+    const resetUrl = `${origin}/admin-control#type=reset_password`;
     console.log(`Reset password URL: ${resetUrl}`);
     return resetUrl;
   };
@@ -32,6 +33,36 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
     setIsLoading(true);
     
     try {
+      // Validate email format first
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        toast({
+          title: "خطأ في البريد الإلكتروني",
+          description: "يرجى إدخال عنوان بريد إلكتروني صالح",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      // Check if the email is on the allowed list for admin access
+      // This is important as only admin emails can reset passwords
+      if (!email.endsWith('@solo4ai.com') && 
+          !email.includes('admin') && 
+          email !== 'aljumeri@gmail.com' && 
+          email !== 'su.alshehri.ai@gmail.com' && 
+          email !== 'admin@example.com' && 
+          email !== 'test@example.com' &&
+          email !== 'padebayo236@gmail.com') {
+        toast({
+          title: "غير مصرح",
+          description: "هذا البريد الإلكتروني غير مصرح له باستخدام لوحة التحكم",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return;
+      }
+
       const resetURL = getResetPasswordURL();
       console.log("Attempting password reset for:", email);
       console.log("Reset password URL:", resetURL);
@@ -61,6 +92,12 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
             toast({
               title: "يرجى الانتظار قليلاً",
               description: "لأسباب أمنية، يمكنك طلب إعادة تعيين كلمة المرور مرة واحدة كل 10 ثوان",
+              variant: "destructive"
+            });
+          } else if (errorMessage.toLowerCase().includes("invalid") || errorMessage.toLowerCase().includes("not found")) {
+            toast({
+              title: "البريد الإلكتروني غير مسجل",
+              description: "هذا البريد الإلكتروني غير مسجل في النظام. يرجى التسجيل أولاً.",
               variant: "destructive"
             });
           } else {

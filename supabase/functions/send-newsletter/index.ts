@@ -1,6 +1,7 @@
 // @deno-types="../deno.d.ts"
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.43.1";
+import { crypto } from "https://deno.land/std@0.178.0/crypto/mod.ts"; 
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -23,6 +24,40 @@ interface SubscriberData {
 // Fallback values for local development
 const FALLBACK_SUPABASE_URL = "https://vqkdadugmkwnthkfjbla.supabase.co";
 const FALLBACK_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxa2RhZHVnbWt3bnRoa2ZqYmxhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYxNDQwOTUsImV4cCI6MjA2MTcyMDA5NX0.AyZpQgkaypIz2thFdO2K5WF7WFXog2tw-t_9RLBapY4";
+
+// Generate unsubscribe token for email
+async function generateEmailToken(email: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const secretKey = Deno.env.get("UNSUBSCRIBE_SECRET") || "default-secret-key";
+  const data = encoder.encode(email + secretKey);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 32);
+}
+
+// Create unsubscribe link for a subscriber
+async function createUnsubscribeLink(email: string, origin: string): Promise<string> {
+  const token = await generateEmailToken(email);
+  const encodedEmail = encodeURIComponent(email);
+  return `${origin}/unsubscribe?email=${encodedEmail}&token=${token}`;
+}
+
+// Wrap newsletter content with template including unsubscribe link
+async function wrapNewsletterContent(content: string, email: string, origin: string): Promise<string> {
+  const unsubscribeLink = await createUnsubscribeLink(email, origin);
+  
+  return `
+    <div dir="rtl" style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
+      ${content}
+      <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666; text-align: center;">
+        <p>
+          إذا كنت تريد إلغاء الاشتراك في هذه النشرة الإخبارية، 
+          <a href="${unsubscribeLink}" style="color: #666;">اضغط هنا</a>
+        </p>
+      </div>
+    </div>
+  `;
+}
 
 serve(async (req: Request) => {
   console.log("Edge Function: send-newsletter invoked");
@@ -81,15 +116,19 @@ serve(async (req: Request) => {
     
     console.log(`Edge Function: Newsletter found: ${newsletter.subject}`);
     
-    // Get subscriber count only to avoid column issues
-    console.log("Edge Function: Counting subscribers");
-    const { count: subscribersCount, error: subscribersError } = await supabase
+    // Get origin for unsubscribe links
+    const origin = req.headers.get("origin") || "https://your-site-url.com";
+    console.log(`Edge Function: Using origin for links: ${origin}`);
+    
+    // Get all subscribers
+    console.log("Edge Function: Fetching subscribers");
+    const { data: subscribers, error: subscribersError, count: subscribersCount } = await supabase
       .from("subscribers")
-      .select("*", { count: 'exact', head: true });
+      .select("email", { count: 'exact' });
       
     if (subscribersError) {
-      console.error(`Edge Function: Subscribers count error: ${subscribersError.message}`);
-      throw new Error(`Failed to count subscribers: ${subscribersError.message}`);
+      console.error(`Edge Function: Subscribers fetch error: ${subscribersError.message}`);
+      throw new Error(`Failed to fetch subscribers: ${subscribersError.message}`);
     }
     
     const subscriberCount = subscribersCount || 0;
@@ -101,6 +140,21 @@ serve(async (req: Request) => {
         JSON.stringify({ message: "No subscribers found", success: true, subscribers: 0 }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
       );
+    }
+    
+    // For each subscriber, we would prepare a personalized email with unsubscribe link
+    // In a real implementation, you would use a service like SendGrid, Mailgun, etc.
+    console.log("Edge Function: Would prepare personalized emails with unsubscribe links");
+    
+    // Here's an example of what would happen for each subscriber:
+    if (subscribers && subscribers.length > 0) {
+      const sampleSubscriber = subscribers[0];
+      const personalizedContent = await wrapNewsletterContent(
+        newsletter.content, 
+        sampleSubscriber.email, 
+        origin
+      );
+      console.log("Edge Function: Example personalized content created with unsubscribe link");
     }
     
     // Update newsletter as sent

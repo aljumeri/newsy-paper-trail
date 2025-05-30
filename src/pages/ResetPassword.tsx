@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -25,12 +24,21 @@ const ResetPassword = () => {
   // Check for the code in the URL with enhanced security
   useEffect(() => {
     const handleResetCode = async () => {
+      // Check for parameters in both URL search params and hash fragments
       const searchParams = new URLSearchParams(location.search);
-      const code = searchParams.get('code');
-      const type = searchParams.get('type');
-      const errorDesc = searchParams.get('error_description');
+      const hashParams = new URLSearchParams(location.hash.replace('#', ''));
+      
+      // Try to get the code from search params first, then hash params
+      const code = searchParams.get('code') || hashParams.get('code');
+      const type = searchParams.get('type') || hashParams.get('type');
+      const errorDesc = searchParams.get('error_description') || hashParams.get('error_description');
       
       console.log("ResetPassword: URL parameters detected");
+      console.log("Search params:", location.search);
+      console.log("Hash params:", location.hash);
+      console.log("Code:", code ? "exists" : "missing");
+      console.log("Type:", type);
+      
       await adminUtils.logSecurityEvent('password_reset_attempt');
       
       // Handle errors from the URL
@@ -43,12 +51,22 @@ const ResetPassword = () => {
       }
       
       // If there's no reset code, show error
-      if (!code || type !== 'recovery') {
-        console.error("Missing or invalid reset code in URL parameters");
+      if (!code) {
+        console.error("Missing reset code in URL parameters");
         setErrorMessage("رابط إعادة تعيين كلمة المرور غير مكتمل. يرجى طلب رابط جديد.");
         setShowErrorDialog(true);
         setVerificationInProgress(false);
         await adminUtils.logSecurityEvent('password_reset_failed', 'reset_code', 'missing_code');
+        return;
+      }
+      
+      // Allow type to be 'recovery' or 'reset_password' to be more flexible
+      if (type !== 'recovery' && type !== 'reset_password' && type !== 'passwordReset') {
+        console.error("Invalid reset type:", type);
+        setErrorMessage("نوع إعادة التعيين غير صالح. يرجى طلب رابط جديد.");
+        setShowErrorDialog(true);
+        setVerificationInProgress(false);
+        await adminUtils.logSecurityEvent('password_reset_failed', 'reset_code', 'invalid_type');
         return;
       }
       

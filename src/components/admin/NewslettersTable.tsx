@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -214,14 +213,14 @@ const NewslettersTable = ({ newsletters, formatDate }: NewslettersTableProps) =>
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => navigate(`/admin-control/edit/${newsletter.id}`)}
+                        onClick={() => navigate(`/admin-control/newsletter/edit/${newsletter.id}`)}
                       >
                         <Edit className="w-4 h-4 ml-1" /> تعديل
                       </Button>
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => navigate(`/newsletter/${newsletter.id}`)}
+                        onClick={() => navigate(`/admin-control/newsletter/view/${newsletter.id}`)}
                       >
                         <Eye className="w-4 h-4 ml-1" /> عرض
                       </Button>
@@ -231,7 +230,7 @@ const NewslettersTable = ({ newsletters, formatDate }: NewslettersTableProps) =>
                         asChild
                         className="text-blue-500"
                       >
-                        <a href={`/newsletter/${newsletter.id}`} target="_blank" rel="noopener noreferrer">
+                        <a href={`/admin-control/newsletter/view/${newsletter.id}`} target="_blank" rel="noopener noreferrer">
                           <ExternalLink className="w-4 h-4 ml-1" /> فتح في صفحة جديدة
                         </a>
                       </Button>

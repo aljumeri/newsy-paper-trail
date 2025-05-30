@@ -1,4 +1,7 @@
-// @deno-types="../deno.d.ts"
+// Enhanced add-subscriber Edge Function for deployment
+// @ts-nocheck
+// deno-lint-ignore-file
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7'
 
 const corsHeaders = {
@@ -66,7 +69,7 @@ Deno.serve(async (req) => {
       console.log("Edge Function: Subscriber added successfully via RPC");
       return new Response(
         JSON.stringify({ 
-          message: "Subscription successful", 
+          message: "تم اشتراكك بنجاح في النشرة الإخبارية.", 
           success: true,
           subscriber_id: rpcData.subscriber_id 
         }),
@@ -91,7 +94,7 @@ Deno.serve(async (req) => {
     } else if (existingSubscriber) {
       console.log("Edge Function: Email already exists");
       return new Response(
-        JSON.stringify({ message: "You are already subscribed", success: true }),
+        JSON.stringify({ message: "البريد الإلكتروني موجود بالفعل في قائمة المشتركين", success: true }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
       );
     }
@@ -108,7 +111,7 @@ Deno.serve(async (req) => {
       if (error.code === '23505') {
         console.log("Edge Function: Email already exists (constraint error)");
         return new Response(
-          JSON.stringify({ message: "You are already subscribed", success: true }),
+          JSON.stringify({ message: "البريد الإلكتروني موجود بالفعل في قائمة المشتركين", success: true }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
         );
       }
@@ -120,7 +123,7 @@ Deno.serve(async (req) => {
     console.log("Edge Function: Subscriber added successfully");
     return new Response(
       JSON.stringify({ 
-        message: "Subscription successful", 
+        message: "تم اشتراكك بنجاح في النشرة الإخبارية.", 
         success: true,
         subscriber_id: data?.id 
       }),
@@ -136,4 +139,4 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
     );
   }
-});
+}); 

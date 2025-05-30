@@ -1,4 +1,6 @@
+
 import { supabase } from "@/integrations/supabase/client";
+import { adminUtils } from "@/utils/adminUtils";
 
 interface SubscriptionResult {
   success: boolean;
@@ -7,33 +9,42 @@ interface SubscriptionResult {
 }
 
 /**
- * Service for handling newsletter subscription operations
+ * Enhanced subscription service with security logging
  */
 export const subscriptionService = {
   /**
-   * Subscribe a user to the newsletter
-   * @param email - The email address to subscribe
-   * @returns Result object with success status and optional error message
+   * Subscribe a user to the newsletter with security enhancements
    */
   async subscribe(email: string): Promise<SubscriptionResult> {
     try {
       console.log("Subscription service: Attempting to subscribe email:", email);
       
-      // First try using the Edge Function
-      try {
-      const { error, data } = await supabase.functions.invoke("add-subscriber", {
-        body: { email }
-      });
+      // Log subscription attempt
+      await adminUtils.logSecurityEvent('newsletter_subscription_attempt', 'subscriber', email);
       
-      // Handle various error scenarios
-      if (error) {
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return {
+          success: false,
+          message: "صيغة البريد الإلكتروني غير صحيحة"
+        };
+      }
+      
+      // Try using the Edge Function first
+      try {
+        const { error, data } = await supabase.functions.invoke("add-subscriber", {
+          body: { email }
+        });
+        
+        if (error) {
           console.error("Edge function error:", error);
-          // Continue to fallback method
           throw error;
         }
         
-        // Successful subscription via Edge Function
         console.log("Subscription successful via Edge Function:", data);
+        await adminUtils.logSecurityEvent('newsletter_subscription_success', 'subscriber', email);
+        
         return { 
           success: true, 
           message: "تم اشتراكك بنجاح في النشرة الإخبارية." 
@@ -42,7 +53,6 @@ export const subscriptionService = {
         console.error("Edge function failed, trying direct database access:", edgeFunctionError);
         
         // Fallback: Try direct database access
-        // First check if email already exists
         const { data: existingSubscriber } = await supabase
           .from("subscribers")
           .select("*")
@@ -56,7 +66,7 @@ export const subscriptionService = {
           };
         }
         
-        // Insert the new subscriber
+        // Insert the new subscriber with enhanced security
         const { data, error } = await supabase
           .from("subscribers")
           .insert([{ 
@@ -68,6 +78,7 @@ export const subscriptionService = {
           
         if (error) {
           console.error("Direct database subscription error:", error);
+          await adminUtils.logSecurityEvent('newsletter_subscription_failed', 'subscriber', email);
           
           if (error.message && error.message.includes('duplicate')) {
             return { 
@@ -76,22 +87,25 @@ export const subscriptionService = {
             };
           }
           
-        return { 
-          success: false, 
-          message: "حدث خطأ أثناء الاشتراك. يرجى المحاولة مرة أخرى لاحقًا.", 
-          error 
-        };
-      }
-      
-        // Successful subscription via direct database access
+          return { 
+            success: false, 
+            message: "حدث خطأ أثناء الاشتراك. يرجى المحاولة مرة أخرى لاحقًا.", 
+            error 
+          };
+        }
+        
         console.log("Subscription successful via direct database access:", data);
-      return { 
-        success: true, 
-        message: "تم اشتراكك بنجاح في النشرة الإخبارية." 
-      };
+        await adminUtils.logSecurityEvent('newsletter_subscription_success', 'subscriber', email);
+        
+        return { 
+          success: true, 
+          message: "تم اشتراكك بنجاح في النشرة الإخبارية." 
+        };
       }
     } catch (error: unknown) {
       console.error("Unhandled error during subscription:", error);
+      await adminUtils.logSecurityEvent('newsletter_subscription_error', 'subscriber', email);
+      
       return { 
         success: false, 
         message: "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى لاحقًا.", 

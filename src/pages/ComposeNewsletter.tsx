@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { adminUtils } from '@/utils/adminUtils';
 
 // Import components
 import NewsletterHeader from '@/components/newsletter/NewsletterHeader';
@@ -19,34 +21,6 @@ const ComposeNewsletter = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  // Add the consistent checkAdminStatus function
-  const checkAdminStatus = async () => {
-    try {
-      const { data } = await supabase.auth.getSession();
-      
-      if (!data.session) {
-        console.log("ComposeNewsletter: No session found during admin check");
-        return false;
-      }
-      
-      // Check admin status by email pattern
-      const email = data.session.user.email?.toLowerCase() || '';
-      console.log("ComposeNewsletter: Checking admin status for email:", email);
-      
-      const isAdmin = email.includes('admin') || 
-             email === 'test@example.com' || 
-             email === 'aljumeri@gmail.com' ||
-             email === 'su.alshehri.ai@gmail.com' ||
-             email.endsWith('@solo4ai.com');
-             
-      console.log("ComposeNewsletter: Admin status check result:", isAdmin);
-      return isAdmin;
-    } catch (error) {
-      console.error("Error checking admin status:", error);
-      return false;
-    }
-  };
-  
   // Apply theme when dark mode changes
   useEffect(() => {
     if (isDarkMode) {
@@ -56,11 +30,13 @@ const ComposeNewsletter = () => {
     }
   }, [isDarkMode]);
   
-  // Check auth directly in component with timeout
+  // Check auth directly in component with enhanced security
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Add timeout to prevent infinite loading
+        console.log("ComposeNewsletter: Checking authentication");
+        await adminUtils.logSecurityEvent('newsletter_compose_access_attempt');
+        
         const timeoutId = setTimeout(() => {
           console.log("ComposeNewsletter: Auth check timeout reached");
           toast({
@@ -72,10 +48,10 @@ const ComposeNewsletter = () => {
         }, 5000);
         
         const { data, error } = await supabase.auth.getSession();
-        
         clearTimeout(timeoutId);
         
         if (error || !data.session) {
+          await adminUtils.logSecurityEvent('newsletter_compose_access_denied', 'auth', 'no_session');
           toast({
             title: "يرجى تسجيل الدخول",
             description: "يجب تسجيل الدخول للوصول إلى هذه الصفحة",
@@ -85,11 +61,12 @@ const ComposeNewsletter = () => {
           return;
         }
         
-        // Use the consistent admin check method
-        const isAdminUser = await checkAdminStatus();
+        // Use the secure admin check method
+        const isAdminUser = await adminUtils.isCurrentUserAdmin();
         
         if (!isAdminUser) {
           console.log("ComposeNewsletter: User is not admin, redirecting");
+          await adminUtils.logSecurityEvent('newsletter_compose_access_denied', 'auth', 'not_admin');
           toast({
             title: "صلاحيات غير كافية",
             description: "ليس لديك صلاحيات الوصول إلى هذه الصفحة",
@@ -99,9 +76,11 @@ const ComposeNewsletter = () => {
           return;
         }
         
+        await adminUtils.logSecurityEvent('newsletter_compose_access_granted');
         setAuthChecking(false);
       } catch (err) {
         console.error("Auth check error:", err);
+        await adminUtils.logSecurityEvent('newsletter_compose_access_error');
         navigate('/admin-control');
       }
     };
@@ -122,6 +101,8 @@ const ComposeNewsletter = () => {
     setIsLoading(true);
     
     try {
+      await adminUtils.logSecurityEvent('newsletter_save_attempt', 'newsletter', subject);
+      
       // Get current session
       const { data: sessionData } = await supabase.auth.getSession();
       
@@ -136,7 +117,6 @@ const ComposeNewsletter = () => {
       }
       
       const userId = sessionData.session.user.id;
-      
       console.log("Attempting to save newsletter with user ID:", userId);
       
       // Save newsletter
@@ -152,10 +132,12 @@ const ComposeNewsletter = () => {
       
       if (error) {
         console.error('Newsletter save error:', error);
+        await adminUtils.logSecurityEvent('newsletter_save_failed', 'newsletter', subject);
         throw error;
       }
       
       console.log('Newsletter saved successfully:', data);
+      await adminUtils.logSecurityEvent('newsletter_save_success', 'newsletter', data[0]?.id);
       
       toast({
         title: "تم الحفظ بنجاح",
@@ -168,7 +150,7 @@ const ComposeNewsletter = () => {
       const errorMessage = error instanceof Error ? error.message : "حدث خطأ أثناء حفظ النشرة الإخبارية";
       toast({
         title: "خطأ في الحفظ",
-        description: errorMessage,
+        description: "حدث خطأ أثناء حفظ النشرة الإخبارية",
         variant: "destructive"
       });
     } finally {

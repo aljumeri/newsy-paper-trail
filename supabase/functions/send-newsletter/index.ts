@@ -1,7 +1,7 @@
+
 // @deno-types="../deno.d.ts"
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.43.1";
-import { crypto } from "https://deno.land/std@0.178.0/crypto/mod.ts"; 
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -197,7 +197,7 @@ serve(async (req: Request) => {
     
     return new Response(
       JSON.stringify({ error: errorMessage, success: false }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
   }
 });

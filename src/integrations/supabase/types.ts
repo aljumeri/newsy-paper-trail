@@ -9,6 +9,30 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_metadata: {
+        Row: {
+          created_at: string | null
+          email: string
+          is_confirmed: boolean | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          is_confirmed?: boolean | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          is_confirmed?: boolean | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       admin_users: {
         Row: {
           created_at: string
@@ -134,6 +158,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_admin_by_email: {
+        Args: { _email: string }
+        Returns: string
+      }
       add_subscriber: {
         Args: { subscriber_email: string }
         Returns: Json
@@ -147,10 +175,9 @@ export type Database = {
         Returns: boolean
       }
       has_role: {
-        Args: {
-          _user_id: string
-          _role: Database["public"]["Enums"]["app_role"]
-        }
+        Args:
+          | { _user_id: string; _role: Database["public"]["Enums"]["app_role"] }
+          | { _user_id: string; _role: string }
         Returns: boolean
       }
       is_admin_by_email: {
@@ -161,14 +188,26 @@ export type Database = {
         Args: { user_id: string }
         Returns: boolean
       }
+      is_admin_with_metadata: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
       log_security_event: {
-        Args: {
-          _action: string
-          _resource_type?: string
-          _resource_id?: string
-          _ip_address?: unknown
-          _user_agent?: string
-        }
+        Args:
+          | {
+              _action: string
+              _resource_type?: string
+              _resource_id?: string
+              _ip_address?: string
+              _user_agent?: string
+            }
+          | {
+              _action: string
+              _resource_type?: string
+              _resource_id?: string
+              _ip_address?: unknown
+              _user_agent?: string
+            }
         Returns: undefined
       }
     }

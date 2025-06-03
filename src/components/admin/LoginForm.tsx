@@ -20,6 +20,11 @@ const LoginForm: React.FC<LoginFormProps> = ({
   onSubmit,
   isLoading
 }) => {
+  const handleTestLogin = () => {
+    setEmail('test@example.com');
+    setPassword('password123');
+  };
+
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="space-y-2">
@@ -46,13 +51,32 @@ const LoginForm: React.FC<LoginFormProps> = ({
           className="w-full"
         />
       </div>
-      <Button
-        type="submit"
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-        disabled={isLoading}
-      >
-        {isLoading ? "جارِ تسجيل الدخول..." : "تسجيل الدخول"}
-      </Button>
+      
+      <div className="space-y-2">
+        <Button
+          type="submit"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+          disabled={isLoading}
+        >
+          {isLoading ? "جارِ تسجيل الدخول..." : "تسجيل الدخول"}
+        </Button>
+        
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full border-gray-300 text-gray-700 hover:bg-gray-50"
+          onClick={handleTestLogin}
+          disabled={isLoading}
+        >
+          تسجيل دخول تجريبي
+        </Button>
+      </div>
+      
+      <div className="text-xs text-gray-500 text-center mt-2">
+        <p>بيانات الدخول التجريبي:</p>
+        <p>البريد: test@example.com</p>
+        <p>كلمة المرور: password123</p>
+      </div>
     </form>
   );
 };

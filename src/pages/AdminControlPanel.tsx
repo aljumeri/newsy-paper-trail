@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import SubscribersTable from '@/components/admin/SubscribersTable';
@@ -7,6 +7,7 @@ import NewslettersTable from '@/components/admin/NewslettersTable';
 import useFormatDate from '@/hooks/useFormatDate';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from '@/hooks/use-toast';
+import { User } from '@supabase/supabase-js';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AdminActionCard from '@/components/admin/AdminActionCard';
@@ -38,17 +39,25 @@ const AdminControlPanel = () => {
   const { formatDate } = useFormatDate();
   const { toast } = useToast();
   
-  // Simplified data fetching function
-  const fetchData = async () => {
-    console.log("AdminPanel: Starting data fetch...");
+  // Handle data fetching with enhanced security
+  const fetchData = useCallback(async () => {
     setDataLoading(true);
     setError(null);
     
     try {
+      console.log("AdminPanel: Fetching data...");
       await adminUtils.logSecurityEvent('admin_panel_data_access');
       
+      // Verify admin status before fetching sensitive data
+      const isCurrentUserAdmin = await adminUtils.isCurrentUserAdmin();
+      if (!isCurrentUserAdmin) {
+        setDataLoading(false);
+        setError("You don't have admin privileges");
+        return;
+      }
+      
       // Fetch subscribers data
-      console.log("AdminPanel: Fetching subscribers...");
+      console.log("AdminPanel: Fetching subscribers data...");
       const { data: subscribersData, error: subscribersError } = await supabase
         .from('subscribers')
         .select('*')
@@ -63,12 +72,12 @@ const AdminControlPanel = () => {
         });
         setSubscribers([]);
       } else {
-        console.log("AdminPanel: Subscribers fetched:", subscribersData?.length ?? 0);
+        console.log("AdminPanel: Subscribers data fetched successfully:", subscribersData?.length ?? 0);
         setSubscribers(Array.isArray(subscribersData) ? subscribersData : []);
       }
       
       // Fetch newsletters data
-      console.log("AdminPanel: Fetching newsletters...");
+      console.log("AdminPanel: Fetching newsletters data...");
       const { data: newslettersData, error: newslettersError } = await supabase
         .from('newsletters')
         .select('*')
@@ -83,43 +92,36 @@ const AdminControlPanel = () => {
         });
         setNewsletters([]);
       } else {
-        console.log("AdminPanel: Newsletters fetched:", newslettersData?.length ?? 0);
+        console.log("AdminPanel: Newsletters data fetched successfully:", newslettersData?.length ?? 0);
         setNewsletters(Array.isArray(newslettersData) ? newslettersData : []);
       }
       
+      setDataLoading(false);
     } catch (error: unknown) {
       console.error('Error fetching data:', error);
       setError(error instanceof Error ? error.message : "Unknown error occurred");
-    } finally {
       setDataLoading(false);
     }
-  };
+  }, [toast]);
 
-  // Simplified auth and data loading effect
+  // Check auth and redirect if necessary
   useEffect(() => {
-    console.log("AdminPanel: Auth state changed", { authLoading, user: !!user, isAdmin });
-    
-    if (authLoading) {
-      console.log("AdminPanel: Still loading auth...");
-      return;
+    if (!authLoading) {
+      if (!user) {
+        console.log("AdminPanel: No user, redirecting to login");
+        navigate('/admin-control');
+        return;
+      }
+      
+      if (!isAdmin) {
+        console.log("AdminPanel: User is not admin");
+        return; // Will show access denied UI
+      }
+      
+      // User is authenticated and is admin, fetch data
+      fetchData();
     }
-
-    if (!user) {
-      console.log("AdminPanel: No user, redirecting...");
-      navigate('/admin-control');
-      return;
-    }
-
-    if (!isAdmin) {
-      console.log("AdminPanel: User is not admin, showing access denied");
-      setDataLoading(false);
-      return;
-    }
-
-    // User is authenticated and is admin, fetch data
-    console.log("AdminPanel: User is admin, fetching data...");
-    fetchData();
-  }, [authLoading, user, isAdmin, navigate]);
+  }, [user, isAdmin, authLoading, navigate, fetchData]);
 
   // Handle refresh
   const handleRefreshData = async () => {

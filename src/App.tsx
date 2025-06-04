@@ -13,7 +13,6 @@ import EditNewsletter from "./pages/EditNewsletter";
 import NewsletterDetail from "./pages/NewsletterDetail";
 import AdminControl from "./pages/AdminControl";
 import ResetPassword from "./pages/ResetPassword";
-import Unsubscribe from "./pages/Unsubscribe";
 import { useEffect, useState } from "react";
 
 // Configure QueryClient with error handling
@@ -55,23 +54,17 @@ const App = () => {
   // Check for password reset code in URL
   useEffect(() => {
     const checkForResetCode = () => {
-      // Check both query parameters and hash fragments
       const urlParams = new URLSearchParams(window.location.search);
-      const hashParams = new URLSearchParams(window.location.hash.replace('#', ''));
-      
-      // Try to get code from either source
-      const code = urlParams.get('code') || hashParams.get('code');
-      const type = urlParams.get('type') || hashParams.get('type');
+      const code = urlParams.get('code');
+      const type = urlParams.get('type');
       
       console.log("URL Parameters:", { 
         code: code ? "present (length: " + code.length + ")" : "not present", 
         type,
-        fullSearch: window.location.search,
-        fullHash: window.location.hash
+        fullSearch: window.location.search
       });
       
-      // Support both 'recovery' and 'reset_password' types
-      if (code && (type === 'recovery' || type === 'reset_password')) {
+      if (code && type === 'recovery') {
         console.log("Reset code detected in URL, setting state for redirect");
         
         // If we're already on the reset password page with the right params, don't redirect
@@ -130,7 +123,6 @@ const App = () => {
             <Route path="/archives" element={<Archives />} />
             <Route path="/about" element={<About />} />
             <Route path="/newsletter/:id" element={<NewsletterDetail />} />
-            <Route path="/unsubscribe" element={<Unsubscribe />} />
             
             {/* Admin Routes */}
             <Route path="/admin-control" element={<AdminControl />} />

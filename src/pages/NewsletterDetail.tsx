@@ -569,6 +569,7 @@ const newsletterData: Record<number, StaticNewsletterData> = {
 const NewsletterDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [newsletter, setNewsletter] = useState<NewsletterData | null>(null);
+  const [staticNewsletter, setStaticNewsletter] = useState<StaticNewsletterData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -581,7 +582,23 @@ const NewsletterDetail = () => {
 
         console.log("Fetching newsletter with ID:", id);
         
-        // Attempt to fetch from database
+        // Check if this is a numeric ID (static data)
+        const numericId = parseInt(id);
+        const isNumericId = !isNaN(numericId) && numericId.toString() === id;
+        
+        if (isNumericId) {
+          // Use static data for numeric IDs
+          console.log("Using static newsletter data for numeric ID:", numericId);
+          if (newsletterData[numericId]) {
+            setStaticNewsletter(newsletterData[numericId]);
+            setLoading(false);
+            return;
+          } else {
+            throw new Error("Static newsletter not found");
+          }
+        }
+        
+        // Try to fetch from database for UUID format
         const { data, error } = await supabase
           .from('newsletters')
           .select('*')
@@ -589,32 +606,25 @@ const NewsletterDetail = () => {
           .single();
         
         if (error) {
-          console.error("Error fetching newsletter:", error);
+          console.error("Error fetching newsletter from database:", error);
+          // If it's a UUID format error, try to use static data as fallback
+          const fallbackId = parseInt(id);
+          if (!isNaN(fallbackId) && newsletterData[fallbackId]) {
+            console.log("Using static newsletter data as fallback");
+            setStaticNewsletter(newsletterData[fallbackId]);
+            setLoading(false);
+            return;
+          }
           throw error;
         }
         
         if (data) {
-          console.log("Newsletter fetched successfully:", data.subject);
+          console.log("Newsletter fetched successfully from database:", data.subject);
           setNewsletter(data);
         } else {
-          // Fallback to static data if available
-          const staticId = parseInt(id);
-          if (newsletterData[staticId]) {
-            console.log("Using static newsletter data as fallback");
-            // Convert static data to match NewsletterData interface
-            const staticNewsletter = newsletterData[staticId];
-            const convertedNewsletter: NewsletterData = {
-              id: staticNewsletter.id.toString(),
-              subject: staticNewsletter.title,
-              content: typeof staticNewsletter.content === 'string' ? staticNewsletter.content : '',
-              created_at: staticNewsletter.date,
-              sent_at: null
-            };
-            setNewsletter(convertedNewsletter);
-          } else {
-            throw new Error("Newsletter not found");
-          }
+          throw new Error("Newsletter not found in database");
         }
+        
       } catch (err) {
         console.error("Failed to fetch newsletter:", err);
         setError(err instanceof Error ? err.message : "Failed to load newsletter");
@@ -651,7 +661,7 @@ const NewsletterDetail = () => {
     );
   }
 
-  if (error || !newsletter) {
+  if (error || (!newsletter && !staticNewsletter)) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
@@ -669,6 +679,12 @@ const NewsletterDetail = () => {
     );
   }
 
+  // Use static newsletter data if available, otherwise use database data
+  const displayNewsletter = staticNewsletter || newsletter;
+  const displayTitle = staticNewsletter ? staticNewsletter.title : newsletter?.subject;
+  const displayDate = staticNewsletter ? staticNewsletter.date : (newsletter?.created_at ? formatDate(newsletter.created_at) : "");
+  const displayContent = staticNewsletter ? staticNewsletter.content : newsletter?.content;
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -679,9 +695,9 @@ const NewsletterDetail = () => {
             <div className="flex flex-col md:flex-row gap-8 items-center">
               <div className="md:w-full">
                 <div className="text-sm text-blue-600 mb-2">
-                  {newsletter.created_at ? formatDate(newsletter.created_at) : ""}
+                  {displayDate}
                 </div>
-                <h1 className="text-3xl md:text-4xl font-bold mb-4">{newsletter.subject}</h1>
+                <h1 className="text-3xl md:text-4xl font-bold mb-4">{displayTitle}</h1>
                 <Link to="/archives" className="inline-flex items-center text-blue-600 hover:text-blue-700">
                   <ChevronRight className="mr-1" size={16} />
                   <span>العودة إلى الأرشيف</span>
@@ -694,7 +710,15 @@ const NewsletterDetail = () => {
         {/* Newsletter content */}
         <div className="container py-12">
           <div className="max-w-3xl mx-auto bg-white p-6 md:p-8 rounded-lg shadow">
-            <article className="prose prose-lg max-w-none" dangerouslySetInnerHTML={{ __html: newsletter.content }}></article>
+            <article className="prose prose-lg max-w-none">
+              {staticNewsletter ? (
+                // Render React content for static newsletters
+                displayContent
+              ) : (
+                // Render HTML content for database newsletters
+                <div dangerouslySetInnerHTML={{ __html: newsletter?.content || '' }}></div>
+              )}
+            </article>
             
             <div className="mt-12 pt-8 border-t border-gray-200">
               <h3 className="text-xl font-semibold mb-4">شارك هذا العدد</h3>

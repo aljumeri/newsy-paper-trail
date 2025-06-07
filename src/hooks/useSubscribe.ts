@@ -11,9 +11,19 @@ export const useSubscribe = () => {
   const handleSubscribe = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     
-    // Improved email validation
+    // Basic validation
+    if (!email || !email.trim()) {
+      toast({
+        title: "خطأ",
+        description: "يرجى إدخال بريد إلكتروني",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Email format validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email || !emailRegex.test(email)) {
+    if (!emailRegex.test(email.trim())) {
       toast({
         title: "خطأ",
         description: "يرجى إدخال بريد إلكتروني صالح",
@@ -23,11 +33,10 @@ export const useSubscribe = () => {
     }
     
     setIsLoading(true);
-    console.log("useSubscribe: Attempting to subscribe with email:", email);
+    console.log("useSubscribe: Attempting to subscribe with email:", email.trim());
     
     try {
-      // Use the new subscription service
-      const result = await subscriptionService.subscribe(email);
+      const result = await subscriptionService.subscribe(email.trim());
       
       if (result.success) {
         toast({

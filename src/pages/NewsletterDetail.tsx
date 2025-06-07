@@ -619,7 +619,7 @@ const NewsletterDetail = () => {
         console.error("Failed to fetch newsletter:", err);
         setError(err instanceof Error ? err.message : "Failed to load newsletter");
       } finally {
-    setLoading(false);
+        setLoading(false);
       }
     };
 

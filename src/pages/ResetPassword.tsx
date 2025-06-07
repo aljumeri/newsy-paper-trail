@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { adminUtils } from '@/utils/adminUtils';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const ResetPassword = () => {
   const [password, setPassword] = useState('');
@@ -17,12 +16,11 @@ const ResetPassword = () => {
   const [verificationInProgress, setVerificationInProgress] = useState(true);
   const [showErrorDialog, setShowErrorDialog] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [rateLimitExceeded, setRateLimitExceeded] = useState(false);
   const { toast } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
   
-  // Check for the code in the URL with enhanced security
+  // Check for the code in the URL
   useEffect(() => {
     const handleResetCode = async () => {
       const searchParams = new URLSearchParams(location.search);
@@ -30,15 +28,18 @@ const ResetPassword = () => {
       const type = searchParams.get('type');
       const errorDesc = searchParams.get('error_description');
       
-      console.log("ResetPassword: URL parameters detected");
-      await adminUtils.logSecurityEvent('password_reset_attempt');
+      console.log("ResetPassword: URL parameters detected", {
+        code: code ? `present (length: ${code.length})` : "not present",
+        type: type || "none",
+        error: errorDesc || "none",
+        fullSearch: location.search
+      });
       
       // Handle errors from the URL
       if (errorDesc) {
         setErrorMessage(decodeURIComponent(errorDesc));
         setShowErrorDialog(true);
         setVerificationInProgress(false);
-        await adminUtils.logSecurityEvent('password_reset_failed', 'reset_code', 'invalid_url');
         return;
       }
       
@@ -48,14 +49,13 @@ const ResetPassword = () => {
         setErrorMessage("رابط إعادة تعيين كلمة المرور غير مكتمل. يرجى طلب رابط جديد.");
         setShowErrorDialog(true);
         setVerificationInProgress(false);
-        await adminUtils.logSecurityEvent('password_reset_failed', 'reset_code', 'missing_code');
         return;
       }
       
       try {
         console.log("Verifying password reset code");
         
-        // Try to verify the OTP token with enhanced validation
+        // Try to verify the OTP token
         const { error } = await supabase.auth.verifyOtp({
           token_hash: code,
           type: 'recovery'
@@ -63,15 +63,11 @@ const ResetPassword = () => {
         
         if (error) {
           console.error("Error verifying reset code:", error);
-          await adminUtils.logSecurityEvent('password_reset_failed', 'reset_code', 'verification_failed');
           
-          // More descriptive error message based on error type
+          // More descriptive error message
           let errorMsg = "رابط إعادة تعيين كلمة المرور غير صالح أو انتهت صلاحيته. يرجى طلب رابط جديد.";
           if (error.message.includes("expired")) {
             errorMsg = "انتهت صلاحية رابط إعادة تعيين كلمة المرور. يرجى طلب رابط جديد.";
-          } else if (error.message.includes("too_many_requests")) {
-            errorMsg = "تم تجاوز عدد المحاولات المسموح. يرجى المحاولة لاحقًا.";
-            setRateLimitExceeded(true);
           }
           
           setErrorMessage(errorMsg);
@@ -81,12 +77,10 @@ const ResetPassword = () => {
         }
         
         console.log("Reset code verified successfully");
-        await adminUtils.logSecurityEvent('password_reset_verified', 'reset_code', 'success');
         setResetCodeVerified(true);
         setVerificationInProgress(false);
       } catch (error: unknown) {
         console.error("Exception during reset code verification:", error);
-        await adminUtils.logSecurityEvent('password_reset_error', 'reset_code', 'exception');
         const errorMessage = error instanceof Error ? error.message : "حدث خطأ أثناء التحقق من رابط إعادة التعيين";
         setErrorMessage(errorMessage);
         setShowErrorDialog(true);
@@ -100,7 +94,7 @@ const ResetPassword = () => {
   const handleSetNewPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Enhanced password validation
+    // Validate passwords match
     if (password !== confirmPassword) {
       toast({
         title: "كلمات المرور غير متطابقة",
@@ -110,22 +104,11 @@ const ResetPassword = () => {
       return;
     }
     
-    // Stronger password requirements
-    if (password.length < 8) {
+    // Validate password length
+    if (password.length < 6) {
       toast({
-        title: "كلمة المرور ضعيفة",
-        description: "يجب أن تتكون كلمة المرور من 8 أحرف على الأقل",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    // Check for common password patterns
-    const commonPatterns = ['password', '123456', 'qwerty', 'admin'];
-    if (commonPatterns.some(pattern => password.toLowerCase().includes(pattern))) {
-      toast({
-        title: "كلمة المرور ضعيفة",
-        description: "يرجى اختيار كلمة مرور أكثر أمانًا",
+        title: "كلمة المرور قصيرة جدًا",
+        description: "يجب أن تتكون كلمة المرور من 6 أحرف على الأقل",
         variant: "destructive"
       });
       return;
@@ -134,16 +117,9 @@ const ResetPassword = () => {
     setIsLoading(true);
     
     try {
-      await adminUtils.logSecurityEvent('password_update_attempt');
-      
       const { error } = await supabase.auth.updateUser({ password });
       
-      if (error) {
-        await adminUtils.logSecurityEvent('password_update_failed', 'user', error.message);
-        throw error;
-      }
-      
-      await adminUtils.logSecurityEvent('password_update_success');
+      if (error) throw error;
       
       toast({
         title: "تم تحديث كلمة المرور",
@@ -159,7 +135,7 @@ const ResetPassword = () => {
       const errorMessage = error instanceof Error ? error.message : "حدث خطأ أثناء تحديث كلمة المرور.";
       toast({
         title: "خطأ في تحديث كلمة المرور",
-        description: "حدث خطأ أثناء تحديث كلمة المرور",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -171,7 +147,7 @@ const ResetPassword = () => {
     setShowErrorDialog(false);
     navigate('/admin-control');
   };
-  
+
   // Show loading state while verifying reset code
   if (verificationInProgress) {
     return (
@@ -211,11 +187,6 @@ const ResetPassword = () => {
               <p className="mt-2 text-center text-sm text-gray-600">
                 {errorMessage}
               </p>
-              {rateLimitExceeded && (
-                <p className="mt-2 text-center text-xs text-red-600">
-                  لأمان حسابك، تم تقييد عدد محاولات إعادة تعيين كلمة المرور
-                </p>
-              )}
             </div>
             <div className="flex justify-center">
               <Button onClick={handleCloseErrorDialog}>
@@ -240,7 +211,7 @@ const ResetPassword = () => {
               إعادة تعيين كلمة المرور
             </h2>
             <p className="mt-2 text-center text-sm text-gray-600">
-              الرجاء إدخال كلمة المرور الجديدة (8 أحرف على الأقل)
+              الرجاء إدخال كلمة المرور الجديدة
             </p>
           </div>
           <form className="mt-8 space-y-6" onSubmit={handleSetNewPassword}>
@@ -255,11 +226,10 @@ const ResetPassword = () => {
                   type="password"
                   autoComplete="new-password"
                   required
-                  minLength={8}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                  placeholder="كلمة المرور الجديدة (8 أحرف على الأقل)"
+                  placeholder="كلمة المرور الجديدة"
                 />
               </div>
               <div>
@@ -272,7 +242,6 @@ const ResetPassword = () => {
                   type="password"
                   autoComplete="new-password"
                   required
-                  minLength={8}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
@@ -280,7 +249,7 @@ const ResetPassword = () => {
                 />
               </div>
             </div>
-              
+
             <div>
               <Button
                 type="submit"

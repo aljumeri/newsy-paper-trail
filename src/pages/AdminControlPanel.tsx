@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -11,8 +10,6 @@ import { User } from '@supabase/supabase-js';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AdminActionCard from '@/components/admin/AdminActionCard';
-import { adminUtils } from '@/utils/adminUtils';
-import useSecureAuth from '@/hooks/useSecureAuth';
 
 interface Subscriber {
   id: string;
@@ -33,47 +30,99 @@ const AdminControlPanel = () => {
   const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [authChecking, setAuthChecking] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user, isAdmin, loading: authLoading, handleSignOut } = useSecureAuth();
   const navigate = useNavigate();
   const { formatDate } = useFormatDate();
   const { toast } = useToast();
   
-  // Handle data fetching with enhanced security
+  // Add the checkAdminStatus function
+  const checkAdminStatus = async () => {
+    try {
+      const { data } = await supabase.auth.getSession();
+      
+      if (!data.session) {
+        console.log("AdminPanel: No session found during admin check");
+        return false;
+      }
+      
+      // Check admin status by email pattern
+      const email = data.session.user.email?.toLowerCase() || '';
+      console.log("AdminPanel: Checking admin status for email:", email);
+      
+      const isAdmin = email.includes('admin') || 
+             email === 'test@example.com' || 
+             email === 'aljumeri@gmail.com' ||
+             email === 'su.alshehri.ai@gmail.com' ||
+             email.endsWith('@solo4ai.com');
+             
+      console.log("AdminPanel: Admin status check result:", isAdmin);
+      return isAdmin;
+    } catch (error) {
+      console.error("Error checking admin status:", error);
+      return false;
+    }
+  };
+  
+  // Handle data fetching function using useCallback to avoid dependency issues
   const fetchData = useCallback(async () => {
     setDataLoading(true);
     setError(null);
     
     try {
-      console.log("AdminPanel: Fetching data...");
-      await adminUtils.logSecurityEvent('admin_panel_data_access');
+      console.log("AdminPanel: Fetching subscribers data...");
       
-      // Verify admin status before fetching sensitive data
-      const isCurrentUserAdmin = await adminUtils.isCurrentUserAdmin();
-      if (!isCurrentUserAdmin) {
+      // Check admin status first to avoid unnecessary queries
+      const adminStatus = await checkAdminStatus();
+      if (!adminStatus) {
         setDataLoading(false);
         setError("You don't have admin privileges");
         return;
       }
       
-      // Fetch subscribers data
-      console.log("AdminPanel: Fetching subscribers data...");
+      // Directly fetch subscribers data with explicit debugging
       const { data: subscribersData, error: subscribersError } = await supabase
         .from('subscribers')
         .select('*')
         .order('created_at', { ascending: false });
 
+      console.log("AdminPanel: Subscribers query completed");
+
       if (subscribersError) {
         console.error('Error fetching subscribers:', subscribersError);
         toast({
           title: "خطأ في جلب بيانات المشتركين",
-          description: "حدث خطأ أثناء جلب بيانات المشتركين",
+          description: subscribersError.message,
           variant: "destructive"
         });
+        
+        // Even if there's an error, set subscribers to empty array to avoid undefined
         setSubscribers([]);
+        
+        // Check if this is a permissions error and show more specific message
+        if (subscribersError.code === '42501' || subscribersError.message.includes('permission')) {
+          console.error('This appears to be a permissions error. Please check RLS policies.');
+          toast({
+            title: "خطأ في الصلاحيات",
+            description: "يرجى التحقق من إعدادات الصلاحيات في Supabase",
+            variant: "destructive"
+          });
+        }
       } else {
-        console.log("AdminPanel: Subscribers data fetched successfully:", subscribersData?.length ?? 0);
+        console.log("AdminPanel: Subscribers data fetched successfully:", subscribersData);
+        console.log("AdminPanel: Number of subscribers:", subscribersData?.length ?? 0);
+        
+        // Ensure we're setting even if empty array (but not null/undefined)
         setSubscribers(Array.isArray(subscribersData) ? subscribersData : []);
+        
+        // Log each subscriber for debugging
+        if (Array.isArray(subscribersData)) {
+          subscribersData.forEach((sub, index) => {
+            console.log(`Subscriber ${index + 1}:`, sub.email, sub.created_at);
+          });
+        }
       }
       
       // Fetch newsletters data
@@ -83,16 +132,20 @@ const AdminControlPanel = () => {
         .select('*')
         .order('created_at', { ascending: false });
       
+      console.log("AdminPanel: Newsletters query completed");
+      
       if (newslettersError) {
         console.error('Error fetching newsletters:', newslettersError);
         toast({
           title: "خطأ في جلب بيانات النشرات الإخبارية",
-          description: "حدث خطأ أثناء جلب بيانات النشرات الإخبارية",
+          description: newslettersError.message,
           variant: "destructive"
         });
+        
+        // Set newsletters to empty array to avoid undefined
         setNewsletters([]);
       } else {
-        console.log("AdminPanel: Newsletters data fetched successfully:", newslettersData?.length ?? 0);
+        console.log("AdminPanel: Newsletters data fetched successfully:", newslettersData);
         setNewsletters(Array.isArray(newslettersData) ? newslettersData : []);
       }
       
@@ -102,36 +155,82 @@ const AdminControlPanel = () => {
       setError(error instanceof Error ? error.message : "Unknown error occurred");
       setDataLoading(false);
     }
-  }, [toast]);
+  }, [toast]); // Only depend on toast to avoid circular dependencies
 
-  // Check auth and redirect if necessary
+  // Check auth state - separate effect for clarity
   useEffect(() => {
-    if (!authLoading) {
-      if (!user) {
-        console.log("AdminPanel: No user, redirecting to login");
-        navigate('/admin-control');
-        return;
-      }
-      
-      if (!isAdmin) {
-        console.log("AdminPanel: User is not admin");
-        return; // Will show access denied UI
-      }
-      
-      // User is authenticated and is admin, fetch data
-      fetchData();
-    }
-  }, [user, isAdmin, authLoading, navigate, fetchData]);
+    const checkAuth = async () => {
+      try {
+        console.log("AdminPanel: Checking authentication");
 
-  // Handle refresh
+        // Set a timeout to prevent hanging on network issues
+        const timeoutId = setTimeout(() => {
+          console.log("AdminPanel: Auth check timeout reached");
+          setAuthChecking(false);
+          navigate('/admin-control');
+        }, 5000);
+
+        const { data, error } = await supabase.auth.getSession();
+        clearTimeout(timeoutId);
+
+        if (error) {
+          console.error("Auth check error:", error);
+          navigate('/admin-control');
+          return;
+        }
+
+        if (!data.session) {
+          console.log("AdminPanel: No session, redirecting");
+          navigate('/admin-control');
+          return;
+        }
+
+        setUser(data.session.user);
+        
+        // Check admin status by email pattern
+        const isAdminUser = await checkAdminStatus();
+        
+        console.log("AdminPanel: Admin check result:", isAdminUser);
+        setIsAdmin(isAdminUser);
+        
+        if (!isAdminUser) {
+          console.log("AdminPanel: User is not admin, showing access denied");
+          setAuthChecking(false);
+          // We'll stay on this page but show an access denied message
+          return;
+        }
+        
+        setAuthChecking(false);
+        fetchData();
+      } catch (error: unknown) {
+        console.error("Auth check error:", error);
+        toast({
+          title: "خطأ في التحقق",
+          description: error instanceof Error ? error.message : 'حدث خطأ أثناء التحقق من الصلاحيات',
+          variant: "destructive"
+        });
+        navigate('/admin-control');
+      }
+    };
+    
+    checkAuth();
+  }, [navigate, toast, fetchData]);
+
+  // Handle refresh button
   const handleRefreshData = async () => {
     setRefreshing(true);
     await fetchData();
     setRefreshing(false);
   };
+  
+  // Handle logout
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate('/admin-control');
+  };
 
-  // Show loading state
-  if (authLoading) {
+  // Show loading state while checking auth
+  if (authChecking) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -142,7 +241,7 @@ const AdminControlPanel = () => {
     );
   }
 
-  // Show access denied for non-admin users
+  // Return access denied UI if user is logged in but doesn't have admin privileges
   if (!isAdmin) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -192,7 +291,7 @@ const AdminControlPanel = () => {
             icon="plus"
           />
         </div>
-
+        
         {error && (
           <div className="bg-red-50 border border-red-500 text-red-700 px-4 py-3 rounded mb-6">
             <p className="text-center">{error}</p>
@@ -201,7 +300,7 @@ const AdminControlPanel = () => {
         
         <div className="space-y-6">
           <NewslettersTable 
-            newsletters={newsletters}
+            newsletters={newsletters} 
             formatDate={formatDate}
           />
           <SubscribersTable 

@@ -1,87 +1,53 @@
-/**
- * Security fixes for newsy-paper-trail
- * This script applies important security patches and configurations
- */
+// Script to apply security fixes to Supabase database
+const { createClient } = require('@supabase/supabase-js');
+const fs = require('fs');
+const path = require('path');
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+// Read migration file
+const migrationSql = fs.readFileSync(
+  path.join(__dirname, 'supabase/migrations/20250527_fix_security_issues.sql'),
+  'utf8'
+);
 
-// Get the directory name using ES modules approach
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Initialize Supabase client
+const SUPABASE_URL = "https://vqkdadugmkwnthkfjbla.supabase.co";
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || 
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxa2RhZHVnbWt3bnRoa2ZqYmxhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYxNDQwOTUsImV4cCI6MjA2MTcyMDA5NX0.AyZpQgkaypIz2thFdO2K5WF7WFXog2tw-t_9RLBapY4";
 
-// Headers configuration to secure the application
-const securityHeaders = `/*
-  X-Frame-Options: DENY
-  X-XSS-Protection: 1; mode=block
-  X-Content-Type-Options: nosniff
-  Referrer-Policy: strict-origin-when-cross-origin
-  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
-  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.lovable.app https://*.lovable.dev; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co https://*.supabase.com; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;
-`;
+// You should use the service key (from the dashboard) for admin operations
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-// Path to headers file
-const headersPath = path.join(__dirname, 'public', '_headers');
-
-// Apply security headers
-function applyHeadersFix() {
+async function applyMigration() {
+  console.log("Starting security fix migration...");
+  
   try {
-    fs.writeFileSync(headersPath, securityHeaders, 'utf8');
-    console.log('✅ Security headers successfully applied');
-  } catch (error) {
-    console.error('❌ Failed to apply security headers:', error);
-  }
-}
-
-// Check if DOMPurify is installed and contentSanitizer is configured
-function checkSecurityDependencies() {
-  try {
-    const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), 'utf8'));
-    const hasDomPurify = packageJson.dependencies.dompurify || packageJson.devDependencies.dompurify;
+    // Split the migration into individual statements
+    const statements = migrationSql
+      .split(';')
+      .map(stmt => stmt.trim())
+      .filter(stmt => stmt.length > 0);
     
-    if (!hasDomPurify) {
-      console.warn('⚠️ DOMPurify not found in dependencies. Run: npm install dompurify');
-    } else {
-      console.log('✅ DOMPurify found in dependencies');
+    // Apply each statement
+    for (const statement of statements) {
+      console.log(`Executing SQL: ${statement.substring(0, 50)}...`);
+      
+      // Execute SQL directly using Supabase's REST API
+      const { error } = await supabase.rpc('pgtle_eval', { 
+        sql: statement 
+      });
+      
+      if (error) {
+        console.error("Error executing statement:", error);
+      } else {
+        console.log("Statement executed successfully");
+      }
     }
     
-    // Check for contentSanitizer file
-    const sanitizerPath = path.join(__dirname, 'src', 'utils', 'contentSanitizer.ts');
-    if (fs.existsSync(sanitizerPath)) {
-      console.log('✅ Content sanitizer utility found');
-    } else {
-      console.warn('⚠️ contentSanitizer.ts not found in src/utils/');
-    }
+    console.log("Migration completed successfully");
   } catch (error) {
-    console.error('❌ Failed to check security dependencies:', error);
+    console.error("Migration failed:", error);
   }
 }
 
-// Apply Lovable-specific configurations
-function applyLovableConfig() {
-  try {
-    // Check if lovable.config.js exists
-    const lovableConfigPath = path.join(__dirname, 'lovable.config.js');
-    if (fs.existsSync(lovableConfigPath)) {
-      console.log('✅ Lovable configuration found');
-    } else {
-      console.warn('⚠️ lovable.config.js not found. Deployment may fail.');
-    }
-  } catch (error) {
-    console.error('❌ Failed to check Lovable configuration:', error);
-  }
-}
-
-// Run all security fixes
-function applyAllFixes() {
-  console.log('🔒 Applying security fixes...');
-  applyHeadersFix();
-  checkSecurityDependencies();
-  applyLovableConfig();
-  console.log('🔒 Security fixes completed');
-}
-
-// Execute the fixes
-applyAllFixes(); 
+// Run the migration
+applyMigration().catch(console.error); 

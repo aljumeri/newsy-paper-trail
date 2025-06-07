@@ -51,39 +51,6 @@ export type Database = {
         }
         Relationships: []
       }
-      security_logs: {
-        Row: {
-          action: string
-          created_at: string
-          id: string
-          ip_address: unknown | null
-          resource_id: string | null
-          resource_type: string | null
-          user_agent: string | null
-          user_id: string | null
-        }
-        Insert: {
-          action: string
-          created_at?: string
-          id?: string
-          ip_address?: unknown | null
-          resource_id?: string | null
-          resource_type?: string | null
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          action?: string
-          created_at?: string
-          id?: string
-          ip_address?: unknown | null
-          resource_id?: string | null
-          resource_type?: string | null
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       subscribers: {
         Row: {
           created_at: string
@@ -105,30 +72,6 @@ export type Database = {
         }
         Relationships: []
       }
-      user_roles: {
-        Row: {
-          created_at: string
-          created_by: string | null
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
@@ -146,34 +89,13 @@ export type Database = {
         Args: { user_id: string }
         Returns: boolean
       }
-      has_role: {
-        Args: {
-          _user_id: string
-          _role: Database["public"]["Enums"]["app_role"]
-        }
-        Returns: boolean
-      }
-      is_admin_by_email: {
-        Args: { _user_id: string }
-        Returns: boolean
-      }
       is_admin_user: {
         Args: { user_id: string }
         Returns: boolean
       }
-      log_security_event: {
-        Args: {
-          _action: string
-          _resource_type?: string
-          _resource_id?: string
-          _ip_address?: unknown
-          _user_agent?: string
-        }
-        Returns: undefined
-      }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -288,8 +210,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      app_role: ["admin", "moderator", "user"],
-    },
+    Enums: {},
   },
 } as const

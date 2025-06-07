@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -14,7 +13,6 @@ import {
 import { Eye, Edit, ExternalLink, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { adminUtils } from '@/utils/adminUtils';
 
 interface Newsletter {
   id: string;
@@ -41,21 +39,7 @@ const NewslettersTable = ({ newsletters, formatDate }: NewslettersTableProps) =>
     setSendingId(id);
     
     try {
-      await adminUtils.logSecurityEvent('newsletter_send_attempt', 'newsletter', id);
-      
-      // Verify admin status before sending
-      const isAdmin = await adminUtils.isCurrentUserAdmin();
-      if (!isAdmin) {
-        await adminUtils.logSecurityEvent('newsletter_send_denied', 'newsletter', id);
-        toast({
-          title: "صلاحيات غير كافية",
-          description: "ليس لديك صلاحيات إرسال النشرات الإخبارية",
-          variant: "destructive"
-        });
-        setSendingId(null);
-        return;
-      }
-      
+      // First check if user is authenticated
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !sessionData.session) {
         toast({
@@ -84,6 +68,7 @@ const NewslettersTable = ({ newsletters, formatDate }: NewslettersTableProps) =>
         console.log("Edge Function response:", data);
         
         if (data && data.success) {
+          // Update newsletter status in the database
           const { error: updateError } = await supabase
             .from('newsletters')
             .update({ 
@@ -94,14 +79,14 @@ const NewslettersTable = ({ newsletters, formatDate }: NewslettersTableProps) =>
             
           if (updateError) {
             console.warn("Could not update newsletter status:", updateError);
+            // Continue anyway as this is not critical
           }
           
-          await adminUtils.logSecurityEvent('newsletter_send_success', 'newsletter', id);
           toast({
             title: "تم الإرسال بنجاح",
             description: `تم إرسال النشرة الإخبارية إلى ${data.subscribers} مشترك`,
           });
-          return;
+          return; // Exit if successful
         } else {
           throw new Error(data?.message || "حدث خطأ أثناء إرسال النشرة الإخبارية");
         }
@@ -111,6 +96,7 @@ const NewslettersTable = ({ newsletters, formatDate }: NewslettersTableProps) =>
         
         // Fallback to direct database operations
         console.log("Fetching newsletter content...");
+        // 1. Get newsletter content
         const { data: newsletter, error: newsletterError } = await supabase
           .from('newsletters')
           .select('subject, content')
@@ -129,6 +115,7 @@ const NewslettersTable = ({ newsletters, formatDate }: NewslettersTableProps) =>
         console.log("Newsletter content fetched successfully:", newsletter.subject);
         
         console.log("Fetching subscribers...");
+        // 2. Get subscribers - only select email field since name doesn't exist
         const { data: subscribers, error: subscribersError } = await supabase
           .from('subscribers')
           .select('email');
@@ -150,6 +137,7 @@ const NewslettersTable = ({ newsletters, formatDate }: NewslettersTableProps) =>
         }
         
         console.log("Updating newsletter as sent...");
+        // 3. Update newsletter as sent
         const { error: updateError } = await supabase
           .from('newsletters')
           .update({ 
@@ -161,11 +149,12 @@ const NewslettersTable = ({ newsletters, formatDate }: NewslettersTableProps) =>
           
         if (updateError) {
           console.error("Failed to mark newsletter as sent:", updateError);
+          // Continue anyway as this is not critical
         } else {
           console.log("Newsletter marked as sent successfully");
         }
         
-        await adminUtils.logSecurityEvent('newsletter_send_fallback_success', 'newsletter', id);
+        // 4. Return success
         toast({
           title: "تم الإرسال بنجاح",
           description: `تم تحديث حالة النشرة الإخبارية لـ ${subscribers.length} مشترك`,
@@ -173,7 +162,6 @@ const NewslettersTable = ({ newsletters, formatDate }: NewslettersTableProps) =>
       }
     } catch (error: unknown) {
       console.error('Error sending newsletter:', error);
-      await adminUtils.logSecurityEvent('newsletter_send_failed', 'newsletter', id);
       const errorMessage = error instanceof Error ? error.message : "حدث خطأ أثناء إرسال النشرة الإخبارية";
       toast({
         title: "فشل إرسال النشرة الإخبارية",

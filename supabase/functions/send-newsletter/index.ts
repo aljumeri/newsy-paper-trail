@@ -1,6 +1,7 @@
 // @deno-types="../deno.d.ts"
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.43.1";
+import { Resend } from 'https://esm.sh/resend@2.0.0';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -47,14 +48,12 @@ serve(async (req: Request) => {
     
     console.log(`Edge Function: Processing newsletter ID: ${newsletterId}`);
 
-    // Initialize Supabase client with Deno.env
+    // Initialize Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     
     if (!supabaseUrl || !supabaseKey) {
       console.error("Edge Function: Missing environment variables");
-      console.error(`SUPABASE_URL: ${supabaseUrl ? "set" : "missing"}`);
-      console.error(`SUPABASE_SERVICE_ROLE_KEY: ${supabaseKey ? "set" : "missing"}`);
       throw new Error("Server configuration error: Missing environment variables");
     }
     
@@ -81,27 +80,45 @@ serve(async (req: Request) => {
     
     console.log(`Edge Function: Newsletter found: ${newsletter.subject}`);
     
-    // Get subscriber count only to avoid column issues
-    console.log("Edge Function: Counting subscribers");
-    const { count: subscribersCount, error: subscribersError } = await supabase
+    // Get all subscribers
+    console.log("Edge Function: Fetching subscribers");
+    const { data: subscribers, error: subscribersError } = await supabase
       .from("subscribers")
-      .select("*", { count: 'exact', head: true });
+      .select("email")
+      .order("created_at", { ascending: false });
       
     if (subscribersError) {
-      console.error(`Edge Function: Subscribers count error: ${subscribersError.message}`);
-      throw new Error(`Failed to count subscribers: ${subscribersError.message}`);
+      console.error(`Edge Function: Subscribers fetch error: ${subscribersError.message}`);
+      throw new Error(`Failed to fetch subscribers: ${subscribersError.message}`);
     }
     
-    const subscriberCount = subscribersCount || 0;
-    console.log(`Edge Function: Found ${subscriberCount} subscribers`);
+    console.log(`Edge Function: Found ${subscribers?.length || 0} subscribers`);
     
-    if (subscriberCount === 0) {
+    if (!subscribers || subscribers.length === 0) {
       console.log("Edge Function: No subscribers found");
       return new Response(
         JSON.stringify({ message: "No subscribers found", success: true, subscribers: 0 }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
       );
     }
+
+    // Initialize Resend
+    const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+    
+    // Send emails to all subscribers
+    console.log("Edge Function: Sending emails to subscribers");
+    const emailPromises = subscribers.map(subscriber => 
+      resend.emails.send({
+        from: 'Newsy <newsletter@newsy.com>',
+        to: subscriber.email,
+        subject: newsletter.subject,
+        html: newsletter.content
+      })
+    );
+
+    // Wait for all emails to be sent
+    const results = await Promise.allSettled(emailPromises);
+    const successfulSends = results.filter(r => r.status === 'fulfilled').length;
     
     // Update newsletter as sent
     console.log("Edge Function: Marking newsletter as sent");
@@ -109,8 +126,8 @@ serve(async (req: Request) => {
       .from("newsletters")
       .update({ 
         sent_at: new Date().toISOString(),
-        recipients_count: subscriberCount,
-        status: 'sent' 
+        recipients_count: successfulSends,
+        status: successfulSends > 0 ? 'sent' : 'failed'
       })
       .eq("id", newsletterId);
       
@@ -121,17 +138,12 @@ serve(async (req: Request) => {
       console.log("Edge Function: Newsletter marked as sent successfully");
     }
     
-    // In a real application, you would use an email service API here
-    // to actually send emails to all subscribers
-    // For this example, we'll just return a success message
-    console.log(`Edge Function: Newsletter "${newsletter.subject}" would be sent to ${subscriberCount} subscribers`);
-    
     // Return success response
     console.log("Edge Function: Returning success response");
     return new Response(
       JSON.stringify({ 
-        message: `Newsletter sent to ${subscriberCount} subscribers`,
-        subscribers: subscriberCount,
+        message: `Newsletter sent to ${successfulSends} subscribers`,
+        subscribers: successfulSends,
         success: true
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }

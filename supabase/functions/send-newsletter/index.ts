@@ -1,7 +1,6 @@
 // @deno-types="../deno.d.ts"
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.43.1";
-import { Resend } from 'https://esm.sh/resend@2.0.0';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,9 +20,71 @@ interface SubscriberData {
   email: string;
 }
 
-// Fallback values for local development
-const FALLBACK_SUPABASE_URL = "https://vqkdadugmkwnthkfjbla.supabase.co";
-const FALLBACK_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxa2RhZHVnbWt3bnRoa2ZqYmxhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYxNDQwOTUsImV4cCI6MjA2MTcyMDA5NX0.AyZpQgkaypIz2thFdO2K5WF7WFXog2tw-t_9RLBapY4";
+async function sendEmail(to: string, from: string, subject: string, html: string) {
+  const apiKey = Deno.env.get("SENDGRID_API_KEY");
+  if (!apiKey) {
+    throw new Error("SENDGRID_API_KEY is not set");
+  }
+
+  try {
+    const response = await fetch("https://api.sendgrid.com/v3/mail/send", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        personalizations: [
+          {
+            to: [{ email: to }],
+            subject: subject,
+          },
+        ],
+        from: { email: from },
+        content: [
+          {
+            type: "text/html",
+            value: html,
+          },
+        ],
+      }),
+    });
+
+    const responseText = await response.text();
+    console.log("SendGrid Response Status:", response.status);
+    console.log("SendGrid Response Headers:", {
+      "content-type": response.headers.get("content-type"),
+      "x-request-id": response.headers.get("x-request-id"),
+    });
+    console.log("SendGrid Response Body:", responseText);
+
+    if (!response.ok) {
+      let errorMessage;
+      try {
+        const errorJson = JSON.parse(responseText);
+        errorMessage = `SendGrid API error: ${JSON.stringify(errorJson)}`;
+      } catch (e) {
+        errorMessage = `SendGrid API error: Status ${response.status}, Response: ${responseText}`;
+      }
+      throw new Error(errorMessage);
+    }
+
+    // If response is empty, return success
+    if (!responseText) {
+      return { success: true };
+    }
+
+    // Try to parse JSON response if it exists
+    try {
+      return JSON.parse(responseText);
+    } catch (e) {
+      return { success: true, message: "Email sent successfully" };
+    }
+  } catch (error) {
+    console.error("SendGrid Error Details:", error);
+    throw error;
+  }
+}
 
 serve(async (req: Request) => {
   console.log("Edge Function: send-newsletter invoked");
@@ -102,23 +163,37 @@ serve(async (req: Request) => {
       );
     }
 
-    // Initialize Resend
-    const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-    
     // Send emails to all subscribers
     console.log("Edge Function: Sending emails to subscribers");
-    const emailPromises = subscribers.map(subscriber => 
-      resend.emails.send({
-        from: 'Newsy <newsletter@newsy.com>',
-        to: subscriber.email,
-        subject: newsletter.subject,
-        html: newsletter.content
-      })
-    );
+    const emailPromises = subscribers.map(async (subscriber) => {
+      try {
+        console.log(`Attempting to send email to: ${subscriber.email}`);
+        await sendEmail(
+          subscriber.email,
+          "hhhassanhafeez91@gmail.com",
+          newsletter.subject,
+          newsletter.content
+        );
+        console.log(`Successfully sent email to ${subscriber.email}`);
+        return true;
+      } catch (error) {
+        console.error(`Failed to send email to ${subscriber.email}:`, error);
+        throw error;
+      }
+    });
 
     // Wait for all emails to be sent
     const results = await Promise.allSettled(emailPromises);
+    console.log("Email sending results:", results);
+    
     const successfulSends = results.filter(r => r.status === 'fulfilled').length;
+    const failedSends = results.filter(r => r.status === 'rejected').length;
+    
+    console.log(`Successfully sent: ${successfulSends}, Failed: ${failedSends}`);
+    
+    if (failedSends > 0) {
+      console.error("Some emails failed to send:", results.filter(r => r.status === 'rejected').map(r => r.reason));
+    }
     
     // Update newsletter as sent
     console.log("Edge Function: Marking newsletter as sent");

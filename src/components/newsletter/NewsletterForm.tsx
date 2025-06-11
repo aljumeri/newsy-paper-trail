@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import EditorToolbar from '@/components/newsletter/EditorToolbar';
-import YoutubeDialog from '@/components/newsletter/YoutubeDialog';
 import ImageUploadDialog from '@/components/newsletter/ImageUploadDialog';
 import LinkDialog from '@/components/newsletter/LinkDialog';
+import YoutubeDialog from '@/components/newsletter/YoutubeDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Send } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 
 interface NewsletterFormProps {
   subject: string;
@@ -18,6 +18,7 @@ interface NewsletterFormProps {
   isSaving?: boolean;
   newsletterId?: string;
   onSend?: (id: string) => Promise<void>;
+  isSending?: boolean;
 }
 
 const NewsletterForm: React.FC<NewsletterFormProps> = ({
@@ -29,7 +30,8 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
   onPreview,
   isSaving = false,
   newsletterId,
-  onSend
+  onSend,
+  isSending = false
 }) => {
   const [showYoutubeDialog, setShowYoutubeDialog] = useState(false);
   const [showImageUploadDialog, setShowImageUploadDialog] = useState(false);
@@ -38,7 +40,6 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
   const [textDirection, setTextDirection] = useState<'rtl' | 'ltr'>('rtl');
   const [editHistory, setEditHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState<number>(-1);
-  const [isSending, setIsSending] = useState(false);
   
   // Initial history state
   useEffect(() => {
@@ -538,13 +539,7 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
   
   const handleSendNewsletter = async () => {
     if (!newsletterId || !onSend) return;
-    
-    try {
-      setIsSending(true);
-      await onSend(newsletterId);
-    } finally {
-      setIsSending(false);
-    }
+    await onSend(newsletterId);
   };
 
   return (

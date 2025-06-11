@@ -1,8 +1,7 @@
-
-import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from '@supabase/supabase-js';
-import { useToast } from "@/hooks/use-toast";
+import React, { createContext, ReactNode, useContext, useEffect, useRef, useState } from 'react';
 
 interface AdminAuthContextType {
   user: User | null;
@@ -220,6 +219,7 @@ export const useAdminAuth = () => {
 export const useRequireAdminAuth = () => {
   const { user, loading } = useAdminAuth();
   const [isChecking, setIsChecking] = useState(true);
+  const { toast } = useToast();
   
   useEffect(() => {
     // Only do the redirect after auth system has loaded
@@ -227,11 +227,103 @@ export const useRequireAdminAuth = () => {
       setIsChecking(false);
       
       if (!user) {
-        console.log("No admin user found, redirecting to login");
-        window.location.href = '/admin';
+        console.log("No user found, redirecting to login");
+        window.location.href = '/admin-control';
+        return;
       }
+
+      console.log("user", user);
+
+      // Check if user is admin by querying admin_users table
+      const checkAdmin = async () => {
+        try {
+          console.log("Starting admin check for user ID:", user.id);
+          
+          // Add more detailed logging and error handling
+          const { data, error, status, statusText } = await supabase
+            .from('admin_users')
+            .select('id')
+            .eq('id', user.id)
+            .maybeSingle();
+
+          console.log("Admin check response:", { 
+            data, 
+            error, 
+            status, 
+            statusText,
+            userId: user.id 
+          });
+
+          // Handle different error scenarios
+          if (error) {
+            console.error("Database error during admin check:", error);
+            
+            // Check if it's a table/permission issue
+            if (error.code === 'PGRST116' || error.message.includes('relation') || error.message.includes('does not exist')) {
+              console.error("Table 'admin_users' may not exist or user lacks permissions");
+              toast({
+                title: 'خطأ في قاعدة البيانات',
+                description: 'لا يمكن الوصول إلى جدول المديرين',
+                variant: 'destructive',
+              });
+            } else if (error.code === '42501' || error.message.includes('permission')) {
+              console.error("Permission denied accessing admin_users table");
+              toast({
+                title: 'صلاحيات غير كافية',
+                description: 'ليس لديك صلاحيات الوصول إلى هذه الصفحة',
+                variant: 'destructive',
+              });
+            } else {
+              toast({
+                title: 'خطأ في النظام',
+                description: `حدث خطأ: ${error.message}`,
+                variant: 'destructive',
+              });
+            }
+            
+            window.location.href = '/admin-control';
+            return;
+          }
+
+          // Check if user is found in admin_users table
+          if (!data) {
+            console.log("User is not an admin (not found in admin_users table)");
+            toast({
+              title: 'صلاحيات غير كافية',
+              description: 'ليس لديك صلاحيات الوصول إلى هذه الصفحة',
+              variant: 'destructive',
+            });
+            window.location.href = '/admin-control';
+            return;
+          }
+
+          console.log("Admin check successful - user is authorized");
+          
+        } catch (err: any) {
+          console.error("Unexpected error checking admin status:", err);
+          
+          // More specific error handling for network/connection issues
+          if (err.name === 'TypeError' && err.message.includes('fetch')) {
+            toast({
+              title: 'خطأ في الاتصال',
+              description: 'لا يمكن الاتصال بالخادم',
+              variant: 'destructive',
+            });
+          } else {
+            toast({
+              title: 'خطأ غير متوقع',
+              description: err.message || 'حدث خطأ أثناء التحقق من الصلاحيات',
+              variant: 'destructive',
+            });
+          }
+          
+          window.location.href = '/admin-control';
+        }
+      };
+
+      checkAdmin();
     }
-  }, [user, loading]);
+  }, [user, loading, toast]);
   
   return { isChecking: loading || isChecking };
 };

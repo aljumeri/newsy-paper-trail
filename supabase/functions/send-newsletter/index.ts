@@ -18,13 +18,24 @@ interface NewsletterData {
 
 interface SubscriberData {
   email: string;
+  unsubscribe_token: string;
 }
 
-async function sendEmail(to: string, from: string, subject: string, html: string) {
+async function sendEmail(to: string, from: string, subject: string, html: string, unsubscribeToken: string) {
   const apiKey = Deno.env.get("SENDGRID_API_KEY");
   if (!apiKey) {
     throw new Error("SENDGRID_API_KEY is not set");
   }
+
+  // Add unsubscribe link to the email
+  const unsubscribeLink = `${Deno.env.get("SITE_URL")}/unsubscribe?email=${encodeURIComponent(to)}&token=${unsubscribeToken}`;
+  const unsubscribeHtml = `
+    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666;">
+      <p>إذا كنت ترغب في إلغاء الاشتراك في النشرة الإخبارية، يمكنك <a href="${unsubscribeLink}">النقر هنا</a>.</p>
+    </div>
+  `;
+
+  const fullHtml = html + unsubscribeHtml;
 
   try {
     const response = await fetch("https://api.sendgrid.com/v3/mail/send", {
@@ -44,7 +55,7 @@ async function sendEmail(to: string, from: string, subject: string, html: string
         content: [
           {
             type: "text/html",
-            value: html,
+            value: fullHtml,
           },
         ],
       }),
@@ -141,11 +152,11 @@ serve(async (req: Request) => {
     
     console.log(`Edge Function: Newsletter found: ${newsletter.subject}`);
     
-    // Get all subscribers
+    // Get all subscribers with their unsubscribe tokens
     console.log("Edge Function: Fetching subscribers");
     const { data: subscribers, error: subscribersError } = await supabase
       .from("subscribers")
-      .select("email")
+      .select("email, unsubscribe_token")
       .order("created_at", { ascending: false });
       
     if (subscribersError) {
@@ -163,46 +174,14 @@ serve(async (req: Request) => {
       );
     }
 
-    // Send emails to all subscribers
-    console.log("Edge Function: Sending emails to subscribers");
-    const emailPromises = subscribers.map(async (subscriber) => {
-      try {
-        console.log(`Attempting to send email to: ${subscriber.email}`);
-        await sendEmail(
-          subscriber.email,
-          "hhhassanhafeez91@gmail.com",
-          newsletter.subject,
-          newsletter.content
-        );
-        console.log(`Successfully sent email to ${subscriber.email}`);
-        return true;
-      } catch (error) {
-        console.error(`Failed to send email to ${subscriber.email}:`, error);
-        throw error;
-      }
-    });
-
-    // Wait for all emails to be sent
-    const results = await Promise.allSettled(emailPromises);
-    console.log("Email sending results:", results);
-    
-    const successfulSends = results.filter(r => r.status === 'fulfilled').length;
-    const failedSends = results.filter(r => r.status === 'rejected').length;
-    
-    console.log(`Successfully sent: ${successfulSends}, Failed: ${failedSends}`);
-    
-    if (failedSends > 0) {
-      console.error("Some emails failed to send:", results.filter(r => r.status === 'rejected').map(r => r.reason));
-    }
-    
     // Update newsletter as sent
     console.log("Edge Function: Marking newsletter as sent");
     const { error: updateError } = await supabase
       .from("newsletters")
       .update({ 
         sent_at: new Date().toISOString(),
-        recipients_count: successfulSends,
-        status: successfulSends > 0 ? 'sent' : 'failed'
+        recipients_count: subscribers.length,
+        status: 'sent'
       })
       .eq("id", newsletterId);
       
@@ -211,6 +190,40 @@ serve(async (req: Request) => {
       // Continue anyway as this is not critical
     } else {
       console.log("Edge Function: Newsletter marked as sent successfully");
+    }
+    
+    // Send emails to all subscribers
+    console.log("Edge Function: Sending emails to subscribers");
+    const fromEmail = "hhhassanhafeez91@gmail.com";
+    let successfulSends = 0;
+    let failedSends = 0;
+
+    const emailPromises = subscribers.map(async (subscriber) => {
+      try {
+        console.log(`Attempting to send email to: ${subscriber.email}`);
+        await sendEmail(
+          subscriber.email,
+          fromEmail,
+          newsletter.subject,
+          newsletter.content,
+          subscriber.unsubscribe_token
+        );
+        console.log(`Successfully sent email to ${subscriber.email}`);
+        successfulSends++;
+        return true;
+      } catch (error) {
+        console.error(`Failed to send email to ${subscriber.email}:`, error);
+        failedSends++;
+        throw error;
+      }
+    });
+
+    // Wait for all emails to be sent
+    const results = await Promise.allSettled(emailPromises);
+    console.log("Email sending results:", results);
+    
+    if (failedSends > 0) {
+      console.error("Some emails failed to send:", results.filter(r => r.status === 'rejected').map(r => r.reason));
     }
     
     // Return success response

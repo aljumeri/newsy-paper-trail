@@ -1,57 +1,59 @@
-
-import React from 'react';
-import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import Navbar from '@/components/Navbar';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-// بيانات موسعة للإصدارات السابقة
-const archiveIssues = [
-  {
-    id: 1,
-    title: "مستقبل الذكاء الاصطناعي في الصناعات الإبداعية",
-    excerpt: "كيف يُغير الذكاء الاصطناعي إنشاء المحتوى والتصميم وطريقة تفكيرنا في الإبداع.",
-    date: "25 أبريل 2025",
-    imageUrl: "https://images.unsplash.com/photo-1655635643532-fa9ba2648cbe?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2232&q=80",
-  },
-  {
-    id: 2,
-    title: "التقنية المستدامة: ما وراء الكلمات الرنانة",
-    excerpt: "نظرة متعمقة حول كيفية معالجة شركات التكنولوجيا للمخاوف البيئية في عام 2025.",
-    date: "18 أبريل 2025",
-    imageUrl: "https://images.unsplash.com/photo-1618044733300-9472054094ee?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2071&q=80",
-  },
-  {
-    id: 3,
-    title: "ثورة العمل عن بُعد: بعد 5 سنوات",
-    excerpt: "دراسة التأثير المستمر لتبني العمل عن بُعد عالميًا على الشركات والإنتاجية وثقافة العمل.",
-    date: "11 أبريل 2025",
-    imageUrl: "https://images.unsplash.com/photo-1521898284481-a5ec348cb555?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1974&q=80",
-  },
-  {
-    id: 4,
-    title: "الخصوصية الرقمية في عصر الذكاء الاصطناعي",
-    excerpt: "فهم كيفية إعادة تشكيل التطورات في الذكاء الاصطناعي لفهمنا للخصوصية وحماية البيانات.",
-    date: "4 أبريل 2025",
-    imageUrl: "https://images.unsplash.com/photo-1566837945700-30057527ade0?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80",
-  },
-  {
-    id: 5,
-    title: "اقتصاد المبدعين: نماذج أعمال جديدة",
-    excerpt: "كيف يبني المبدعون الأفراد أعماًلا مستدامة ويعيدون تشكيل الاقتصاد الرقمي.",
-    date: "28 مارس 2025",
-    imageUrl: "https://images.unsplash.com/photo-1661956602139-ec64991b8b16?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=665&q=80",
-  },
-  {
-    id: 6,
-    title: "الويب 3.0: بين الوعد والواقع",
-    excerpt: "دراسة متوازنة حول أماكن تقديم تقنيات الويب 3.0 للقيمة وأين تقصر.",
-    date: "21 مارس 2025",
-    imageUrl: "https://images.unsplash.com/photo-1639322537228-f710d846310a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1332&q=80",
-  },
-];
+interface Newsletter {
+  id: string;
+  subject: string;
+  content: string;
+  created_at: string;
+  created_by: string | null;
+  sent_at: string | null;
+}
 
 const Archives = () => {
+  const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchNewsletters = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('newsletters')
+          .select('id, subject, content, created_at, created_by, sent_at')
+          .not('sent_at', 'is', null)
+          .order('sent_at', { ascending: false });
+
+        if (error) throw error;
+        setNewsletters(data || []);
+      } catch (err) {
+        console.error('Error fetching newsletters:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load newsletters');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNewsletters();
+  }, []);
+
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return new Intl.DateTimeFormat('ar-SA', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }).format(date);
+    } catch (e) {
+      return dateString;
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -67,31 +69,34 @@ const Archives = () => {
         
         <section className="section">
           <div className="container">
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {archiveIssues.map((issue) => (
-                <Card key={issue.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                  <div className="aspect-[16/9] overflow-hidden">
-                    <img 
-                      src={issue.imageUrl} 
-                      alt={issue.title} 
-                      className="w-full h-full object-cover transition-transform hover:scale-105 duration-500"
-                    />
-                  </div>
-                  <CardHeader className="pt-5 pb-2">
-                    <div className="text-sm text-neutral-500 mb-1">{issue.date}</div>
-                    <h3 className="text-xl font-semibold font-serif leading-tight">{issue.title}</h3>
-                  </CardHeader>
-                  <CardContent className="py-2">
-                    <p className="text-neutral-600">{issue.excerpt}</p>
-                    <div className="mt-4">
-                      <Link to={`/newsletter/${issue.id}`} className="text-purple-600 hover:text-purple-700 font-medium">
-                        قراءة العدد ←
-                      </Link>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            {loading ? (
+              <div className="text-center py-12">جاري التحميل...</div>
+            ) : error ? (
+              <div className="text-center py-12 text-red-500">{error}</div>
+            ) : newsletters.length === 0 ? (
+              <div className="text-center py-12 text-neutral-600">لا توجد نشرات إخبارية في الأرشيف</div>
+            ) : (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {newsletters.map((newsletter) => (
+                  <Card key={newsletter.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                    <CardHeader className="pt-5 pb-2">
+                      <div className="text-sm text-neutral-500 mb-1">
+                        {formatDate(newsletter.sent_at || newsletter.created_at)}
+                      </div>
+                      <h3 className="text-xl font-semibold font-serif leading-tight">{newsletter.subject}</h3>
+                    </CardHeader>
+                    <CardContent className="py-2">
+                      <div className="text-neutral-600 line-clamp-3" dangerouslySetInnerHTML={{ __html: newsletter.content }} />
+                      <div className="mt-4">
+                        <Link to={`/newsletter/${newsletter.id}`} className="text-purple-600 hover:text-purple-700 font-medium">
+                          قراءة العدد ←
+                        </Link>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
         </section>
       </main>

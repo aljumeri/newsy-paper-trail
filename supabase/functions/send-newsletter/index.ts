@@ -28,7 +28,12 @@ async function sendEmail(to: string, from: string, subject: string, html: string
   }
 
   // Add unsubscribe link to the email
-  const unsubscribeLink = `${Deno.env.get("SITE_URL")}/unsubscribe?email=${encodeURIComponent(to)}&token=${unsubscribeToken}`;
+  const siteUrl = Deno.env.get("SITE_URL");
+  if (!siteUrl) {
+    console.warn("SITE_URL not set, using default");
+  }
+  
+  const unsubscribeLink = `${siteUrl || 'https://solo4ai.com'}/unsubscribe?email=${encodeURIComponent(to)}&token=${unsubscribeToken}`;
   const unsubscribeHtml = `
     <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666;">
       <p>إذا كنت ترغب في إلغاء الاشتراك في النشرة الإخبارية، يمكنك <a href="${unsubscribeLink}">النقر هنا</a>.</p>
@@ -37,12 +42,19 @@ async function sendEmail(to: string, from: string, subject: string, html: string
 
   const fullHtml = html + unsubscribeHtml;
 
+  // Add timeout to prevent hanging requests
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
   try {
+    console.log(`Sending email to ${to} with subject: ${subject}`);
+    
     const response = await fetch("https://api.sendgrid.com/v3/mail/send", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
+        "User-Agent": "Lovable-Newsletter/1.0"
       },
       body: JSON.stringify({
         personalizations: [
@@ -51,15 +63,31 @@ async function sendEmail(to: string, from: string, subject: string, html: string
             subject: subject,
           },
         ],
-        from: { email: from },
+        from: { 
+          email: from,
+          name: "Solo4AI Newsletter"
+        },
         content: [
           {
             type: "text/html",
             value: fullHtml,
           },
         ],
+        // Add tracking settings to help with deliverability
+        tracking_settings: {
+          click_tracking: {
+            enable: true,
+            enable_text: false
+          },
+          open_tracking: {
+            enable: true
+          }
+        }
       }),
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
 
     const responseText = await response.text();
     console.log("SendGrid Response Status:", response.status);
@@ -67,7 +95,11 @@ async function sendEmail(to: string, from: string, subject: string, html: string
       "content-type": response.headers.get("content-type"),
       "x-request-id": response.headers.get("x-request-id"),
     });
-    console.log("SendGrid Response Body:", responseText);
+    
+    // Only log response body if there's an error or it's not empty
+    if (!response.ok || responseText) {
+      console.log("SendGrid Response Body:", responseText);
+    }
 
     if (!response.ok) {
       let errorMessage;
@@ -78,6 +110,11 @@ async function sendEmail(to: string, from: string, subject: string, html: string
         errorMessage = `SendGrid API error: Status ${response.status}, Response: ${responseText}`;
       }
       throw new Error(errorMessage);
+    }
+
+    // SendGrid returns 202 for successful requests with empty body
+    if (response.status === 202) {
+      return { success: true, message: "Email queued successfully" };
     }
 
     // If response is empty, return success
@@ -92,6 +129,13 @@ async function sendEmail(to: string, from: string, subject: string, html: string
       return { success: true, message: "Email sent successfully" };
     }
   } catch (error) {
+    clearTimeout(timeoutId);
+    
+    if (error.name === 'AbortError') {
+      console.error("SendGrid request timed out");
+      throw new Error("Email sending timed out");
+    }
+    
     console.error("SendGrid Error Details:", error);
     throw error;
   }
@@ -99,6 +143,8 @@ async function sendEmail(to: string, from: string, subject: string, html: string
 
 serve(async (req: Request) => {
   console.log("Edge Function: send-newsletter invoked");
+  console.log("Request method:", req.method);
+  console.log("Request URL:", req.url);
   
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -107,6 +153,15 @@ serve(async (req: Request) => {
   }
 
   try {
+    // Validate environment variables early
+    const requiredEnvVars = ["SENDGRID_API_KEY", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"];
+    const missingEnvVars = requiredEnvVars.filter(envVar => !Deno.env.get(envVar));
+    
+    if (missingEnvVars.length > 0) {
+      console.error("Missing environment variables:", missingEnvVars);
+      throw new Error(`Missing required environment variables: ${missingEnvVars.join(", ")}`);
+    }
+
     // Get request body
     const requestBody = await req.json();
     console.log("Edge Function: Request body received:", JSON.stringify(requestBody));
@@ -121,13 +176,8 @@ serve(async (req: Request) => {
     console.log(`Edge Function: Processing newsletter ID: ${newsletterId}`);
 
     // Initialize Supabase client
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    
-    if (!supabaseUrl || !supabaseKey) {
-      console.error("Edge Function: Missing environment variables");
-      throw new Error("Server configuration error: Missing environment variables");
-    }
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     
     console.log("Edge Function: Creating Supabase client");
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -192,48 +242,71 @@ serve(async (req: Request) => {
       console.log("Edge Function: Newsletter marked as sent successfully");
     }
     
-    // Send emails to all subscribers
+    // Send emails to all subscribers with rate limiting
     console.log("Edge Function: Sending emails to subscribers");
     const fromEmail = "info@solo4ai.com";
     let successfulSends = 0;
     let failedSends = 0;
+    const errors: string[] = [];
 
-    const emailPromises = subscribers.map(async (subscriber) => {
-      try {
-        console.log(`Attempting to send email to: ${subscriber.email}`);
-        await sendEmail(
-          subscriber.email,
-          fromEmail,
-          newsletter.subject,
-          newsletter.content,
-          subscriber.unsubscribe_token
-        );
-        console.log(`Successfully sent email to ${subscriber.email}`);
-        successfulSends++;
-        return true;
-      } catch (error) {
-        console.error(`Failed to send email to ${subscriber.email}:`, error);
-        failedSends++;
-        throw error;
+    // Process emails in smaller batches to avoid overwhelming the service
+    const batchSize = 10;
+    const batches = [];
+    for (let i = 0; i < subscribers.length; i += batchSize) {
+      batches.push(subscribers.slice(i, i + batchSize));
+    }
+
+    for (const batch of batches) {
+      const emailPromises = batch.map(async (subscriber) => {
+        try {
+          console.log(`Attempting to send email to: ${subscriber.email}`);
+          await sendEmail(
+            subscriber.email,
+            fromEmail,
+            newsletter.subject,
+            newsletter.content,
+            subscriber.unsubscribe_token
+          );
+          console.log(`Successfully sent email to ${subscriber.email}`);
+          successfulSends++;
+          return { success: true, email: subscriber.email };
+        } catch (error) {
+          const errorMsg = `Failed to send email to ${subscriber.email}: ${error.message}`;
+          console.error(errorMsg);
+          errors.push(errorMsg);
+          failedSends++;
+          return { success: false, email: subscriber.email, error: error.message };
+        }
+      });
+
+      // Wait for current batch to complete before starting next batch
+      const batchResults = await Promise.allSettled(emailPromises);
+      console.log(`Batch completed. Successful: ${batchResults.filter(r => r.status === 'fulfilled').length}, Failed: ${batchResults.filter(r => r.status === 'rejected').length}`);
+      
+      // Add a small delay between batches to avoid rate limiting
+      if (batches.indexOf(batch) < batches.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
-    });
-
-    // Wait for all emails to be sent
-    const results = await Promise.allSettled(emailPromises);
-    console.log("Email sending results:", results);
-    
-    if (failedSends > 0) {
-      console.error("Some emails failed to send:", results.filter(r => r.status === 'rejected').map(r => r.reason));
     }
     
-    // Return success response
-    console.log("Edge Function: Returning success response");
+    console.log(`Email sending completed. Successful: ${successfulSends}, Failed: ${failedSends}`);
+    
+    if (errors.length > 0) {
+      console.error("Errors encountered:", errors);
+    }
+    
+    // Return success response with details
+    const responseData = { 
+      message: `Newsletter sent to ${successfulSends} subscribers${failedSends > 0 ? ` (${failedSends} failed)` : ''}`,
+      subscribers: successfulSends,
+      failed: failedSends,
+      success: successfulSends > 0,
+      errors: failedSends > 0 ? errors.slice(0, 5) : [] // Limit error details in response
+    };
+    
+    console.log("Edge Function: Returning response:", responseData);
     return new Response(
-      JSON.stringify({ 
-        message: `Newsletter sent to ${successfulSends} subscribers`,
-        subscribers: successfulSends,
-        success: true
-      }),
+      JSON.stringify(responseData),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
     

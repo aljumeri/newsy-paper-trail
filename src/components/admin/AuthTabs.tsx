@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LoginForm from './LoginForm';
-import RegisterForm from './RegisterForm';
 import ResetPasswordForm from './ResetPasswordForm';
 import AuthErrorAlert from './AuthErrorAlert';
 
@@ -35,9 +34,8 @@ const AuthTabs: React.FC<AuthTabsProps> = ({
     <>
       {authError && <AuthErrorAlert error={authError} />}
       <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-4">
+        <TabsList className="grid w-full grid-cols-2 mb-4">
           <TabsTrigger value="login">تسجيل الدخول</TabsTrigger>
-          <TabsTrigger value="register">إنشاء حساب جديد</TabsTrigger>
           <TabsTrigger value="reset">نسيت كلمة المرور</TabsTrigger>
         </TabsList>
         
@@ -59,17 +57,6 @@ const AuthTabs: React.FC<AuthTabsProps> = ({
               نسيت كلمة المرور؟ انقر هنا لإعادة تعيينها
             </button>
           </div>
-        </TabsContent>
-        
-        <TabsContent value="register">
-          <RegisterForm
-            email={email}
-            setEmail={setEmail}
-            password={password}
-            setPassword={setPassword}
-            onSubmit={handleRegister}
-            isLoading={isLoading}
-          />
         </TabsContent>
 
         <TabsContent value="reset">

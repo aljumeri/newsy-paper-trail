@@ -22,6 +22,35 @@ interface SubscriberData {
   unsubscribe_token: string;
 }
 
+// Function to process HTML content for better email display
+function processHtmlForEmail(html: string): string {
+  // Split content by line breaks and wrap each line in a paragraph if it's not already wrapped
+  let processedHtml = html
+    // Replace multiple <br> tags with paragraph breaks
+    .replace(/<br\s*\/?>\s*<br\s*\/?>/gi, '</p><p>')
+    // Replace single <br> tags with paragraph breaks for better spacing
+    .replace(/<br\s*\/?>/gi, '</p><p>')
+    // Clean up empty paragraphs
+    .replace(/<p>\s*<\/p>/gi, '')
+    // Ensure content starts and ends with paragraph tags
+    .trim();
+  
+  // If content doesn't start with a tag, wrap it in paragraphs
+  if (!processedHtml.startsWith('<')) {
+    processedHtml = '<p>' + processedHtml;
+  }
+  if (!processedHtml.endsWith('>')) {
+    processedHtml = processedHtml + '</p>';
+  }
+  
+  // Make sure all content is wrapped in paragraphs
+  if (!processedHtml.startsWith('<p>') && !processedHtml.startsWith('<div>') && !processedHtml.startsWith('<h')) {
+    processedHtml = '<p>' + processedHtml + '</p>';
+  }
+  
+  return processedHtml;
+}
+
 async function sendEmail(to: string, from: string, subject: string, html: string, unsubscribeToken: string) {
   const apiKey = Deno.env.get("SENDGRID_API_KEY");
   if (!apiKey) {
@@ -36,6 +65,9 @@ async function sendEmail(to: string, from: string, subject: string, html: string
   
   const unsubscribeLink = `${siteUrl || 'https://solo4ai.com'}/unsubscribe?email=${encodeURIComponent(to)}&token=${unsubscribeToken}`;
   
+  // Process the HTML content for better email display
+  const processedContent = processHtmlForEmail(html);
+  
   // Enhanced HTML template with proper RTL support and paragraph spacing
   const emailTemplate = `
 <!DOCTYPE html>
@@ -49,7 +81,7 @@ async function sendEmail(to: string, from: string, subject: string, html: string
             font-family: 'Noto Naskh Arabic', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             direction: rtl;
             text-align: right;
-            line-height: 1.6;
+            line-height: 1.8;
             color: #333;
             margin: 0;
             padding: 20px;
@@ -72,33 +104,53 @@ async function sendEmail(to: string, from: string, subject: string, html: string
         .email-content {
             direction: rtl;
             text-align: right;
+            font-size: 16px;
+            line-height: 1.8;
         }
         .email-content p {
-            margin: 0 0 16px 0;
+            margin: 0 0 20px 0;
             line-height: 1.8;
+            direction: rtl;
+            text-align: right;
+            font-size: 16px;
+        }
+        .email-content div {
+            margin: 0 0 20px 0;
+            line-height: 1.8;
+            direction: rtl;
+            text-align: right;
         }
         .email-content h1, .email-content h2, .email-content h3 {
             direction: rtl;
             text-align: right;
-            margin: 20px 0 12px 0;
+            margin: 25px 0 15px 0;
+            font-weight: bold;
+        }
+        .email-content h1 {
+            font-size: 24px;
+        }
+        .email-content h2 {
+            font-size: 20px;
+        }
+        .email-content h3 {
+            font-size: 18px;
         }
         .email-content ul, .email-content ol {
             direction: rtl;
             text-align: right;
-            margin: 16px 0;
-            padding-right: 20px;
+            margin: 20px 0;
+            padding-right: 25px;
         }
         .email-content li {
-            margin-bottom: 8px;
+            margin-bottom: 10px;
+            direction: rtl;
+            text-align: right;
         }
         .email-content img {
             max-width: 100%;
             height: auto;
-            margin: 16px 0;
-        }
-        .email-content div {
-            direction: rtl;
-            text-align: right;
+            margin: 20px 0;
+            display: block;
         }
         .email-content strong, .email-content em, .email-content u {
             direction: rtl;
@@ -111,7 +163,7 @@ async function sendEmail(to: string, from: string, subject: string, html: string
         .youtube-embed {
             direction: rtl;
             text-align: center;
-            margin: 20px 0;
+            margin: 25px 0;
         }
         .youtube-embed iframe {
             max-width: 100%;
@@ -128,23 +180,28 @@ async function sendEmail(to: string, from: string, subject: string, html: string
         .unsubscribe-section a {
             color: #0066cc;
         }
-        /* Preserve line breaks and spacing */
-        .email-content br {
-            line-height: 1.8;
+        /* Force proper spacing between all elements */
+        .email-content > * {
+            margin-bottom: 20px !important;
         }
-        /* Handle different paragraph spacing */
-        .email-content div + div {
-            margin-top: 16px;
+        .email-content > *:last-child {
+            margin-bottom: 0 !important;
+        }
+        /* Ensure line breaks create proper spacing */
+        .email-content br {
+            display: block;
+            margin: 10px 0;
+            line-height: 20px;
         }
     </style>
 </head>
 <body>
     <div class="email-container">
         <div class="email-header">
-            <h1 style="color: #333; margin: 0; font-size: 24px;">${subject}</h1>
+            <h1 style="color: #333; margin: 0; font-size: 24px; direction: rtl; text-align: center;">${subject}</h1>
         </div>
         <div class="email-content">
-            ${html}
+            ${processedContent}
         </div>
         <div class="unsubscribe-section">
             <p>إذا كنت ترغب في إلغاء الاشتراك في النشرة الإخبارية، يمكنك <a href="${unsubscribeLink}">النقر هنا</a>.</p>

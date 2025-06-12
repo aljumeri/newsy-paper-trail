@@ -1,6 +1,5 @@
-
 // @deno-types="../deno.d.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,6 +9,15 @@ const corsHeaders = {
 
 interface SubscriberRequest {
   email: string;
+}
+
+// Function to generate a random unsubscribe token
+function generateUnsubscribeToken(): string {
+  const randomBytes = new Uint8Array(32);
+  crypto.getRandomValues(randomBytes);
+  return Array.from(randomBytes)
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 Deno.serve(async (req: Request) => {
@@ -113,15 +121,27 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    // Generate unsubscribe token
+    const unsubscribeToken = generateUnsubscribeToken();
+    console.log("Edge Function: Generated unsubscribe token:", unsubscribeToken.substring(0, 8) + "...");
+
+    // Prepare the data to insert
+    const subscriberData = {
+      email: email.trim(),
+      created_at: new Date().toISOString(),
+      vendor: req.headers.get("origin") || null,
+      unsubscribe_token: unsubscribeToken
+    };
+
+    console.log("Edge Function: Inserting subscriber data:", {
+      ...subscriberData,
+      unsubscribe_token: subscriberData.unsubscribe_token.substring(0, 8) + "..."
+    });
+
     // Insert new subscriber
-    console.log("Edge Function: Inserting new subscriber:", email.trim());
     const { data, error } = await supabase
       .from("subscribers")
-      .insert([{ 
-        email: email.trim(),
-        created_at: new Date().toISOString(),
-        vendor: req.headers.get("origin") || null
-      }])
+      .insert([subscriberData])
       .select();
 
     if (error) {
@@ -153,7 +173,11 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    console.log("Edge Function: Subscriber added successfully:", data);
+    console.log("Edge Function: Subscriber added successfully:", {
+      ...data[0],
+      unsubscribe_token: data[0]?.unsubscribe_token ? data[0].unsubscribe_token.substring(0, 8) + "..." : "NULL"
+    });
+
     return new Response(JSON.stringify({
       success: true,
       subscriber: data[0],

@@ -54,24 +54,36 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
+          recipients_count: number | null
           sent_at: string | null
+          status: string | null
           subject: string
+          updated_at: string | null
+          updated_by: string | null
         }
         Insert: {
           content: string
           created_at?: string
           created_by?: string | null
           id?: string
+          recipients_count?: number | null
           sent_at?: string | null
+          status?: string | null
           subject: string
+          updated_at?: string | null
+          updated_by?: string | null
         }
         Update: {
           content?: string
           created_at?: string
           created_by?: string | null
           id?: string
+          recipients_count?: number | null
           sent_at?: string | null
+          status?: string | null
           subject?: string
+          updated_at?: string | null
+          updated_by?: string | null
         }
         Relationships: []
       }
@@ -113,18 +125,27 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          name: string | null
+          unsubscribe_token: string | null
+          updated_at: string
           vendor: string | null
         }
         Insert: {
           created_at?: string
           email: string
           id?: string
+          name?: string | null
+          unsubscribe_token?: string | null
+          updated_at?: string
           vendor?: string | null
         }
         Update: {
           created_at?: string
           email?: string
           id?: string
+          name?: string | null
+          unsubscribe_token?: string | null
+          updated_at?: string
           vendor?: string | null
         }
         Relationships: []
@@ -180,6 +201,10 @@ export type Database = {
           | { _user_id: string; _role: string }
         Returns: boolean
       }
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       is_admin_by_email: {
         Args: { _user_id: string }
         Returns: boolean
@@ -189,6 +214,10 @@ export type Database = {
         Returns: boolean
       }
       is_admin_with_metadata: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
+      is_user_admin: {
         Args: { user_id: string }
         Returns: boolean
       }
@@ -208,6 +237,10 @@ export type Database = {
               _ip_address?: unknown
               _user_agent?: string
             }
+        Returns: undefined
+      }
+      set_admin_status: {
+        Args: { user_id: string; is_admin: boolean }
         Returns: undefined
       }
     }

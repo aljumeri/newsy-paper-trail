@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -58,7 +57,6 @@ const About = () => {
                     <span>نكتب بلغة واضحة ومباشرة، بدون تعقيد أو تكلّف</span>
                   </li>
                 </ul>
-                <Button className="bg-purple-500 hover:bg-purple-600">اشترك الآن</Button>
               </div>
               <div className="relative">
                 <div className="absolute -left-5 -top-5 w-24 h-24 bg-purple-200/60 rounded-full"></div>

@@ -18,11 +18,84 @@ interface NewsletterData {
 
 interface SubscriberData {
   email: string;
+  unsubscribe_token: string;
 }
 
-// Fallback values for local development
-const FALLBACK_SUPABASE_URL = "https://vqkdadugmkwnthkfjbla.supabase.co";
-const FALLBACK_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxa2RhZHVnbWt3bnRoa2ZqYmxhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYxNDQwOTUsImV4cCI6MjA2MTcyMDA5NX0.AyZpQgkaypIz2thFdO2K5WF7WFXog2tw-t_9RLBapY4";
+async function sendEmail(to: string, from: string, subject: string, html: string, unsubscribeToken: string) {
+  const apiKey = Deno.env.get("SENDGRID_API_KEY");
+  if (!apiKey) {
+    throw new Error("SENDGRID_API_KEY is not set");
+  }
+
+  // Add unsubscribe link to the email
+  const unsubscribeLink = `${Deno.env.get("SITE_URL")}/unsubscribe?email=${encodeURIComponent(to)}&token=${unsubscribeToken}`;
+  const unsubscribeHtml = `
+    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666;">
+      <p>إذا كنت ترغب في إلغاء الاشتراك في النشرة الإخبارية، يمكنك <a href="${unsubscribeLink}">النقر هنا</a>.</p>
+    </div>
+  `;
+
+  const fullHtml = html + unsubscribeHtml;
+
+  try {
+    const response = await fetch("https://api.sendgrid.com/v3/mail/send", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        personalizations: [
+          {
+            to: [{ email: to }],
+            subject: subject,
+          },
+        ],
+        from: { email: from },
+        content: [
+          {
+            type: "text/html",
+            value: fullHtml,
+          },
+        ],
+      }),
+    });
+
+    const responseText = await response.text();
+    console.log("SendGrid Response Status:", response.status);
+    console.log("SendGrid Response Headers:", {
+      "content-type": response.headers.get("content-type"),
+      "x-request-id": response.headers.get("x-request-id"),
+    });
+    console.log("SendGrid Response Body:", responseText);
+
+    if (!response.ok) {
+      let errorMessage;
+      try {
+        const errorJson = JSON.parse(responseText);
+        errorMessage = `SendGrid API error: ${JSON.stringify(errorJson)}`;
+      } catch (e) {
+        errorMessage = `SendGrid API error: Status ${response.status}, Response: ${responseText}`;
+      }
+      throw new Error(errorMessage);
+    }
+
+    // If response is empty, return success
+    if (!responseText) {
+      return { success: true };
+    }
+
+    // Try to parse JSON response if it exists
+    try {
+      return JSON.parse(responseText);
+    } catch (e) {
+      return { success: true, message: "Email sent successfully" };
+    }
+  } catch (error) {
+    console.error("SendGrid Error Details:", error);
+    throw error;
+  }
+}
 
 serve(async (req: Request) => {
   console.log("Edge Function: send-newsletter invoked");
@@ -47,14 +120,12 @@ serve(async (req: Request) => {
     
     console.log(`Edge Function: Processing newsletter ID: ${newsletterId}`);
 
-    // Initialize Supabase client with Deno.env
+    // Initialize Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     
     if (!supabaseUrl || !supabaseKey) {
       console.error("Edge Function: Missing environment variables");
-      console.error(`SUPABASE_URL: ${supabaseUrl ? "set" : "missing"}`);
-      console.error(`SUPABASE_SERVICE_ROLE_KEY: ${supabaseKey ? "set" : "missing"}`);
       throw new Error("Server configuration error: Missing environment variables");
     }
     
@@ -81,36 +152,36 @@ serve(async (req: Request) => {
     
     console.log(`Edge Function: Newsletter found: ${newsletter.subject}`);
     
-    // Get subscriber count only to avoid column issues
-    console.log("Edge Function: Counting subscribers");
-    const { count: subscribersCount, error: subscribersError } = await supabase
+    // Get all subscribers with their unsubscribe tokens
+    console.log("Edge Function: Fetching subscribers");
+    const { data: subscribers, error: subscribersError } = await supabase
       .from("subscribers")
-      .select("*", { count: 'exact', head: true });
+      .select("email, unsubscribe_token")
+      .order("created_at", { ascending: false });
       
     if (subscribersError) {
-      console.error(`Edge Function: Subscribers count error: ${subscribersError.message}`);
-      throw new Error(`Failed to count subscribers: ${subscribersError.message}`);
+      console.error(`Edge Function: Subscribers fetch error: ${subscribersError.message}`);
+      throw new Error(`Failed to fetch subscribers: ${subscribersError.message}`);
     }
     
-    const subscriberCount = subscribersCount || 0;
-    console.log(`Edge Function: Found ${subscriberCount} subscribers`);
+    console.log(`Edge Function: Found ${subscribers?.length || 0} subscribers`);
     
-    if (subscriberCount === 0) {
+    if (!subscribers || subscribers.length === 0) {
       console.log("Edge Function: No subscribers found");
       return new Response(
         JSON.stringify({ message: "No subscribers found", success: true, subscribers: 0 }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
       );
     }
-    
+
     // Update newsletter as sent
     console.log("Edge Function: Marking newsletter as sent");
     const { error: updateError } = await supabase
       .from("newsletters")
       .update({ 
         sent_at: new Date().toISOString(),
-        recipients_count: subscriberCount,
-        status: 'sent' 
+        recipients_count: subscribers.length,
+        status: 'sent'
       })
       .eq("id", newsletterId);
       
@@ -121,17 +192,46 @@ serve(async (req: Request) => {
       console.log("Edge Function: Newsletter marked as sent successfully");
     }
     
-    // In a real application, you would use an email service API here
-    // to actually send emails to all subscribers
-    // For this example, we'll just return a success message
-    console.log(`Edge Function: Newsletter "${newsletter.subject}" would be sent to ${subscriberCount} subscribers`);
+    // Send emails to all subscribers
+    console.log("Edge Function: Sending emails to subscribers");
+    const fromEmail = "hhhassanhafeez91@gmail.com";
+    let successfulSends = 0;
+    let failedSends = 0;
+
+    const emailPromises = subscribers.map(async (subscriber) => {
+      try {
+        console.log(`Attempting to send email to: ${subscriber.email}`);
+        await sendEmail(
+          subscriber.email,
+          fromEmail,
+          newsletter.subject,
+          newsletter.content,
+          subscriber.unsubscribe_token
+        );
+        console.log(`Successfully sent email to ${subscriber.email}`);
+        successfulSends++;
+        return true;
+      } catch (error) {
+        console.error(`Failed to send email to ${subscriber.email}:`, error);
+        failedSends++;
+        throw error;
+      }
+    });
+
+    // Wait for all emails to be sent
+    const results = await Promise.allSettled(emailPromises);
+    console.log("Email sending results:", results);
+    
+    if (failedSends > 0) {
+      console.error("Some emails failed to send:", results.filter(r => r.status === 'rejected').map(r => r.reason));
+    }
     
     // Return success response
     console.log("Edge Function: Returning success response");
     return new Response(
       JSON.stringify({ 
-        message: `Newsletter sent to ${subscriberCount} subscribers`,
-        subscribers: subscriberCount,
+        message: `Newsletter sent to ${successfulSends} subscribers`,
+        subscribers: successfulSends,
         success: true
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }

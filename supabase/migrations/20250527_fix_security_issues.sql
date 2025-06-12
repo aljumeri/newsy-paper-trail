@@ -1,6 +1,16 @@
 -- Fix the search_path parameter for admin functions to prevent SQL injection
 -- This addresses the "Function Search Path Mutable" security warning
 
+-- Enable RLS on admin_users table
+ALTER TABLE public.admin_users ENABLE ROW LEVEL SECURITY;
+
+-- Create policy to allow users to check their own admin status
+CREATE POLICY "Users can check their own admin status"
+ON public.admin_users
+FOR SELECT
+TO authenticated
+USING (auth.uid() = id);
+
 -- Fix create_admin_user function
 CREATE OR REPLACE FUNCTION public.create_admin_user(user_id UUID)
 RETURNS VOID

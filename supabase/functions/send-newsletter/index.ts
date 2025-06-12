@@ -1,3 +1,4 @@
+
 // @deno-types="../deno.d.ts"
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.43.1";
@@ -34,13 +35,124 @@ async function sendEmail(to: string, from: string, subject: string, html: string
   }
   
   const unsubscribeLink = `${siteUrl || 'https://solo4ai.com'}/unsubscribe?email=${encodeURIComponent(to)}&token=${unsubscribeToken}`;
-  const unsubscribeHtml = `
-    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666;">
-      <p>إذا كنت ترغب في إلغاء الاشتراك في النشرة الإخبارية، يمكنك <a href="${unsubscribeLink}">النقر هنا</a>.</p>
+  
+  // Enhanced HTML template with proper RTL support and paragraph spacing
+  const emailTemplate = `
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${subject}</title>
+    <style>
+        body {
+            font-family: 'Noto Naskh Arabic', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            direction: rtl;
+            text-align: right;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .email-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .email-content {
+            direction: rtl;
+            text-align: right;
+        }
+        .email-content p {
+            margin: 0 0 16px 0;
+            line-height: 1.8;
+        }
+        .email-content h1, .email-content h2, .email-content h3 {
+            direction: rtl;
+            text-align: right;
+            margin: 20px 0 12px 0;
+        }
+        .email-content ul, .email-content ol {
+            direction: rtl;
+            text-align: right;
+            margin: 16px 0;
+            padding-right: 20px;
+        }
+        .email-content li {
+            margin-bottom: 8px;
+        }
+        .email-content img {
+            max-width: 100%;
+            height: auto;
+            margin: 16px 0;
+        }
+        .email-content div {
+            direction: rtl;
+            text-align: right;
+        }
+        .email-content strong, .email-content em, .email-content u {
+            direction: rtl;
+        }
+        .email-content a {
+            color: #0066cc;
+            text-decoration: underline;
+            direction: rtl;
+        }
+        .youtube-embed {
+            direction: rtl;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .youtube-embed iframe {
+            max-width: 100%;
+        }
+        .unsubscribe-section {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+            direction: rtl;
+        }
+        .unsubscribe-section a {
+            color: #0066cc;
+        }
+        /* Preserve line breaks and spacing */
+        .email-content br {
+            line-height: 1.8;
+        }
+        /* Handle different paragraph spacing */
+        .email-content div + div {
+            margin-top: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="email-header">
+            <h1 style="color: #333; margin: 0; font-size: 24px;">${subject}</h1>
+        </div>
+        <div class="email-content">
+            ${html}
+        </div>
+        <div class="unsubscribe-section">
+            <p>إذا كنت ترغب في إلغاء الاشتراك في النشرة الإخبارية، يمكنك <a href="${unsubscribeLink}">النقر هنا</a>.</p>
+            <p>نشرة سولو للذكاء الاصطناعي</p>
+        </div>
     </div>
-  `;
-
-  const fullHtml = html + unsubscribeHtml;
+</body>
+</html>`;
 
   // Add timeout to prevent hanging requests
   const controller = new AbortController();
@@ -70,7 +182,7 @@ async function sendEmail(to: string, from: string, subject: string, html: string
         content: [
           {
             type: "text/html",
-            value: fullHtml,
+            value: emailTemplate,
           },
         ],
         // Add tracking settings to help with deliverability

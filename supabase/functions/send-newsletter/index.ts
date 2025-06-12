@@ -194,7 +194,7 @@ serve(async (req: Request) => {
     
     // Send emails to all subscribers
     console.log("Edge Function: Sending emails to subscribers");
-    const fromEmail = "hhhassanhafeez91@gmail.com";
+    const fromEmail = "info@solo4ai.com";
     let successfulSends = 0;
     let failedSends = 0;
 

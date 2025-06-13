@@ -696,7 +696,7 @@ const NewsletterDetail = () => {
                 <div className="text-sm text-blue-600 mb-2">
                   {displayDate}
                 </div>
-                <h1 className="text-3xl md:text-4xl font-bold mb-4">{displayTitle}1234</h1>
+                <h1 className="text-3xl md:text-4xl font-bold mb-4">{displayTitle}</h1>
                 <Link to="/archives" className="inline-flex items-center text-blue-600 hover:text-blue-700">
                   <ChevronRight className="mr-1" size={16} />
                   <span>العودة إلى الأرشيف</span>

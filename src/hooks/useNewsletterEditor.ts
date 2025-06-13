@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 
 export const useNewsletterEditor = () => {
   const [subject, setSubject] = useState('');
@@ -63,7 +63,8 @@ export const useNewsletterEditor = () => {
         
         console.log("Newsletter content loaded successfully");
         setSubject(data.subject || '');
-        setContent(data.content || '');
+        // Ensure line breaks are preserved when loading content
+        setContent(data.content ? data.content.replace(/<br\s*\/?>/gi, '\n') : '');
         setIsLoading(false);
       } catch (error: any) {
         console.error('Exception fetching newsletter:', error);
@@ -109,6 +110,9 @@ export const useNewsletterEditor = () => {
       
       console.log("Newsletter update initiated for ID:", id || "new");
       
+      // Preserve line breaks when saving content
+      const formattedContent = content.replace(/\n/g, '<br>');
+      
       // Update existing newsletter or create new one
       let result;
       
@@ -118,7 +122,7 @@ export const useNewsletterEditor = () => {
           .from('newsletters')
           .update({ 
             subject, 
-            content,
+            content: formattedContent,
             updated_at: new Date().toISOString(),
             updated_by: userId
           })
@@ -129,7 +133,7 @@ export const useNewsletterEditor = () => {
           .from('newsletters')
           .insert({
             subject, 
-            content, 
+            content: formattedContent, 
             created_by: userId,
             created_at: new Date().toISOString()
           });

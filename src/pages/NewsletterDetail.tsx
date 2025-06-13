@@ -1,11 +1,10 @@
-
-import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
-import { ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { ChevronRight } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
 
 // Define the newsletter data structure
 interface NewsletterData {
@@ -697,7 +696,7 @@ const NewsletterDetail = () => {
                 <div className="text-sm text-blue-600 mb-2">
                   {displayDate}
                 </div>
-                <h1 className="text-3xl md:text-4xl font-bold mb-4">{displayTitle}</h1>
+                <h1 className="text-3xl md:text-4xl font-bold mb-4">{displayTitle}1234</h1>
                 <Link to="/archives" className="inline-flex items-center text-blue-600 hover:text-blue-700">
                   <ChevronRight className="mr-1" size={16} />
                   <span>العودة إلى الأرشيف</span>
@@ -716,7 +715,12 @@ const NewsletterDetail = () => {
                 displayContent
               ) : (
                 // Render HTML content for database newsletters
-                <div dangerouslySetInnerHTML={{ __html: newsletter?.content || '' }}></div>
+                <div 
+                  className="whitespace-pre-wrap"
+                  dangerouslySetInnerHTML={{ 
+                    __html: newsletter?.content ? newsletter.content.replace(/\n/g, '<br>') : '' 
+                  }}
+                ></div>
               )}
             </article>
             

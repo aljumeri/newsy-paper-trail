@@ -36,14 +36,6 @@ const AdminControl: React.FC = () => {
     navigate('/admin-control/panel');
   };
 
-  // We disable in-app registration
-  const handleRegister = async () => {
-    toast({
-      title: 'غير مدعوم',
-      description: 'يرجى دعوة المسؤولين الجدد من داخل لوحة Supabase Authentication.',
-    });
-  };
-
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -60,7 +52,6 @@ const AdminControl: React.FC = () => {
             password={password}
             setPassword={setPassword}
             handleLogin={handleLogin}
-            handleRegister={handleRegister}
             isLoading={loading}
             authError={error}
           />

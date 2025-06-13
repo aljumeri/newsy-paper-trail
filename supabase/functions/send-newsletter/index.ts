@@ -36,60 +36,24 @@ async function sendEmail(to: string, from: string, subject: string, html: string
   const unsubscribeLink = `${siteUrl || 'https://solo4ai.com'}/unsubscribe?email=${encodeURIComponent(to)}&token=${unsubscribeToken}`;
   
   // Create a properly formatted email template
-  const emailTemplate = `
-    <!DOCTYPE html>
-    <html dir="rtl" lang="ar">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <style>
-        body {
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-          line-height: 1.6;
-          color: #333;
-          max-width: 800px;
-          margin: 0 auto;
-          padding: 20px;
-        }
-        .newsletter-content {
-          margin-bottom: 30px;
-          white-space: pre-wrap; /* This preserves line breaks */
-        }
-        .newsletter-content p {
-          margin-bottom: 1.5em;
-          white-space: pre-wrap; /* This preserves line breaks */
-        }
-        .newsletter-content img {
-          max-width: 100%;
-          height: auto;
-          margin: 1em 0;
-        }
-        .unsubscribe {
-          margin-top: 30px;
-          padding-top: 20px;
-          border-top: 1px solid #eee;
-          font-size: 12px;
-          color: #666;
-        }
-        .unsubscribe a {
-          color: #0066cc;
-          text-decoration: none;
-        }
-        .unsubscribe a:hover {
-          text-decoration: underline;
-        }
-      </style>
-    </head>
-    <body>
-      <div class="newsletter-content">
-        ${html.replace(/\n/g, '<br>')}
-      </div>
-      <div class="unsubscribe">
-        <p>إذا كنت ترغب في إلغاء الاشتراك في النشرة الإخبارية، يمكنك <a href="${unsubscribeLink}">النقر هنا</a>.</p>
-      </div>
-    </body>
-    </html>
-  `;
+const emailTemplate = `
+  <!DOCTYPE html>
+  <html lang="ar">
+  <head><meta charset="UTF-8"></head>
+  <body dir="rtl" style="direction: rtl; text-align: right; margin:0; padding:20px;">
+    <div style="direction: rtl; text-align: right;">
+      ${html
+        .split('\n')
+        .map(line => `<p style="margin-bottom:1em;">${line}</p>`)
+        .join('')}
+    </div>
+    <div style="direction: rtl; text-align: right; margin-top:30px; padding-top:20px; border-top:1px solid #eee; font-size:12px; color:#666;">
+      <p>إذا كنت ترغب في إلغاء الاشتراك… <a href="${unsubscribeLink}">النقر هنا</a>.</p>
+    </div>
+  </body>
+  </html>
+`;
+
 
   // Add timeout to prevent hanging requests
   const controller = new AbortController();

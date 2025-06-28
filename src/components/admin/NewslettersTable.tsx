@@ -1,3 +1,4 @@
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -34,69 +35,42 @@ const NewslettersTable = ({ newsletters, formatDate, onRefresh }: NewslettersTab
 
   const handleSendNewsletter = async (id: string) => {
     setSendingId(id);
+    console.log(`Starting newsletter send process for ID: ${id}`);
+    
     try {
-      // First, get the newsletter content
-      const { data: newsletter, error: newsletterError } = await supabase
-        .from('newsletters')
-        .select('subject, content')
-        .eq('id', id)
-        .single();
-
-      if (newsletterError) throw newsletterError;
-      if (!newsletter) throw new Error('Newsletter not found');
-
-      // Get all subscribers
-      const { data: subscribers, error: subscribersError } = await supabase
-        .from('subscribers')
-        .select('email');
-
-      if (subscribersError) throw subscribersError;
-      if (!subscribers || subscribers.length === 0) {
-        toast({
-          title: "لا يوجد مشتركين",
-          description: "لم يتم العثور على أي مشتركين في النشرة الإخبارية"
-        });
-        return;
-      }
-
-      // Update newsletter as sent
-      const { error: updateError } = await supabase
-        .from('newsletters')
-        .update({ 
-          sent_at: new Date().toISOString(),
-          recipients_count: subscribers.length,
-          status: 'sent'
-        })
-        .eq('id', id);
-
-      if (updateError) throw updateError;
-
       // Call the send-newsletter edge function
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-newsletter`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-        },
-        body: JSON.stringify({
+      console.log('Calling send-newsletter edge function...');
+      const { data, error } = await supabase.functions.invoke('send-newsletter', {
+        body: {
           newsletterId: id
-        })
+        }
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to send newsletter');
+      console.log('Edge function response:', { data, error });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Failed to send newsletter');
       }
 
-      toast({
-        title: "تم الإرسال",
-        description: `تم إرسال النشرة الإخبارية إلى ${subscribers.length} مشترك`
-      });
+      if (data && data.success) {
+        toast({
+          title: "تم الإرسال بنجاح",
+          description: data.message || `تم إرسال النشرة الإخبارية إلى ${data.subscribers} مشترك`
+        });
 
-      if (onRefresh) await onRefresh();
+        // Refresh the data to show updated status
+        if (onRefresh) {
+          await onRefresh();
+        }
+      } else {
+        throw new Error(data?.error || 'Failed to send newsletter');
+      }
+
     } catch (error: any) {
       console.error('Error sending newsletter:', error);
       toast({
-        title: "خطأ",
+        title: "خطأ في الإرسال",
         description: error.message || "حدث خطأ أثناء إرسال النشرة الإخبارية",
         variant: "destructive"
       });
@@ -161,7 +135,7 @@ const NewslettersTable = ({ newsletters, formatDate, onRefresh }: NewslettersTab
                           size="sm"
                           onClick={() => handleSendNewsletter(newsletter.id)}
                           disabled={sendingId === newsletter.id}
-                          className="text-green-500"
+                          className="text-green-500 hover:text-green-600"
                         >
                           <Send className="w-4 h-4 ml-1" />
                           {sendingId === newsletter.id ? 'جاري الإرسال...' : 'إرسال'}

@@ -1,3 +1,4 @@
+
 import NewsletterForm from '@/components/newsletter/NewsletterForm';
 import NewsletterHeader from '@/components/newsletter/NewsletterHeader';
 import NewsletterPreview from '@/components/newsletter/NewsletterPreview';
@@ -47,28 +48,54 @@ const EditNewsletter: React.FC = () => {
   }
 
   const handleSendNewsletter = async () => {
+    if (!id) {
+      toast({
+        title: 'خطأ',
+        description: 'معرف النشرة الإخبارية غير متوفر',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setIsSending(true);
+    console.log(`Starting newsletter send process for ID: ${id}`);
+    
     try {
-      // Count subscribers
-      const { count, error: countErr } = await supabase
-        .from('subscribers')
-        .select('*', { count: 'exact', head: true });
-      if (countErr) throw countErr;
-      // Mark the newsletter as sent
-      const { error: updateErr } = await supabase
-        .from('newsletters')
-        .update({
-          sent_at: new Date().toISOString(),
-          recipients_count: count || 0,
-          status: 'sent'
-        })
-        .eq('id', id);
-      if (updateErr) throw updateErr;
-      toast({ title: 'تم الإرسال بنجاح', description: `تم إرسال النشرة إلى ${count} مشترك` });
-      navigate('/admin-control/panel');
+      // Call the send-newsletter edge function
+      console.log('Calling send-newsletter edge function...');
+      const { data, error } = await supabase.functions.invoke('send-newsletter', {
+        body: {
+          newsletterId: id
+        }
+      });
+
+      console.log('Edge function response:', { data, error });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Failed to send newsletter');
+      }
+
+      if (data && data.success) {
+        toast({
+          title: 'تم الإرسال بنجاح',
+          description: data.message || `تم إرسال النشرة الإخبارية إلى ${data.subscribers} مشترك`
+        });
+        
+        // Navigate back to admin panel after successful send
+        navigate('/admin-control/panel');
+      } else {
+        throw new Error(data?.error || 'Failed to send newsletter');
+      }
+
     } catch (err: unknown) {
+      console.error('Error sending newsletter:', err);
       const msg = err instanceof Error ? err.message : 'خطأ أثناء الإرسال';
-      toast({ title: 'فشل في الإرسال', description: msg, variant: 'destructive' });
+      toast({ 
+        title: 'فشل في الإرسال', 
+        description: msg, 
+        variant: 'destructive' 
+      });
     } finally {
       setIsSending(false);
     }
@@ -98,7 +125,8 @@ const EditNewsletter: React.FC = () => {
                 onSave={handleUpdateNewsletter}
                 onPreview={handlePreview}
                 isSaving={isSaving}
-                onSend={() => handleSendNewsletter()}
+                newsletterId={id}
+                onSend={handleSendNewsletter}
                 isSending={isSending}
               />
             )}

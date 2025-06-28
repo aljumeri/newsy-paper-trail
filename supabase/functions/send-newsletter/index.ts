@@ -197,7 +197,13 @@ serve(async (req: Request) => {
   console.log("Edge Function: send-newsletter invoked");
   console.log("Request method:", req.method);
   console.log("Request URL:", req.url);
-  console.log("Request headers:", Object.fromEntries(req.headers.entries()));
+  
+  // Log headers in a way that's compatible with Deno
+  const headerEntries: string[] = [];
+  req.headers.forEach((value, key) => {
+    headerEntries.push(`${key}: ${value}`);
+  });
+  console.log("Request headers:", headerEntries.join(", "));
   
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {

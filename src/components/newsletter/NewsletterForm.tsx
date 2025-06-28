@@ -421,6 +421,88 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
     }
   };
 
+  // New section handler
+  const handleAddSection = () => {
+    const textarea = document.getElementById('content') as HTMLTextAreaElement;
+    const sectionHtml = `
+<div style="border: 2px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0; background-color: #f8fafc;" class="newsletter-section" data-type="section">
+  <h3 style="margin: 0 0 15px 0; color: #1a202c; font-size: 18px; font-weight: bold; text-align: right; direction: rtl;">عنوان القسم</h3>
+  <p style="margin: 0; color: #4a5568; line-height: 1.6; text-align: right; direction: rtl;">اكتب محتوى القسم هنا...</p>
+</div>
+`;
+    
+    if (textarea) {
+      const cursorPos = textarea.selectionStart;
+      const newContent = content.substring(0, cursorPos) + sectionHtml + content.substring(cursorPos);
+      setContent(newContent);
+      addToHistory(newContent);
+    } else {
+      const newContent = content + sectionHtml;
+      setContent(newContent);
+      addToHistory(newContent);
+    }
+  };
+
+  // New shape handler
+  const handleAddShape = (shapeType: string) => {
+    const textarea = document.getElementById('content') as HTMLTextAreaElement;
+    let shapeHtml = '';
+    
+    switch (shapeType) {
+      case 'rectangle':
+        shapeHtml = `
+<div style="width: 200px; height: 100px; background-color: #3182ce; border-radius: 4px; margin: 20px auto; display: flex; align-items: center; justify-content: center;" class="newsletter-shape" data-type="shape" data-shape="rectangle">
+  <span style="color: white; font-weight: bold; text-align: center;">مستطيل</span>
+</div>
+`;
+        break;
+      case 'circle':
+        shapeHtml = `
+<div style="width: 120px; height: 120px; background-color: #38a169; border-radius: 50%; margin: 20px auto; display: flex; align-items: center; justify-content: center;" class="newsletter-shape" data-type="shape" data-shape="circle">
+  <span style="color: white; font-weight: bold; text-align: center;">دائرة</span>
+</div>
+`;
+        break;
+      case 'triangle':
+        shapeHtml = `
+<div style="width: 0; height: 0; border-left: 60px solid transparent; border-right: 60px solid transparent; border-bottom: 100px solid #e53e3e; margin: 20px auto;" class="newsletter-shape" data-type="shape" data-shape="triangle">
+</div>
+`;
+        break;
+      case 'star':
+        shapeHtml = `
+<div style="margin: 20px auto; text-align: center;" class="newsletter-shape" data-type="shape" data-shape="star">
+  <svg width="100" height="100" viewBox="0 0 100 100" style="fill: #d69e2e;">
+    <polygon points="50,5 61,39 95,39 68,60 79,95 50,74 21,95 32,60 5,39 39,39" />
+  </svg>
+</div>
+`;
+        break;
+      case 'arrow':
+        shapeHtml = `
+<div style="margin: 20px auto; text-align: center;" class="newsletter-shape" data-type="shape" data-shape="arrow">
+  <svg width="120" height="60" viewBox="0 0 120 60" style="fill: #805ad5;">
+    <polygon points="0,20 70,20 70,5 120,30 70,55 70,40 0,40" />
+  </svg>
+</div>
+`;
+        break;
+      default:
+        return;
+    }
+    
+    if (textarea) {
+      const cursorPos = textarea.selectionStart;
+      const newContent = content.substring(0, cursorPos) + shapeHtml + content.substring(cursorPos);
+      setContent(newContent);
+      addToHistory(newContent);
+    } else {
+      const newContent = content + shapeHtml;
+      setContent(newContent);
+      addToHistory(newContent);
+    }
+  };
+
   // Initialize editor drag and drop after component mounts
   React.useEffect(() => {
     const initializeDragDrop = () => {
@@ -578,6 +660,8 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
           onUndo={handleUndo}
           onRedo={handleRedo}
           onTextDirection={handleTextDirection}
+          onAddSection={handleAddSection}
+          onAddShape={handleAddShape}
         />
         <textarea
           id="content"

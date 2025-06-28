@@ -20,6 +20,8 @@ import {
   Redo,
   Undo,
   TextCursorInput,
+  Section,
+  Shapes,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -46,6 +48,8 @@ interface EditorToolbarProps {
   onUndo?: () => void;
   onRedo?: () => void;
   onTextDirection: () => void;
+  onAddSection?: () => void;
+  onAddShape?: (shape: string) => void;
 }
 
 const colors = [
@@ -56,6 +60,14 @@ const colors = [
   { name: 'أخضر', value: '#38a169' },
   { name: 'أصفر', value: '#d69e2e' },
   { name: 'أرجواني', value: '#805ad5' },
+];
+
+const shapes = [
+  { name: 'مستطيل', value: 'rectangle' },
+  { name: 'دائرة', value: 'circle' },
+  { name: 'مثلث', value: 'triangle' },
+  { name: 'نجمة', value: 'star' },
+  { name: 'سهم', value: 'arrow' },
 ];
 
 const EditorToolbar: React.FC<EditorToolbarProps> = ({
@@ -74,7 +86,9 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
   onTextColor,
   onUndo,
   onRedo,
-  onTextDirection
+  onTextDirection,
+  onAddSection,
+  onAddShape
 }) => {
   return (
     <div className="flex flex-wrap items-center gap-1 border rounded-md p-1 mb-2 bg-white">
@@ -198,6 +212,34 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
         <Button variant="ghost" size="icon" onClick={onYoutubeEmbed} title="إضافة فيديو يوتيوب">
           <Youtube className="h-4 w-4" />
         </Button>
+      </div>
+
+      <Separator orientation="vertical" className="mx-1 h-6" />
+
+      {/* Sections and Shapes */}
+      <div className="flex gap-1">
+        {onAddSection && (
+          <Button variant="ghost" size="icon" onClick={onAddSection} title="إضافة قسم">
+            <Section className="h-4 w-4" />
+          </Button>
+        )}
+        
+        {onAddShape && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" title="إضافة شكل">
+                <Shapes className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              {shapes.map((shape) => (
+                <DropdownMenuItem key={shape.value} onClick={() => onAddShape(shape.value)}>
+                  {shape.name}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
 
       {onUndo && onRedo && (

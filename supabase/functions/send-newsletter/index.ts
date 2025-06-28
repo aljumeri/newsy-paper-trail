@@ -6,36 +6,21 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.43.1";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 interface NewsletterRequest {
   newsletterId: string;
 }
 
-interface NewsletterData {
-  subject: string;
-  content: string;
-}
-
-interface SubscriberData {
-  email: string;
-  unsubscribe_token: string;
-}
-
 // Function to process HTML content for better email display
 function processHtmlForEmail(html: string): string {
-  // Split content by line breaks and wrap each line in a paragraph if it's not already wrapped
   let processedHtml = html
-    // Replace multiple <br> tags with paragraph breaks
     .replace(/<br\s*\/?>\s*<br\s*\/?>/gi, '</p><p>')
-    // Replace single <br> tags with paragraph breaks for better spacing
     .replace(/<br\s*\/?>/gi, '</p><p>')
-    // Clean up empty paragraphs
     .replace(/<p>\s*<\/p>/gi, '')
-    // Ensure content starts and ends with paragraph tags
     .trim();
   
-  // If content doesn't start with a tag, wrap it in paragraphs
   if (!processedHtml.startsWith('<')) {
     processedHtml = '<p>' + processedHtml;
   }
@@ -43,7 +28,6 @@ function processHtmlForEmail(html: string): string {
     processedHtml = processedHtml + '</p>';
   }
   
-  // Make sure all content is wrapped in paragraphs
   if (!processedHtml.startsWith('<p>') && !processedHtml.startsWith('<div>') && !processedHtml.startsWith('<h')) {
     processedHtml = '<p>' + processedHtml + '</p>';
   }
@@ -58,14 +42,11 @@ async function sendEmail(to: string, from: string, subject: string, html: string
     return { success: true, message: "Email simulated (no API key)" };
   }
 
-  // Add unsubscribe link to the email
   const siteUrl = Deno.env.get("SITE_URL") || 'https://solo4ai.com';
   const unsubscribeLink = `${siteUrl}/unsubscribe?email=${encodeURIComponent(to)}&token=${unsubscribeToken}`;
   
-  // Process the HTML content for better email display
   const processedContent = processHtmlForEmail(html);
   
-  // Enhanced HTML template with proper RTL support and paragraph spacing
   const emailTemplate = `
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -111,27 +92,6 @@ async function sendEmail(to: string, from: string, subject: string, html: string
             text-align: right;
             font-size: 16px;
         }
-        .email-content div {
-            margin: 0 0 20px 0;
-            line-height: 1.8;
-            direction: rtl;
-            text-align: right;
-        }
-        .email-content h1, .email-content h2, .email-content h3 {
-            direction: rtl;
-            text-align: right;
-            margin: 25px 0 15px 0;
-            font-weight: bold;
-        }
-        .email-content h1 {
-            font-size: 24px;
-        }
-        .email-content h2 {
-            font-size: 20px;
-        }
-        .email-content h3 {
-            font-size: 18px;
-        }
         .unsubscribe-section {
             margin-top: 40px;
             padding-top: 20px;
@@ -162,9 +122,8 @@ async function sendEmail(to: string, from: string, subject: string, html: string
 </body>
 </html>`;
 
-  // Add timeout to prevent hanging requests
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
 
   try {
     console.log(`Sending email to ${to} with subject: ${subject}`);
@@ -208,10 +167,8 @@ async function sendEmail(to: string, from: string, subject: string, html: string
 
     clearTimeout(timeoutId);
 
-    const responseText = await response.text();
-    console.log("SendGrid Response Status:", response.status);
-    
     if (!response.ok) {
+      const responseText = await response.text();
       let errorMessage;
       try {
         const errorJson = JSON.parse(responseText);
@@ -240,17 +197,42 @@ serve(async (req: Request) => {
   console.log("Edge Function: send-newsletter invoked");
   console.log("Request method:", req.method);
   console.log("Request URL:", req.url);
+  console.log("Request headers:", Object.fromEntries(req.headers.entries()));
   
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     console.log("Edge Function: Handling OPTIONS request");
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { 
+      status: 200,
+      headers: corsHeaders 
+    });
+  }
+
+  // Only allow POST requests
+  if (req.method !== "POST") {
+    console.log(`Edge Function: Method ${req.method} not allowed`);
+    return new Response(
+      JSON.stringify({ error: "Method not allowed", success: false }),
+      { 
+        status: 405,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      }
+    );
   }
 
   try {
     // Get request body
-    const requestBody = await req.json();
-    console.log("Edge Function: Request body received:", JSON.stringify(requestBody));
+    let requestBody;
+    try {
+      const bodyText = await req.text();
+      console.log("Edge Function: Raw request body:", bodyText);
+      requestBody = JSON.parse(bodyText);
+    } catch (e) {
+      console.error("Edge Function: Failed to parse request body:", e);
+      throw new Error("Invalid JSON in request body");
+    }
+    
+    console.log("Edge Function: Parsed request body:", JSON.stringify(requestBody));
     
     const { newsletterId } = requestBody as NewsletterRequest;
     
@@ -328,7 +310,6 @@ serve(async (req: Request) => {
       
     if (updateError) {
       console.error(`Edge Function: Update error: ${updateError.message}`);
-      // Continue anyway as this is not critical
     } else {
       console.log("Edge Function: Newsletter marked as sent successfully");
     }
@@ -340,14 +321,13 @@ serve(async (req: Request) => {
     let failedSends = 0;
     const errors: string[] = [];
 
-    // Check if we have SendGrid API key
     const hasApiKey = !!Deno.env.get("SENDGRID_API_KEY");
     if (!hasApiKey) {
       console.log("No SendGrid API key found, simulating email sending");
     }
 
-    // Process emails in smaller batches to avoid overwhelming the service
-    const batchSize = 10;
+    // Process emails in smaller batches
+    const batchSize = 5;
     const batches = [];
     for (let i = 0; i < subscribers.length; i += batchSize) {
       batches.push(subscribers.slice(i, i + batchSize));
@@ -376,23 +356,17 @@ serve(async (req: Request) => {
         }
       });
 
-      // Wait for current batch to complete before starting next batch
-      const batchResults = await Promise.allSettled(emailPromises);
-      console.log(`Batch completed. Successful: ${batchResults.filter(r => r.status === 'fulfilled').length}, Failed: ${batchResults.filter(r => r.status === 'rejected').length}`);
+      await Promise.allSettled(emailPromises);
+      console.log(`Batch completed. Current totals - Successful: ${successfulSends}, Failed: ${failedSends}`);
       
-      // Add a small delay between batches to avoid rate limiting
+      // Add delay between batches
       if (batches.indexOf(batch) < batches.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
     }
     
-    console.log(`Email sending completed. Successful: ${successfulSends}, Failed: ${failedSends}`);
+    console.log(`Email sending completed. Final totals - Successful: ${successfulSends}, Failed: ${failedSends}`);
     
-    if (errors.length > 0) {
-      console.error("Errors encountered:", errors);
-    }
-    
-    // Return success response with details
     const responseData = { 
       message: hasApiKey 
         ? `Newsletter sent to ${successfulSends} subscribers${failedSends > 0 ? ` (${failedSends} failed)` : ''}`
@@ -400,7 +374,7 @@ serve(async (req: Request) => {
       subscribers: successfulSends,
       failed: failedSends,
       success: true,
-      errors: failedSends > 0 ? errors.slice(0, 5) : [] // Limit error details in response
+      errors: failedSends > 0 ? errors.slice(0, 3) : []
     };
     
     console.log("Edge Function: Returning response:", responseData);

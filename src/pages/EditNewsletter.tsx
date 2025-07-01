@@ -1,6 +1,5 @@
-import NewsletterForm from '@/components/newsletter/NewsletterForm';
-import NewsletterHeader from '@/components/newsletter/NewsletterHeader';
-import NewsletterPreview from '@/components/newsletter/NewsletterPreview';
+import Newsletter from '@/components/newsletter/Newsletter';
+import NewsletterHeaderV2 from '@/components/newsletter/NewsletterHeaderV2';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAdminAuth, useRequireAdminAuth } from '@/contexts/AdminAuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -76,7 +75,7 @@ const EditNewsletter: React.FC = () => {
 
   return (
     <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 ${isDarkMode ? 'dark' : ''}`}>
-      <NewsletterHeader
+      <NewsletterHeaderV2
         title="تعديل النشرة الإخبارية"
         onThemeToggle={toggleDarkMode}
         isDarkMode={isDarkMode}
@@ -88,9 +87,9 @@ const EditNewsletter: React.FC = () => {
           </CardHeader>
           <CardContent>
             {isPreview ? (
-              <NewsletterPreview subject={subject} content={content} onEdit={handlePreview} />
+              <Newsletter subject={subject} content={content} onEdit={handlePreview} />
             ) : (
-              <NewsletterForm
+              <Newsletter
                 subject={subject}
                 setSubject={setSubject}
                 content={content}

@@ -1,6 +1,4 @@
-import NewsletterForm from '@/components/newsletter/NewsletterForm';
-import NewsletterHeader from '@/components/newsletter/NewsletterHeader';
-import NewsletterPreview from '@/components/newsletter/NewsletterPreview';
+import Newsletter, { defaultSections } from '@/components/newsletter/Newsletter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAdminAuth, useRequireAdminAuth } from '@/contexts/AdminAuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -14,10 +12,8 @@ const ComposeNewsletter: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const [subject, setSubject] = useState('');
-  const [content, setContent] = useState('');
+  const [sections, setSections] = useState(defaultSections); // New editor state
   const [isLoading, setIsLoading] = useState(false);
-  const [isPreview, setIsPreview] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   useEffect(() => {
@@ -34,8 +30,8 @@ const ComposeNewsletter: React.FC = () => {
   }
 
   const handleSaveNewsletter = async () => {
-    if (!subject.trim() || !content.trim()) {
-      toast({ title: 'حقول مطلوبة', description: 'يرجى ملء جميع الحقول المطلوبة', variant: 'destructive' });
+    if (!sections.length) {
+      toast({ title: 'حقول مطلوبة', description: 'يرجى إضافة محتوى للنشرة', variant: 'destructive' });
       return;
     }
     setIsLoading(true);
@@ -43,7 +39,7 @@ const ComposeNewsletter: React.FC = () => {
       const userId = user!.id;
       const { error } = await supabase
         .from('newsletters')
-        .insert({ subject, content, created_by: userId, created_at: new Date().toISOString() });
+        .insert({ subject: sections[0]?.title || '', content: JSON.stringify(sections), created_by: userId, created_at: new Date().toISOString() });
       if (error) throw error;
       toast({ title: 'تم الحفظ بنجاح', description: 'تم حفظ النشرة الإخبارية' });
       navigate('/admin-control/panel');
@@ -57,30 +53,21 @@ const ComposeNewsletter: React.FC = () => {
 
   return (
     <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 ${isDarkMode ? 'dark' : ''}`}>
-      <NewsletterHeader
-        title="إنشاء نشرة إخبارية جديدة"
-        onThemeToggle={() => setIsDarkMode(prev => !prev)}
-        isDarkMode={isDarkMode}
-      />
+      {/* <NewsletterHeaderV2 /> */}
       <div className="container py-8">
         <Card className="dark:bg-gray-800 dark:border-gray-700">
           <CardHeader>
             <CardTitle className="dark:text-white">إنشاء نشرة إخبارية جديدة</CardTitle>
           </CardHeader>
           <CardContent>
-            {isPreview ? (
-              <NewsletterPreview subject={subject} content={content} onEdit={() => setIsPreview(false)} />
-            ) : (
-              <NewsletterForm
-                subject={subject}
-                setSubject={setSubject}
-                content={content}
-                setContent={setContent}
-                onSave={handleSaveNewsletter}
-                onPreview={() => setIsPreview(true)}
-                isSaving={isLoading}
-              />
-            )}
+            <Newsletter sections={sections} setSections={setSections} />
+            <button
+              className="mt-6 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              onClick={handleSaveNewsletter}
+              disabled={isLoading}
+            >
+              {isLoading ? 'جارٍ الحفظ...' : 'حفظ النشرة'}
+            </button>
           </CardContent>
         </Card>
       </div>

@@ -1,5 +1,4 @@
 import type { Config } from "tailwindcss";
-import tailwindcssAnimate from "tailwindcss-animate";
 
 export default {
 	darkMode: ["class"],
@@ -20,9 +19,8 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				sans: ['Noto Naskh Arabic', 'serif'],
-				serif: ['Noto Naskh Arabic', 'serif'],
-				heading: ['Noto Naskh Arabic', 'serif'],
+				'cairo': ['Cairo', 'sans-serif'],
+				'amiri': ['Amiri', 'serif'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',
@@ -68,30 +66,10 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				purple: {
-					50: '#F6F4FF',
-					100: '#E8E4FF',
-					200: '#D6BCFA',
-					300: '#B197FC',
-					400: '#9B87F5',
-					500: '#8B5CF6',
-					600: '#7E69AB',
-					700: '#6E59A5',
-					800: '#1A1F2C',
-					900: '#0F1117',
-				},
-				neutral: {
-					50: '#F1F0FB',
-					100: '#E9E9F2',
-					200: '#D4D4D9',
-					300: '#BABABF',
-					400: '#8E9196',
-					500: '#6D7175',
-					600: '#52565A',
-					700: '#37393E',
-					800: '#1A1F2C',
-					900: '#221F26',
-				}
+				// Logo-inspired colors
+				'logo-blue': '#4F46E5',
+				'logo-pink': '#EC4899',
+				'logo-light-blue': '#06B6D4',
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -114,43 +92,13 @@ export default {
 					to: {
 						height: '0'
 					}
-				},
-				fadeIn: {
-					from: { opacity: '0' },
-					to: { opacity: '1' }
-				},
-				slideUp: {
-					from: { transform: 'translateY(20px)', opacity: '0' },
-					to: { transform: 'translateY(0)', opacity: '1' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out',
-				'fade-in': 'fadeIn 0.5s ease-in-out',
-				'slide-up': 'slideUp 0.5s ease-out'
-			},
-			textDirection: {
-				rtl: 'rtl',
+				'accordion-up': 'accordion-up 0.2s ease-out'
 			}
 		}
 	},
-	plugins: [tailwindcssAnimate],
-	safelist: [
-		"bg-gradient-to-r",
-		"bg-gradient-to-l",
-		"from-blue-50",
-		"to-indigo-50",
-		"from-pink-50",
-		"to-rose-50",
-		"from-cyan-50",
-		"to-blue-50",
-		"from-green-50",
-		"to-lime-50",
-		"from-yellow-50",
-		"to-amber-50",
-		"from-logo-blue",
-		"via-logo-pink",
-		"to-logo-light-blue"
-	],
+	plugins: [require("tailwindcss-animate")],
 } satisfies Config;

@@ -1,4 +1,4 @@
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from '@/components/ui/textarea';
 import React, { useEffect, useRef, useState } from 'react';
 import TextSelectionHandler from './TextSelectionHandler';
 
@@ -17,7 +17,7 @@ const EditableText: React.FC<EditableTextProps> = ({
   className = '',
   placeholder = '',
   multiline = false,
-  isTitle = false
+  isTitle = false,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [tempValue, setTempValue] = useState(value);
@@ -53,7 +53,7 @@ const EditableText: React.FC<EditableTextProps> = ({
   // Function to render markdown links as actual links
   const renderTextWithLinks = (text: string) => {
     if (!text) return placeholder;
-    
+
     // Simple markdown link regex: [text](url)
     const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
     const parts = [];
@@ -65,7 +65,7 @@ const EditableText: React.FC<EditableTextProps> = ({
       if (match.index > lastIndex) {
         parts.push(text.substring(lastIndex, match.index));
       }
-      
+
       // Add the link
       parts.push(
         <a
@@ -74,20 +74,20 @@ const EditableText: React.FC<EditableTextProps> = ({
           target="_blank"
           rel="noopener noreferrer"
           className="text-blue-600 hover:text-blue-800 underline"
-          onClick={(e) => e.stopPropagation()}
+          onClick={e => e.stopPropagation()}
         >
           {match[1]}
         </a>
       );
-      
+
       lastIndex = match.index + match[0].length;
     }
-    
+
     // Add remaining text
     if (lastIndex < text.length) {
       parts.push(text.substring(lastIndex));
     }
-    
+
     return parts.length > 0 ? parts : text;
   };
 
@@ -96,7 +96,7 @@ const EditableText: React.FC<EditableTextProps> = ({
       <Textarea
         ref={inputRef}
         value={tempValue}
-        onChange={(e) => setTempValue(e.target.value)}
+        onChange={e => setTempValue(e.target.value)}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         className={`${className} resize-none border-2 border-logo-blue`}
@@ -108,13 +108,10 @@ const EditableText: React.FC<EditableTextProps> = ({
   }
 
   return (
-    <TextSelectionHandler
-      value={value}
-      onTextChange={onChange}
-    >
+    <TextSelectionHandler value={value} onTextChange={onChange}>
       <div
         onDoubleClick={handleDoubleClick}
-        className={`${className} cursor-pointer hover:bg-black/5 rounded px-2 py-1 transition-colors min-h-[1.5rem] select-text ${
+        className={`${className} rounded px-2 py-1 transition-colors min-h-[1.5rem] select-text ${
           !value ? 'text-gray-400' : ''
         }`}
         dir="rtl"
@@ -125,4 +122,4 @@ const EditableText: React.FC<EditableTextProps> = ({
   );
 };
 
-export default EditableText; 
+export default EditableText;

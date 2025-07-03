@@ -1,4 +1,6 @@
-import Newsletter, { defaultSections } from '@/components/newsletter/Newsletter';
+import Newsletter, {
+  defaultSections,
+} from '@/components/newsletter/Newsletter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAdminAuth, useRequireAdminAuth } from '@/contexts/AdminAuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -31,45 +33,66 @@ const ComposeNewsletter: React.FC = () => {
 
   const handleSaveNewsletter = async () => {
     if (!sections.length) {
-      toast({ title: 'حقول مطلوبة', description: 'يرجى إضافة محتوى للنشرة', variant: 'destructive' });
+      toast({
+        title: 'حقول مطلوبة',
+        description: 'يرجى إضافة محتوى للنشرة',
+        variant: 'destructive',
+      });
       return;
     }
     setIsLoading(true);
     try {
       const userId = user!.id;
-      const { error } = await supabase
-        .from('newsletters')
-        .insert({ subject: sections[0]?.title || '', content: JSON.stringify(sections), created_by: userId, created_at: new Date().toISOString() });
+      const { error } = await supabase.from('newsletters').insert({
+        subject: sections[0]?.title || '',
+        content: JSON.stringify(sections),
+        created_by: userId,
+        created_at: new Date().toISOString(),
+      });
       if (error) throw error;
-      toast({ title: 'تم الحفظ بنجاح', description: 'تم حفظ النشرة الإخبارية' });
+      toast({
+        title: 'تم الحفظ بنجاح',
+        description: 'تم حفظ النشرة الإخبارية',
+      });
       navigate('/admin-control/panel');
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'حدث خطأ أثناء حفظ النشرة الإخبارية';
-      toast({ title: 'خطأ في الحفظ', description: msg, variant: 'destructive' });
+      const msg =
+        err instanceof Error
+          ? err.message
+          : 'حدث خطأ أثناء حفظ النشرة الإخبارية';
+      toast({
+        title: 'خطأ في الحفظ',
+        description: msg,
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 ${isDarkMode ? 'dark' : ''}`}>
+    <div
+      className={`min-h-screen pb-6  dark:bg-gray-900 ${
+        isDarkMode ? 'dark' : ''
+      }`}
+    >
       {/* <NewsletterHeaderV2 /> */}
-      <div className="container py-8">
-        <Card className="dark:bg-gray-800 dark:border-gray-700">
-          <CardHeader>
-            <CardTitle className="dark:text-white">إنشاء نشرة إخبارية جديدة</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Newsletter sections={sections} setSections={setSections} />
-            <button
-              className="mt-6 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              onClick={handleSaveNewsletter}
-              disabled={isLoading}
-            >
-              {isLoading ? 'جارٍ الحفظ...' : 'حفظ النشرة'}
-            </button>
-          </CardContent>
-        </Card>
+      <div className="container max-w-5xl m-auto">
+        <CardHeader className="py-6">
+          <CardTitle className="dark:text-white">
+            إنشاء نشرة إخبارية جديدة
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Newsletter sections={sections} setSections={setSections} />
+          <button
+            className="mt-6 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            onClick={handleSaveNewsletter}
+            disabled={isLoading}
+          >
+            {isLoading ? 'جارٍ الحفظ...' : 'حفظ النشرة'}
+          </button>
+        </CardContent>
       </div>
     </div>
   );

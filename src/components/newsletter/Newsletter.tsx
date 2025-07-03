@@ -1,6 +1,6 @@
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Facebook, Linkedin, Plus, X } from "lucide-react";
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Facebook, Linkedin, Plus, X } from 'lucide-react';
 import { useState } from 'react';
 import EditableSection from './EditableSection';
 import NewsletterHeaderV2 from './NewsletterHeaderV2';
@@ -49,18 +49,19 @@ export const defaultSections: Section[] = [
   {
     id: '1',
     title: 'الأخبار الرئيسية',
-    content: 'محتوى القسم الرئيسي يمكن تحريره هنا. أضف النصوص والروابط والصور حسب الحاجة.',
+    content:
+      'محتوى القسم الرئيسي يمكن تحريره هنا. أضف النصوص والروابط والصور حسب الحاجة.',
     backgroundColor: 'bg-gradient-to-r from-blue-50 to-indigo-50',
     sideLineColor: '#4F46E5',
     subsections: [
       {
         id: '1-1',
         title: 'عنوان فرعي أول',
-        content: 'محتوى القسم الفرعي الأول'
-      }
+        content: 'محتوى القسم الفرعي الأول',
+      },
     ],
     mediaItems: [],
-    lists: []
+    lists: [],
   },
   {
     id: '2',
@@ -70,14 +71,19 @@ export const defaultSections: Section[] = [
     sideLineColor: '#EC4899',
     subsections: [],
     mediaItems: [],
-    lists: []
-  }
+    lists: [],
+  },
 ];
 
-const Newsletter: React.FC<NewsletterProps> = ({ sections: propSections, setSections: propSetSections }) => {
-  const [internalSections, internalSetSections] = useState<Section[]>(defaultSections);
+const Newsletter: React.FC<NewsletterProps> = ({
+  sections: propSections,
+  setSections: propSetSections,
+}) => {
+  const [internalSections, internalSetSections] =
+    useState<Section[]>(defaultSections);
   const sections = propSections !== undefined ? propSections : internalSections;
-  const setSections = propSetSections !== undefined ? propSetSections : internalSetSections;
+  const setSections =
+    propSetSections !== undefined ? propSetSections : internalSetSections;
 
   const addSection = () => {
     const newSection: Section = {
@@ -88,15 +94,17 @@ const Newsletter: React.FC<NewsletterProps> = ({ sections: propSections, setSect
       sideLineColor: '#06B6D4',
       subsections: [],
       mediaItems: [],
-      lists: []
+      lists: [],
     };
     setSections([...sections, newSection]);
   };
 
   const updateSection = (id: string, updates: Partial<Section>) => {
-    setSections(sections.map(section => 
-      section.id === id ? { ...section, ...updates } : section
-    ));
+    setSections(
+      sections.map(section =>
+        section.id === id ? { ...section, ...updates } : section
+      )
+    );
   };
 
   const deleteSection = (id: string) => {
@@ -104,18 +112,18 @@ const Newsletter: React.FC<NewsletterProps> = ({ sections: propSections, setSect
   };
 
   return (
-    <div className="min-h-screen bg-gray-50" dir="rtl">
-      <div className="max-w-4xl mx-auto p-4 space-y-6">
+    <div className="min-h-screen " dir="rtl">
+      <div className="space-y-6">
         {/* Newsletter Header */}
         <NewsletterHeaderV2 />
-        
+
         {/* Newsletter Sections */}
         <div className="space-y-6">
-          {sections.map((section) => (
+          {sections.map(section => (
             <EditableSection
               key={section.id}
               section={section}
-              onUpdate={(updates) => updateSection(section.id, updates)}
+              onUpdate={updates => updateSection(section.id, updates)}
               onDelete={() => deleteSection(section.id)}
             />
           ))}
@@ -137,13 +145,22 @@ const Newsletter: React.FC<NewsletterProps> = ({ sections: propSections, setSect
         <div className="text-center py-8 border-t border-gray-200 space-y-6">
           {/* Social Media Icons */}
           <div className="flex justify-center items-center space-x-4 space-x-reverse">
-            <a href="#" className="text-gray-600 hover:text-logo-blue transition-colors">
+            <a
+              href="#"
+              className="text-gray-600 hover:text-logo-blue transition-colors"
+            >
               <X className="h-6 w-6" />
             </a>
-            <a href="#" className="text-gray-600 hover:text-logo-blue transition-colors">
+            <a
+              href="#"
+              className="text-gray-600 hover:text-logo-blue transition-colors"
+            >
               <Facebook className="h-6 w-6" />
             </a>
-            <a href="#" className="text-gray-600 hover:text-logo-blue transition-colors">
+            <a
+              href="#"
+              className="text-gray-600 hover:text-logo-blue transition-colors"
+            >
               <Linkedin className="h-6 w-6" />
             </a>
           </div>
@@ -151,14 +168,20 @@ const Newsletter: React.FC<NewsletterProps> = ({ sections: propSections, setSect
           {/* Subscription Text */}
           <div className="text-gray-600 text-sm space-y-2">
             <p>
-              هل وصلتك هذه النشرة عبر صديق؟{" "}
-              <a href="#" className="text-logo-blue hover:underline font-medium">
+              هل وصلتك هذه النشرة عبر صديق؟{' '}
+              <a
+                href="#"
+                className="text-logo-blue hover:underline font-medium"
+              >
                 اشترك من هنا
               </a>
               ، ليصلك جديدنا
             </p>
             <p>
-              <a href="#" className="text-gray-500 hover:text-gray-700 underline">
+              <a
+                href="#"
+                className="text-gray-500 hover:text-gray-700 underline"
+              >
                 لإلغاء الاشتراك هنا
               </a>
             </p>
@@ -166,9 +189,9 @@ const Newsletter: React.FC<NewsletterProps> = ({ sections: propSections, setSect
 
           {/* Copyright and Logo */}
           <div className="flex justify-center items-center space-x-4 space-x-reverse pt-4 border-t border-gray-100">
-            <img 
-              src="/lovable-uploads/b40e2534-e282-4e60-9ca0-91070f9c6ad7.png" 
-              alt="Solo for AI Logo" 
+            <img
+              src="/lovable-uploads/b40e2534-e282-4e60-9ca0-91070f9c6ad7.png"
+              alt="Solo for AI Logo"
               className="h-8 w-8"
             />
             <p className="text-gray-600 text-sm">
@@ -181,4 +204,4 @@ const Newsletter: React.FC<NewsletterProps> = ({ sections: propSections, setSect
   );
 };
 
-export default Newsletter; 
+export default Newsletter;

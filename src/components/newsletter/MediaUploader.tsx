@@ -1,74 +1,230 @@
 import { Button } from "@/components/ui/button";
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { Link as LinkIcon, Upload, Youtube } from "lucide-react";
 import React, { useState } from 'react';
 
 interface MediaItem {
+  id: string;
   type: 'image' | 'video' | 'youtube' | 'link';
   url: string;
   title?: string;
   description?: string;
+  size?: 'small' | 'medium' | 'large' | 'full';
+  alignment?: 'left' | 'center' | 'right';
 }
 
 interface MediaUploaderProps {
   isOpen: boolean;
   onClose: () => void;
   onAddMedia: (media: MediaItem) => void;
+  defaultTab?: 'image' | 'video' | 'youtube' | 'link';
 }
 
-const MediaUploader: React.FC<MediaUploaderProps> = ({ isOpen, onClose, onAddMedia }) => {
+const MediaUploader: React.FC<MediaUploaderProps> = ({ isOpen, onClose, onAddMedia, defaultTab = 'image' }) => {
+  const { toast } = useToast();
   const [imageUrl, setImageUrl] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState('');
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [videoUrl, setVideoUrl] = useState('');
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoPreview, setVideoPreview] = useState('');
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [linkUrl, setLinkUrl] = useState('');
   const [linkTitle, setLinkTitle] = useState('');
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const url = URL.createObjectURL(file);
-      setImageUrl(url);
+      setImageFile(file);
+      // Create preview for display
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview(previewUrl);
+      setImageUrl(''); // Clear URL input when file is selected
     }
   };
 
-  const handleVideoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUrlChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const url = event.target.value;
+    setImageUrl(url);
+    setImageFile(null); // Clear file when URL is entered
+    setImagePreview(url); // Use URL as preview
+  };
+
+  const uploadImageToStorage = async (file: File): Promise<string> => {
+    // Generate a unique file name to avoid collisions
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+    const filePath = `newsletter_images/${fileName}`;
+    
+    const { data, error } = await supabase.storage
+      .from('newsletter-assets')
+      .upload(filePath, file);
+    
+    if (error) throw error;
+    
+    // Get public URL for the uploaded image
+    const { data: publicUrlData } = supabase.storage
+      .from('newsletter-assets')
+      .getPublicUrl(filePath);
+    
+    return publicUrlData.publicUrl;
+  };
+
+  const handleImageUpload = async () => {
+    if (!imageFile && !imageUrl) return;
+
+    setIsUploadingImage(true);
+    
+    try {
+      let finalImageUrl = '';
+      
+      if (imageFile) {
+        // Upload file to Supabase Storage
+        finalImageUrl = await uploadImageToStorage(imageFile);
+        toast({
+          title: "تم رفع الصورة بنجاح",
+          description: "تم حفظ الصورة في الخادم",
+        });
+      } else if (imageUrl) {
+        // Use the provided URL directly
+        finalImageUrl = imageUrl;
+        toast({
+          title: "تم إضافة الصورة",
+          description: "تم استخدام الرابط المقدم",
+        });
+      }
+
+      if (finalImageUrl) {
+        onAddMedia({ 
+          id: Date.now().toString(), 
+          type: 'image', 
+          url: finalImageUrl, 
+          title: '', 
+          description: '', 
+          size: 'medium', 
+          alignment: 'center' 
+        });
+        resetImageForm();
+        onClose();
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast({
+        title: "خطأ في رفع الصورة",
+        description: "حدث خطأ أثناء رفع الصورة. يرجى المحاولة مرة أخرى.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const resetImageForm = () => {
+    setImageUrl('');
+    setImageFile(null);
+    setImagePreview('');
+    setIsUploadingImage(false);
+  };
+
+  const handleVideoFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const url = URL.createObjectURL(file);
-      setVideoUrl(url);
+      setVideoFile(file);
+      const previewUrl = URL.createObjectURL(file);
+      setVideoPreview(previewUrl);
+      setVideoUrl(''); // Clear URL input when file is selected
     }
   };
 
-  const addImage = () => {
-    if (imageUrl) {
-      onAddMedia({ type: 'image', url: imageUrl });
-      setImageUrl('');
-      onClose();
+  const handleVideoUrlChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const url = event.target.value;
+    setVideoUrl(url);
+    setVideoFile(null);
+    setVideoPreview(url);
+  };
+
+  const uploadVideoToStorage = async (file: File): Promise<string> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+    const filePath = `newsletter_videos/${fileName}`;
+    const { data, error } = await supabase.storage
+      .from('newsletter-assets')
+      .upload(filePath, file);
+    if (error) throw error;
+    const { data: publicUrlData } = supabase.storage
+      .from('newsletter-assets')
+      .getPublicUrl(filePath);
+    return publicUrlData.publicUrl;
+  };
+
+  const handleVideoUpload = async () => {
+    if (!videoFile && !videoUrl) return;
+    setIsUploadingVideo(true);
+    try {
+      let finalVideoUrl = '';
+      if (videoFile) {
+        finalVideoUrl = await uploadVideoToStorage(videoFile);
+        toast({
+          title: "تم رفع الفيديو بنجاح",
+          description: "تم حفظ الفيديو في الخادم",
+        });
+      } else if (videoUrl) {
+        finalVideoUrl = videoUrl;
+        toast({
+          title: "تم إضافة الفيديو",
+          description: "تم استخدام الرابط المقدم",
+        });
+      }
+      if (finalVideoUrl) {
+        onAddMedia({
+          id: Date.now().toString(),
+          type: 'video',
+          url: finalVideoUrl,
+          title: '',
+          description: '',
+          size: 'medium',
+          alignment: 'center',
+        });
+        resetVideoForm();
+        onClose();
+      }
+    } catch (error) {
+      console.error('Error uploading video:', error);
+      toast({
+        title: "خطأ في رفع الفيديو",
+        description: "حدث خطأ أثناء رفع الفيديو. يرجى المحاولة مرة أخرى.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingVideo(false);
     }
   };
 
-  const addVideo = () => {
-    if (videoUrl) {
-      onAddMedia({ type: 'video', url: videoUrl });
-      setVideoUrl('');
-      onClose();
-    }
+  const resetVideoForm = () => {
+    setVideoUrl('');
+    setVideoFile(null);
+    setVideoPreview('');
+    setIsUploadingVideo(false);
   };
 
   const addYouTubeLink = () => {
     if (youtubeUrl) {
       const videoId = youtubeUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/)?.[1];
       const embedUrl = videoId ? `https://www.youtube.com/embed/${videoId}` : youtubeUrl;
-      onAddMedia({ type: 'youtube', url: embedUrl });
+      onAddMedia({ id: Date.now().toString(), type: 'youtube', url: embedUrl, title: '', description: '', size: 'medium', alignment: 'center' });
       setYoutubeUrl('');
       onClose();
     }
@@ -76,11 +232,7 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({ isOpen, onClose, onAddMed
 
   const addLink = () => {
     if (linkUrl) {
-      onAddMedia({ 
-        type: 'link', 
-        url: linkUrl, 
-        title: linkTitle || linkUrl 
-      });
+      onAddMedia({ id: Date.now().toString(), type: 'link', url: linkUrl, title: linkTitle || linkUrl, description: '', size: 'medium', alignment: 'center' });
       setLinkUrl('');
       setLinkTitle('');
       onClose();
@@ -97,7 +249,7 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({ isOpen, onClose, onAddMed
           </DialogDescription>
         </DialogHeader>
         
-        <Tabs defaultValue="image" className="w-full">
+        <Tabs defaultValue={defaultTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="image">صورة</TabsTrigger>
             <TabsTrigger value="video">فيديو</TabsTrigger>
@@ -112,7 +264,7 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({ isOpen, onClose, onAddMed
                 id="image-file"
                 type="file"
                 accept="image/*"
-                onChange={handleImageUpload}
+                onChange={handleImageFileChange}
               />
             </div>
             <div>
@@ -121,19 +273,23 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({ isOpen, onClose, onAddMed
                 id="image-url"
                 type="url"
                 value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
+                onChange={handleImageUrlChange}
                 placeholder="https://example.com/image.jpg"
                 dir="ltr"
               />
             </div>
-            {imageUrl && (
+            {imagePreview && (
               <div className="border rounded p-2">
-                <img src={imageUrl} alt="Preview" className="max-w-full h-32 object-cover rounded" />
+                <img src={imagePreview} alt="Preview" className="max-w-full h-32 object-cover rounded" />
               </div>
             )}
-            <Button onClick={addImage} disabled={!imageUrl} className="w-full">
+            <Button 
+              onClick={handleImageUpload} 
+              disabled={!imageFile && !imageUrl || isUploadingImage} 
+              className="w-full"
+            >
               <Upload className="ml-2 h-4 w-4" />
-              إضافة الصورة
+              {isUploadingImage ? 'جارِ التحميل...' : 'إضافة الصورة'}
             </Button>
           </TabsContent>
           
@@ -144,7 +300,7 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({ isOpen, onClose, onAddMed
                 id="video-file"
                 type="file"
                 accept="video/*"
-                onChange={handleVideoUpload}
+                onChange={handleVideoFileChange}
               />
             </div>
             <div>
@@ -153,14 +309,19 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({ isOpen, onClose, onAddMed
                 id="video-url"
                 type="url"
                 value={videoUrl}
-                onChange={(e) => setVideoUrl(e.target.value)}
+                onChange={handleVideoUrlChange}
                 placeholder="https://example.com/video.mp4"
                 dir="ltr"
               />
             </div>
-            <Button onClick={addVideo} disabled={!videoUrl} className="w-full">
+            {videoPreview && (
+              <div className="border rounded p-2">
+                <video src={videoPreview} controls className="max-w-full h-32 object-cover rounded" />
+              </div>
+            )}
+            <Button onClick={handleVideoUpload} disabled={!videoFile && !videoUrl || isUploadingVideo} className="w-full">
               <Upload className="ml-2 h-4 w-4" />
-              إضافة الفيديو
+              {isUploadingVideo ? 'جارِ التحميل...' : 'إضافة الفيديو'}
             </Button>
           </TabsContent>
           

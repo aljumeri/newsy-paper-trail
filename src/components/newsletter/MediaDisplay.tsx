@@ -17,9 +17,10 @@ interface MediaDisplayProps {
   items: MediaItem[];
   onRemove: (id: string) => void;
   onUpdate?: (id: string, updates: Partial<MediaItem>) => void;
+  readOnly?: boolean;
 }
 
-const MediaDisplay: React.FC<MediaDisplayProps> = ({ items, onRemove, onUpdate }) => {
+const MediaDisplay: React.FC<MediaDisplayProps> = ({ items, onRemove, onUpdate, readOnly = false }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   if (items.length === 0) return null;
@@ -62,59 +63,59 @@ const MediaDisplay: React.FC<MediaDisplayProps> = ({ items, onRemove, onUpdate }
     <div className="space-y-4">
       {items.map((item) => (
         <div key={item.id} className="border rounded-lg p-4 bg-white/50">
-          <div className="flex items-start justify-between gap-4 mb-3">
-            <div className="flex items-center gap-2">
+          {!readOnly && (
+            <div className="flex items-start justify-between gap-4 mb-3">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setEditingId(editingId === item.id ? null : item.id)}
+                  className="text-gray-600 hover:text-gray-800"
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+                {editingId === item.id && (
+                  <div className="flex items-center gap-2">
+                    <Select
+                      value={item.size || 'medium'}
+                      onValueChange={(value) => updateMediaItem(item.id, 'size', value)}
+                    >
+                      <SelectTrigger className="w-24 h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="small">صغير</SelectItem>
+                        <SelectItem value="medium">متوسط</SelectItem>
+                        <SelectItem value="large">كبير</SelectItem>
+                        <SelectItem value="full">كامل</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      value={item.alignment || 'center'}
+                      onValueChange={(value) => updateMediaItem(item.id, 'alignment', value)}
+                    >
+                      <SelectTrigger className="w-24 h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="left">يسار</SelectItem>
+                        <SelectItem value="center">وسط</SelectItem>
+                        <SelectItem value="right">يمين</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setEditingId(editingId === item.id ? null : item.id)}
-                className="text-gray-600 hover:text-gray-800"
+                onClick={() => onRemove(item.id)}
+                className="text-red-500 hover:text-red-600 hover:bg-red-50"
               >
-                <Settings className="h-4 w-4" />
+                <Trash2 className="h-4 w-4" />
               </Button>
-              {editingId === item.id && (
-                <div className="flex items-center gap-2">
-                  <Select
-                    value={item.size || 'medium'}
-                    onValueChange={(value) => updateMediaItem(item.id, 'size', value)}
-                  >
-                    <SelectTrigger className="w-24 h-8 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="small">صغير</SelectItem>
-                      <SelectItem value="medium">متوسط</SelectItem>
-                      <SelectItem value="large">كبير</SelectItem>
-                      <SelectItem value="full">كامل</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  
-                  <Select
-                    value={item.alignment || 'center'}
-                    onValueChange={(value) => updateMediaItem(item.id, 'alignment', value)}
-                  >
-                    <SelectTrigger className="w-24 h-8 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="left">يسار</SelectItem>
-                      <SelectItem value="center">وسط</SelectItem>
-                      <SelectItem value="right">يمين</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
             </div>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onRemove(item.id)}
-              className="text-red-500 hover:text-red-600 hover:bg-red-50"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
+          )}
 
           <div className={`flex-1 ${getContainerAlignmentClass(item.alignment)}`}>
             {item.type === 'image' && (
@@ -138,10 +139,10 @@ const MediaDisplay: React.FC<MediaDisplayProps> = ({ items, onRemove, onUpdate }
             )}
             
             {item.type === 'youtube' && (
-              <div className={`${getAlignmentClass(item.alignment)}`}>
+              <div className={`${getSizeClass(item.size)} ${getAlignmentClass(item.alignment)} rounded overflow-hidden`}>
                 <iframe
                   src={item.url}
-                  className={`${getSizeClass(item.size)} rounded aspect-video`}
+                  className="w-full h-full"
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
@@ -150,7 +151,7 @@ const MediaDisplay: React.FC<MediaDisplayProps> = ({ items, onRemove, onUpdate }
             )}
             
             {item.type === 'link' && (
-              <div className={`flex items-center gap-2 p-3 bg-blue-50 rounded border-r-4 border-blue-500 ${getAlignmentClass(item.alignment)} mt-2`}>
+              <div className={`flex items-center gap-2 p-3 bg-blue-50 rounded border-r-4 border-blue-500 ${getAlignmentClass(item.alignment)} ${getSizeClass(item.size)} mt-2`}>
                 <ExternalLink className="h-5 w-5 text-blue-600" />
                 <a 
                   href={item.url} 

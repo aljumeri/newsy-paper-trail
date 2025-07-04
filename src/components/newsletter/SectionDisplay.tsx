@@ -60,7 +60,7 @@ const SectionDisplay: React.FC<SectionDisplayProps> = ({ section }) => {
         {/* Section Content */}
         <div className="text-gray-700 mb-6 leading-relaxed text-lg whitespace-pre-line">{section.content}</div>
         {/* Media Items */}
-        <MediaDisplay items={section.mediaItems || []} onRemove={() => {}} />
+        <MediaDisplay items={section.mediaItems || []} onRemove={() => {}} readOnly={true} />
         {/* Lists */}
         <div className="mb-6">
           <ListDisplay lists={section.lists || []} />

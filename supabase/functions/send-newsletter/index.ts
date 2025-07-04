@@ -115,18 +115,82 @@ function renderNewsletterHtml(newsletter: any): string {
     const sections = JSON.parse(newsletter.content);
     if (Array.isArray(sections)) {
       for (const section of sections) {
-        html += `<div style="background:#fff; margin:24px 0; border-radius:12px; box-shadow:0 2px 8px #0001; padding:24px;">
+        // Section background and side line
+        html += `<div style="background:${section.backgroundColor?.includes('white') ? '#fff' : section.backgroundColor?.includes('pink') ? '#fde4ec' : section.backgroundColor?.includes('green') ? '#e9fbe5' : section.backgroundColor?.includes('blue') ? '#e6f0fa' : section.backgroundColor?.includes('cyan') ? '#e0f7fa' : section.backgroundColor?.includes('purple') ? '#f3e8ff' : '#fff'}; margin:24px 0; border-radius:12px; box-shadow:0 2px 8px #0001; padding:24px; position:relative;">
+          <div style="position:absolute; right:0; top:0; bottom:0; width:8px; border-radius:8px; background:${section.sideLineColor || '#3b82f6'};"></div>
           <h2 style="color:#3b82f6; margin-top:0;">${section.title || ''}</h2>
-          <div style="margin-bottom:12px; color:#333;">${
-            section.content || ''
-          }</div>`;
+          <div style="margin-bottom:12px; color:#333;">${section.content || ''}</div>`;
+        // Media Items
+        if (section.mediaItems && section.mediaItems.length) {
+          for (const item of section.mediaItems) {
+            // Alignment and size
+            let align = 'center';
+            let size = 'medium';
+            if (item.alignment) align = item.alignment;
+            if (item.size) size = item.size;
+            let marginStyle = align === 'left' ? 'margin-right:auto;margin-left:0;' : align === 'right' ? 'margin-left:auto;margin-right:0;' : 'margin-left:auto;margin-right:auto;';
+            let width = size === 'small' ? '180px' : size === 'medium' ? '320px' : size === 'large' ? '480px' : '100%';
+            let height = size === 'small' ? '120px' : size === 'medium' ? '200px' : size === 'large' ? '320px' : 'auto';
+            if (item.type === 'image') {
+              html += `<div style="text-align:initial;">
+                <img src="${item.url}" alt="" style="display:block;${marginStyle}width:${width};height:${height};object-fit:cover;border-radius:8px;margin-bottom:16px;" />
+              </div>`;
+            } else if (item.type === 'video') {
+              html += `<div style="text-align:initial;">
+                <a href="${item.url}" target="_blank">
+                  <img src="https://www.biblecenterchurch.com/wp-content/uploads/2018/10/video-placeholder-4453_1080x675.png" alt="" style="display:block;${marginStyle}width:${width};height:${height};object-fit:cover;border-radius:8px;margin-bottom:16px;" />
+                </a>
+              </div>`;
+            } else if (item.type === 'youtube') {
+              let marginStyle = align === 'left' ? 'margin-right:auto;margin-left:0;' : align === 'right' ? 'margin-left:auto;margin-right:0;' : 'margin-left:auto;margin-right:auto;';
+              let videoId = '';
+              let ytThumb = 'https://cdn-icons-png.flaticon.com/512/1384/1384060.png';
+              const ytMatch = item.url.match(/(?:youtube\.com\/embed\/|youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
+              if (ytMatch && ytMatch[1]) {
+                videoId = ytMatch[1];
+                ytThumb = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+              }
+              html += `<div style="text-align:initial;">
+                <a href="${item.url}" target="_blank">
+                  <img src="https://whyhunger.org/wp-content/uploads/2021/07/youtube-placeholder.jpeg" alt="" style="display:block;${marginStyle}width:${width};height:${height};object-fit:cover;border-radius:8px;margin-bottom:16px;" />
+                </a>
+              </div>`;
+            } else if (item.type === 'link') {
+              html += `<div style="text-align:initial;">
+                <a href="${item.url}" target="_blank" style="display:block;${marginStyle}width:${width};">
+                  <div style="display:flex;align-items:center;gap:8px;padding:12px;background:#e0f2fe;border-radius:8px;border-right:4px solid #3b82f6;width:100%;margin-bottom:16px;">
+                    <span style="color:#3b82f6;font-size:18px;">🔗</span><span style="color:#2563eb;font-size:18px;text-decoration:underline;">${item.title || item.url}</span>
+                  </div>
+                </a>
+              </div>`;
+            }
+          }
+        }
+        // Lists
+        if (section.lists && section.lists.length) {
+          for (const list of section.lists) {
+            if (list.type === 'bullet') {
+              html += '<div style="margin-bottom:16px;">';
+              for (const item of list.items) {
+                html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><span style="display:inline-block;width:16px;height:16px;border-radius:50%;background:${item.color};"></span><span style="font-size:16px;color:#333;">${item.text}</span></div>`;
+              }
+              html += '</div>';
+            } else if (list.type === 'numbered') {
+              html += '<div style="margin-bottom:16px;">';
+              list.items.forEach((item, idx) => {
+                html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><span style="font-weight:bold;font-size:18px;color:${item.color};width:24px;display:inline-block;">${String(idx + 1).padStart(2, '0')}</span><span style="font-size:16px;color:#333;">${item.text}</span></div>`;
+              });
+              html += '</div>';
+            }
+          }
+        }
         // Subsections
         if (section.subsections && section.subsections.length) {
-          html += '<ul style="margin:0 0 12px 0; padding:0 0 0 24px;">';
+          html += '<div style="margin-top:18px;">';
           for (const sub of section.subsections) {
-            html += `<li><strong>${sub.title}:</strong> ${sub.content}</li>`;
+            html += `<div style="margin-bottom:10px;"><span style="font-weight:bold;color:#3b82f6;">${sub.title}:</span> <span style="color:#333;">${sub.content}</span></div>`;
           }
-          html += '</ul>';
+          html += '</div>';
         }
         html += '</div>';
       }

@@ -5,7 +5,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 export const useNewsletterEditor = () => {
   const [subject, setSubject] = useState('');
-  const [content, setContent] = useState('');
+  const [subTitle, setSubTitle] = useState('');
+  const [date, setDate] = useState('');
+  const [sections, setSections] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isPreview, setIsPreview] = useState(false);
@@ -35,7 +37,7 @@ export const useNewsletterEditor = () => {
         
         const { data, error } = await supabase
           .from('newsletters')
-          .select('id, main_title, content, created_at, updated_at, created_by, updated_by, sent_at')
+          .select('id, main_title, sub_title, date, content, created_at, updated_at, created_by, updated_by, sent_at')
           .eq('id', id)
           .single();
         
@@ -63,8 +65,32 @@ export const useNewsletterEditor = () => {
         
         console.log("Newsletter content loaded successfully");
         setSubject(data.main_title || '');
-        // Ensure line breaks are preserved when loading content
-        setContent(data.content ? data.content.replace(/<br\s*\/?>/gi, '\n') : '');
+        setSubTitle(data.sub_title || '');
+        setDate(data.date || '');
+        
+        // Parse content as JSON for sections
+        if (data.content) {
+          try {
+            const parsed = JSON.parse(data.content);
+            if (Array.isArray(parsed)) {
+              setSections(parsed);
+            }
+          } catch (e) {
+            // If not JSON, treat as legacy HTML content
+            console.log("Legacy HTML content found, converting to sections");
+            setSections([{
+              id: '1',
+              title: 'محتوى النشرة',
+              content: data.content.replace(/<br\s*\/?>/gi, '\n'),
+              backgroundColor: 'bg-gradient-to-r from-blue-50 to-indigo-50',
+              sideLineColor: '#4F46E5',
+              subsections: [],
+              mediaItems: [],
+              lists: []
+            }]);
+          }
+        }
+        
         setIsLoading(false);
       } catch (error: any) {
         console.error('Exception fetching newsletter:', error);
@@ -81,7 +107,7 @@ export const useNewsletterEditor = () => {
   }, [id, navigate, toast]);
 
   const handleUpdateNewsletter = async () => {
-    if (!subject.trim() || !content.trim()) {
+    if (!subject.trim() || !sections.length) {
       toast({
         title: "حقول مطلوبة",
         description: "يرجى ملء جميع الحقول المطلوبة",
@@ -110,8 +136,15 @@ export const useNewsletterEditor = () => {
       
       console.log("Newsletter update initiated for ID:", id || "new");
       
-      // Preserve line breaks when saving content
-      const formattedContent = content.replace(/\n/g, '<br>');
+      // Save sections as JSON
+      const newsletterData = {
+        main_title: subject,
+        sub_title: subTitle,
+        date: date,
+        content: JSON.stringify(sections),
+        updated_at: new Date().toISOString(),
+        updated_by: userId
+      };
       
       // Update existing newsletter or create new one
       let result;
@@ -120,20 +153,14 @@ export const useNewsletterEditor = () => {
         // Update existing newsletter
         result = await supabase
           .from('newsletters')
-          .update({ 
-            main_title: subject, 
-            content: formattedContent,
-            updated_at: new Date().toISOString(),
-            updated_by: userId
-          })
+          .update(newsletterData)
           .eq('id', id);
       } else {
         // Create new newsletter
         result = await supabase
           .from('newsletters')
           .insert({
-            main_title: subject, 
-            content: formattedContent, 
+            ...newsletterData,
             created_by: userId,
             created_at: new Date().toISOString()
           });
@@ -180,8 +207,12 @@ export const useNewsletterEditor = () => {
   return {
     subject,
     setSubject,
-    content,
-    setContent,
+    subTitle,
+    setSubTitle,
+    date,
+    setDate,
+    sections,
+    setSections,
     isLoading,
     isSaving,
     isPreview,

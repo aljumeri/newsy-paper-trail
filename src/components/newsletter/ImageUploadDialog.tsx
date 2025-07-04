@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -8,13 +7,13 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from "@/integrations/supabase/client";
+import React, { useState } from 'react';
 
 interface ImageUploadDialogProps {
   isOpen: boolean;
@@ -79,14 +78,14 @@ const ImageUploadDialog: React.FC<ImageUploadDialogProps> = ({ isOpen, onClose, 
       const filePath = `newsletter_images/${fileName}`;
       
       const { data, error } = await supabase.storage
-        .from('newsletter_assets')
+        .from('newsletter-assets')
         .upload(filePath, file);
       
       if (error) throw error;
       
       // Get public URL for the uploaded image
       const { data: publicUrlData } = supabase.storage
-        .from('newsletter_assets')
+        .from('newsletter-assets')
         .getPublicUrl(filePath);
       
       const uploadedImageUrl = publicUrlData.publicUrl;

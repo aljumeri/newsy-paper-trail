@@ -1,13 +1,13 @@
 import { Button } from '@/components/ui/button';
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTitle,
+    SheetTrigger,
 } from '@/components/ui/sheet';
-import { List, ListOrdered, Palette, Settings } from 'lucide-react';
+import { Image, Link as LinkIcon, Palette, Video, Youtube } from 'lucide-react';
 import React from 'react';
 
 interface ListItem {
@@ -40,23 +40,27 @@ interface Section {
 interface SectionCustomizationPanelProps {
   section: Section;
   onUpdate: (updates: Partial<Section>) => void;
-  onOpenMediaUploader: () => void;
+  onOpenMediaUploader: (type: string) => void;
 }
 
 const bgOptions = [
-  { label: 'أزرق', value: 'bg-gradient-to-r from-blue-50 to-indigo-50' },
-  { label: 'وردي', value: 'bg-gradient-to-r from-pink-50 to-rose-50' },
-  { label: 'سماوي', value: 'bg-gradient-to-r from-cyan-50 to-blue-50' },
-  { label: 'أخضر', value: 'bg-gradient-to-r from-green-50 to-lime-50' },
-  { label: 'أصفر', value: 'bg-gradient-to-r from-yellow-50 to-amber-50' },
+  { label: 'وردي فاتح', value: 'bg-pink-50', color: '#fde4ec' },
+  { label: 'أخضر فاتح', value: 'bg-green-50', color: '#e9fbe5' },
+  { label: 'أزرق فاتح', value: 'bg-blue-50', color: '#e6f0fa' },
+  { label: 'سماوي فاتح', value: 'bg-cyan-50', color: '#e0f7fa' },
+  { label: 'بنفسجي فاتح', value: 'bg-purple-50', color: '#f3e8ff' },
+  { label: 'أبيض', value: 'bg-white', color: '#fff' },
 ];
 
 const colorOptions = [
-  { label: 'أزرق', value: '#4F46E5' },
-  { label: 'وردي', value: '#EC4899' },
-  { label: 'سماوي', value: '#06B6D4' },
-  { label: 'أخضر', value: '#10B981' },
-  { label: 'أصفر', value: '#EAB308' },
+  { label: 'وردي', value: '#EC4899', dot: 'bg-pink-400' },
+  { label: 'أخضر', value: '#10B981', dot: 'bg-green-500' },
+  { label: 'أزرق', value: '#6366F1', dot: 'bg-indigo-400' },
+  { label: 'سماوي', value: '#06B6D4', dot: 'bg-cyan-400' },
+  { label: 'بنفسجي', value: '#A78BFA', dot: 'bg-purple-400' },
+  { label: 'أحمر', value: '#EF4444', dot: 'bg-red-400' },
+  { label: 'أصفر', value: '#EAB308', dot: 'bg-yellow-400' },
+  { label: 'برتقالي', value: '#F59E42', dot: 'bg-orange-400' },
 ];
 
 const SectionCustomizationPanel: React.FC<SectionCustomizationPanelProps> = ({
@@ -96,80 +100,55 @@ const SectionCustomizationPanel: React.FC<SectionCustomizationPanelProps> = ({
           <SheetTitle>تخصيص القسم</SheetTitle>
           <SheetDescription>قم بتخصيص شكل ومحتوى هذا القسم</SheetDescription>
         </SheetHeader>
-        <div className="space-y-4 mt-6">
+        <div className="space-y-6 mt-6">
           <div>
-            <label className="text-sm font-medium  mb-2 block">
-              لون الخلفية
-            </label>
-            <div className="flex gap-2 items-center">
-              <select
-                value={section.backgroundColor}
-                onChange={e => onUpdate({ backgroundColor: e.target.value })}
-                className="rounded border px-2 py-1 text-sm"
-                title="تغيير خلفية القسم"
-              >
-                {bgOptions.map(opt => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+            <label className="text-sm font-medium mb-2 block">لون الخلفية</label>
+            <div className="grid grid-cols-2 gap-2">
+              {bgOptions.map(opt => (
+                <button
+                  key={opt.value}
+                  className={`rounded-lg border px-4 py-3 flex items-center justify-center text-sm font-medium transition-colors ${section.backgroundColor === opt.value ? 'border-logo-blue ring-2 ring-logo-blue' : 'border-gray-200'} `}
+                  style={{ background: opt.color }}
+                  onClick={() => onUpdate({ backgroundColor: opt.value })}
+                  type="button"
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-2 block">
-              لون الخط الجانبي
-            </label>
-            <div className="flex gap-2 items-center">
-              <select
-                value={section.sideLineColor}
-                onChange={e => onUpdate({ sideLineColor: e.target.value })}
-                className="rounded border px-2 py-1 text-sm"
-                title="تغيير لون الخط الجانبي"
-              >
-                {colorOptions.map(opt => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+            <label className="text-sm font-medium mb-2 block">لون الخط الجانبي</label>
+            <div className="grid grid-cols-2 gap-2">
+              {colorOptions.map(opt => (
+                <button
+                  key={opt.value}
+                  className={`rounded-lg border px-4 py-2 flex items-center justify-between text-sm font-medium transition-colors ${section.sideLineColor === opt.value ? 'border-logo-blue ring-2 ring-logo-blue' : 'border-gray-200'}`}
+                  onClick={() => onUpdate({ sideLineColor: opt.value })}
+                  type="button"
+                >
+                  <span>{opt.label}</span>
+                  <span className={`ml-2 w-4 h-4 rounded-full inline-block ${opt.dot}`}></span>
+                </button>
+              ))}
             </div>
           </div>
 
           <div className="space-y-2">
             <label className="text-sm font-medium">إضافة محتوى</label>
             <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onOpenMediaUploader}
-                title="إضافة صورة أو فيديو أو رابط"
-              >
-                <Settings className="h-4 w-4 mr-1" />
-                محتوى
+              <Button variant="outline" size="sm" onClick={() => onOpenMediaUploader('image')}>
+                <Image className="h-4 w-4 ml-1" /> صورة
               </Button>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">إضافة قائمة</label>
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => addList('bullet')}
-              >
-                <List className="ml-1 h-4 w-4" />
-                قائمة نقطية
+              <Button variant="outline" size="sm" onClick={() => onOpenMediaUploader('video')}>
+                <Video className="h-4 w-4 ml-1" /> فيديو
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => addList('numbered')}
-              >
-                <ListOrdered className="ml-1 h-4 w-4" />
-                قائمة مرقمة
+              <Button variant="outline" size="sm" onClick={() => onOpenMediaUploader('youtube')}>
+                <Youtube className="h-4 w-4 ml-1" /> يوتيوب
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => onOpenMediaUploader('link')}>
+                <LinkIcon className="h-4 w-4 ml-1" /> رابط
               </Button>
             </div>
           </div>

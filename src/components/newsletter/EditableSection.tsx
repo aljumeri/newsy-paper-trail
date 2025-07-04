@@ -60,6 +60,7 @@ const EditableSection: React.FC<EditableSectionProps> = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isMediaUploaderOpen, setIsMediaUploaderOpen] = useState(false);
+  const [selectedMediaType, setSelectedMediaType] = useState<'image' | 'video' | 'youtube' | 'link'>('image');
 
   const addSubsection = () => {
     const newSubsection: Subsection = {
@@ -122,6 +123,11 @@ const EditableSection: React.FC<EditableSectionProps> = ({
     onUpdate({ lists });
   };
 
+  const handleOpenMediaUploader = (type: 'image' | 'video' | 'youtube' | 'link') => {
+    setSelectedMediaType(type);
+    setIsMediaUploaderOpen(true);
+  };
+
   return (
     <>
       <Card
@@ -141,7 +147,7 @@ const EditableSection: React.FC<EditableSectionProps> = ({
             onUpdate={onUpdate}
             onDelete={onDelete}
             onToggleEdit={() => setIsEditing(!isEditing)}
-            onOpenMediaUploader={() => setIsMediaUploaderOpen(true)}
+            onOpenMediaUploader={handleOpenMediaUploader}
           />
 
           {/* Section Title */}
@@ -196,6 +202,7 @@ const EditableSection: React.FC<EditableSectionProps> = ({
         isOpen={isMediaUploaderOpen}
         onClose={() => setIsMediaUploaderOpen(false)}
         onAddMedia={addMediaItem}
+        defaultTab={selectedMediaType}
       />
     </>
   );

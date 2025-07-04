@@ -1,5 +1,5 @@
 import Newsletter, {
-  defaultSections,
+    defaultSections,
 } from '@/components/newsletter/Newsletter';
 import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAdminAuth, useRequireAdminAuth } from '@/contexts/AdminAuthContext';

@@ -1,5 +1,5 @@
 import Newsletter from '@/components/newsletter/Newsletter';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardTitle } from '@/components/ui/card';
 import { useAdminAuth, useRequireAdminAuth } from '@/contexts/AdminAuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useNewsletterEditor } from '@/hooks/useNewsletterEditor';

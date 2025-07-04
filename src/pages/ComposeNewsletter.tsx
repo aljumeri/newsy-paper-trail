@@ -1,12 +1,21 @@
 import Newsletter, {
   defaultSections,
 } from '@/components/newsletter/Newsletter';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAdminAuth, useRequireAdminAuth } from '@/contexts/AdminAuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+
+// Get today's Hijri date in Arabic
+const getTodayHijriDate = () => {
+  return new Date().toLocaleDateString('ar-SA-u-ca-islamic', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+};
 
 const ComposeNewsletter: React.FC = () => {
   const { user } = useAdminAuth();
@@ -17,6 +26,9 @@ const ComposeNewsletter: React.FC = () => {
   const [sections, setSections] = useState(defaultSections); // New editor state
   const [isLoading, setIsLoading] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [mainTitle, setMainTitle] = useState('');
+  const [subTitle, setSubTitle] = useState('');
+  const [headerDate] = useState(getTodayHijriDate());
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDarkMode);
@@ -44,7 +56,9 @@ const ComposeNewsletter: React.FC = () => {
     try {
       const userId = user!.id;
       const { error } = await supabase.from('newsletters').insert({
-        subject: sections[0]?.title || '',
+        main_title: mainTitle,
+        sub_title: subTitle,
+        date: headerDate,
         content: JSON.stringify(sections),
         created_by: userId,
         created_at: new Date().toISOString(),
@@ -84,7 +98,16 @@ const ComposeNewsletter: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <Newsletter sections={sections} setSections={setSections} />
+          <Newsletter 
+            sections={sections} 
+            setSections={setSections} 
+            mainTitle={mainTitle}
+            subTitle={subTitle}
+            date={headerDate}
+            readOnly={false}
+            onMainTitleChange={setMainTitle}
+            onSubTitleChange={setSubTitle}
+          />
           <button
             className="mt-6 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
             onClick={handleSaveNewsletter}

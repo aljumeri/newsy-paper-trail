@@ -22,136 +22,95 @@ interface SubscriberData {
 }
 
 async function sendEmail(to: string, from: string, subject: string, html: string, unsubscribeToken: string) {
-  const apiKey = Deno.env.get("SENDGRID_API_KEY");
+  const apiKey = Deno.env.get("BREVO_API_KEY");
   if (!apiKey) {
-    throw new Error("SENDGRID_API_KEY is not set");
+    throw new Error("BREVO_API_KEY is not set");
   }
 
   // Add unsubscribe link to the email
   const siteUrl = Deno.env.get("SITE_URL");
-  if (!siteUrl) {
-    console.warn("SITE_URL not set, using default");
-  }
-  
   const unsubscribeLink = `${siteUrl || 'https://solo4ai.com'}/unsubscribe?email=${encodeURIComponent(to)}&token=${unsubscribeToken}`;
-  
-  // Create a properly formatted email template
-const emailTemplate = `
-  <!DOCTYPE html>
-  <html lang="ar">
-  <head><meta charset="UTF-8"></head>
-  <body dir="rtl" style="direction: rtl; text-align: right; margin:0; padding:20px;">
-    <div style="direction: rtl; text-align: right;">
-      ${html
-        .split('\n')
-        .map(line => `<p style="margin-bottom:1em;">${line}</p>`)
-        .join('')}
-    </div>
-    <div style="direction: rtl; text-align: right; margin-top:30px; padding-top:20px; border-top:1px solid #eee; font-size:12px; color:#666;">
+
+  // Compose the email body (HTML)
+  const emailHtml = `
+    ${html}
+    <div style="direction: rtl; margin-top:30px; padding-top:20px; border-top:1px solid #eee; font-size:12px; color:#666;">
       <p>إذا كنت ترغب في إلغاء الاشتراك… <a href="${unsubscribeLink}">النقر هنا</a>.</p>
     </div>
-  </body>
-  </html>
-`;
+  `;
 
+  // Brevo API endpoint
+  const url = "https://api.brevo.com/v3/smtp/email";
 
-  // Add timeout to prevent hanging requests
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000);
-
-  try {
-    console.log(`Sending email to ${to} with subject: ${subject}`);
-    
-    const response = await fetch("https://api.sendgrid.com/v3/mail/send", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "User-Agent": "Lovable-Newsletter/1.0"
-      },
-      body: JSON.stringify({
-        personalizations: [
-          {
-            to: [{ email: to }],
-            subject: subject,
-          },
-        ],
-        from: { 
-          email: from,
-          name: "Solo4AI Newsletter"
-        },
-        content: [
-          {
-            type: "text/html",
-            value: emailTemplate,
-          },
-        ],
-        // Add tracking settings to help with deliverability
-        tracking_settings: {
-          click_tracking: {
-            enable: true,
-            enable_text: false
-          },
-          open_tracking: {
-            enable: true
-          }
-        }
-      }),
-      signal: controller.signal
-    });
-
-    clearTimeout(timeoutId);
-
-    const responseText = await response.text();
-    console.log("SendGrid Response Status:", response.status);
-    console.log("SendGrid Response Headers:", {
-      "content-type": response.headers.get("content-type"),
-      "x-request-id": response.headers.get("x-request-id"),
-    });
-    
-    // Only log response body if there's an error or it's not empty
-    if (!response.ok || responseText) {
-      console.log("SendGrid Response Body:", responseText);
+  // Prepare JSON payload
+  const payload = {
+    sender: {
+      email: from,
+      name: "Solo4AI Newsletter"
+    },
+    to: [
+      { email: to }
+    ],
+    subject: subject,
+    htmlContent: emailHtml,
+    headers: {
+      "List-Unsubscribe": `<${unsubscribeLink}>`
     }
+  };
 
-    if (!response.ok) {
-      let errorMessage;
-      try {
-        const errorJson = JSON.parse(responseText);
-        errorMessage = `SendGrid API error: ${JSON.stringify(errorJson)}`;
-      } catch (e) {
-        errorMessage = `SendGrid API error: Status ${response.status}, Response: ${responseText}`;
-      }
-      throw new Error(errorMessage);
-    }
+  // Send the email via Brevo
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "api-key": apiKey,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload),
+  });
 
-    // SendGrid returns 202 for successful requests with empty body
-    if (response.status === 202) {
-      return { success: true, message: "Email queued successfully" };
-    }
-
-    // If response is empty, return success
-    if (!responseText) {
-      return { success: true };
-    }
-
-    // Try to parse JSON response if it exists
-    try {
-      return JSON.parse(responseText);
-    } catch (e) {
-      return { success: true, message: "Email sent successfully" };
-    }
-  } catch (error) {
-    clearTimeout(timeoutId);
-    
-    if (error.name === 'AbortError') {
-      console.error("SendGrid request timed out");
-      throw new Error("Email sending timed out");
-    }
-    
-    console.error("SendGrid Error Details:", error);
-    throw error;
+  const responseText = await response.text();
+  if (!response.ok) {
+    let errorMessage = `Brevo API error: Status ${response.status}, Response: ${responseText}`;
+    throw new Error(errorMessage);
   }
+  return { success: true, message: "Email sent via Brevo" };
+}
+
+// Helper: Render newsletter JSON to HTML for email
+function renderNewsletterHtml(newsletter: any): string {
+  let html = '';
+  // Header
+  html += `<div style="background: linear-gradient(90deg,#3b82f6,#ec4899,#38bdf8); padding: 24px 16px; border-radius: 12px 12px 0 0; text-align: center; color: #fff;">
+    <h1 style="margin: 0; font-size: 2em; font-weight: bold;">${newsletter.main_title || ''}</h1>
+    ${newsletter.sub_title ? `<div style='font-size:1.1em; margin-top:8px;'>${newsletter.sub_title}</div>` : ''}
+    ${newsletter.date ? `<div style='font-size:0.95em; margin-top:8px; color:#e0e0e0;'>${newsletter.date}</div>` : ''}
+  </div>`;
+  // Sections
+  try {
+    const sections = JSON.parse(newsletter.content);
+    if (Array.isArray(sections)) {
+      for (const section of sections) {
+        html += `<div style="background:#fff; margin:24px 0; border-radius:12px; box-shadow:0 2px 8px #0001; padding:24px;">
+          <h2 style="color:#3b82f6; margin-top:0;">${section.title || ''}</h2>
+          <div style="margin-bottom:12px; color:#333;">${section.content || ''}</div>`;
+        // Subsections
+        if (section.subsections && section.subsections.length) {
+          html += '<ul style="margin:0 0 12px 0; padding:0 0 0 24px;">';
+          for (const sub of section.subsections) {
+            html += `<li><strong>${sub.title}:</strong> ${sub.content}</li>`;
+          }
+          html += '</ul>';
+        }
+        html += '</div>';
+      }
+    } else {
+      html += `<div>${newsletter.content}</div>`;
+    }
+  } catch (e) {
+    html += `<div>${newsletter.content}</div>`;
+  }
+  // Wrap all content in RTL container
+  return `<div dir="rtl" style="text-align: right; font-family: Tahoma, Arial, sans-serif;">${html}</div>`;
 }
 
 serve(async (req: Request) => {
@@ -167,7 +126,7 @@ serve(async (req: Request) => {
 
   try {
     // Validate environment variables early
-    const requiredEnvVars = ["SENDGRID_API_KEY", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"];
+    const requiredEnvVars = ["BREVO_API_KEY", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"];
     const missingEnvVars = requiredEnvVars.filter(envVar => !Deno.env.get(envVar));
     
     if (missingEnvVars.length > 0) {
@@ -199,7 +158,7 @@ serve(async (req: Request) => {
     console.log("Edge Function: Fetching newsletter content");
     const { data: newsletter, error: newsletterError } = await supabase
       .from("newsletters")
-      .select("subject, content")
+      .select("main_title, sub_title, date, content")
       .eq("id", newsletterId)
       .single();
       
@@ -213,7 +172,7 @@ serve(async (req: Request) => {
       throw new Error("Newsletter not found");
     }
     
-    console.log(`Edge Function: Newsletter found: ${newsletter.subject}`);
+    console.log(`Edge Function: Newsletter found: ${newsletter.main_title}`);
     
     // Get all subscribers with their unsubscribe tokens
     console.log("Edge Function: Fetching subscribers");
@@ -273,11 +232,13 @@ serve(async (req: Request) => {
       const emailPromises = batch.map(async (subscriber) => {
         try {
           console.log(`Attempting to send email to: ${subscriber.email}`);
+          // Render HTML for email
+          const htmlBody = renderNewsletterHtml(newsletter);
           await sendEmail(
             subscriber.email,
             fromEmail,
-            newsletter.subject,
-            newsletter.content,
+            newsletter.main_title,
+            htmlBody,
             subscriber.unsubscribe_token
           );
           console.log(`Successfully sent email to ${subscriber.email}`);

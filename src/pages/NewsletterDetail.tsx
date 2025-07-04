@@ -1,5 +1,6 @@
 import Footer from '@/components/Footer';
 import Navbar from '@/components/Navbar';
+import Newsletter from '@/components/newsletter/Newsletter';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { ChevronRight } from 'lucide-react';
@@ -14,6 +15,9 @@ interface NewsletterData {
   created_at: string;
   sent_at: string | null;
   recipients_count?: number;
+  main_title?: string;
+  sub_title?: string;
+  date?: string;
 }
 
 // Newsletter static examples (as fallback)
@@ -600,7 +604,7 @@ const NewsletterDetail = () => {
         // Try to fetch from database for UUID format
         const { data, error } = await supabase
           .from('newsletters')
-          .select('*')
+          .select('id, main_title, sub_title, date, content, created_at, sent_at')
           .eq('id', id)
           .single();
         
@@ -618,7 +622,7 @@ const NewsletterDetail = () => {
         }
         
         if (data) {
-          console.log("Newsletter fetched successfully from database:", data.subject);
+          console.log("Newsletter fetched successfully from database:", data.main_title);
           setNewsletter(data);
         } else {
           throw new Error("Newsletter not found in database");
@@ -680,9 +684,22 @@ const NewsletterDetail = () => {
 
   // Use static newsletter data if available, otherwise use database data
   const displayNewsletter = staticNewsletter || newsletter;
-  const displayTitle = staticNewsletter ? staticNewsletter.title : newsletter?.subject;
-  const displayDate = staticNewsletter ? staticNewsletter.date : (newsletter?.created_at ? formatDate(newsletter.created_at) : "");
-  const displayContent = staticNewsletter ? staticNewsletter.content : newsletter?.content;
+  const displayTitle = staticNewsletter ? staticNewsletter.title : (newsletter?.main_title);
+  const displaySubTitle = staticNewsletter ? undefined : (newsletter?.sub_title || '');
+  const displayDate = staticNewsletter ? staticNewsletter.date : (newsletter?.date || (newsletter?.created_at ? formatDate(newsletter.created_at) : ""));
+  let sections: any[] = [];
+  let isJson = false;
+  if (newsletter?.content) {
+    try {
+      const parsed = JSON.parse(newsletter.content);
+      if (Array.isArray(parsed)) {
+        sections = parsed;
+        isJson = true;
+      }
+    } catch (e) {
+      // Not JSON, fallback to legacy
+    }
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -696,7 +713,10 @@ const NewsletterDetail = () => {
                 <div className="text-sm text-blue-600 mb-2">
                   {displayDate}
                 </div>
-                <h1 className="text-3xl md:text-4xl font-bold mb-4">{displayTitle}</h1>
+                <h1 className="text-3xl md:text-4xl font-bold mb-2">{displayTitle}</h1>
+                {displaySubTitle && (
+                  <div className="text-base md:text-lg text-gray-700 mb-4">{displaySubTitle}</div>
+                )}
                 <Link to="/archives" className="inline-flex items-center text-blue-600 hover:text-blue-700">
                   <ChevronRight className="mr-1" size={16} />
                   <span>العودة إلى الأرشيف</span>
@@ -711,10 +731,16 @@ const NewsletterDetail = () => {
           <div className="max-w-3xl mx-auto bg-white p-6 md:p-8 rounded-lg shadow">
             <article className="prose prose-lg max-w-none">
               {staticNewsletter ? (
-                // Render React content for static newsletters
-                displayContent
+                displayNewsletter.content
+              ) : isJson && sections.length > 0 ? (
+                <Newsletter 
+                  sections={sections} 
+                  readOnly 
+                  mainTitle={newsletter?.main_title}
+                  subTitle={newsletter?.sub_title || ''}
+                  date={newsletter?.date || (newsletter?.created_at ? formatDate(newsletter.created_at) : '')}
+                />
               ) : (
-                // Render HTML content for database newsletters
                 <div 
                   className="whitespace-pre-wrap"
                   dangerouslySetInnerHTML={{ 

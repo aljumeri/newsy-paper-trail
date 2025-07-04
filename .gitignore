@@ -12,6 +12,7 @@ dist
 dist-ssr
 *.local
 .env
+newsletter-template
 
 # Editor directories and files
 .vscode/*

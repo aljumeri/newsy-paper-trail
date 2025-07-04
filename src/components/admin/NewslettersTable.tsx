@@ -1,12 +1,12 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,7 +16,7 @@ import { useNavigate } from 'react-router-dom';
 
 interface Newsletter {
   id: string;
-  subject: string;
+  main_title: string;
   created_at: string;
   sent_at: string | null;
 }
@@ -38,7 +38,7 @@ const NewslettersTable = ({ newsletters, formatDate, onRefresh }: NewslettersTab
       // First, get the newsletter content
       const { data: newsletter, error: newsletterError } = await supabase
         .from('newsletters')
-        .select('subject, content')
+        .select('main_title, content')
         .eq('id', id)
         .single();
 
@@ -124,7 +124,7 @@ const NewslettersTable = ({ newsletters, formatDate, onRefresh }: NewslettersTab
             {newsletters.length > 0 ? (
               newsletters.map((newsletter) => (
                 <TableRow key={newsletter.id} className="hover:bg-gray-50">
-                  <TableCell>{newsletter.subject}</TableCell>
+                  <TableCell>{newsletter.main_title}</TableCell>
                   <TableCell>{formatDate(newsletter.created_at)}</TableCell>
                   <TableCell>
                     {newsletter.sent_at ? formatDate(newsletter.sent_at) : 'لم يتم الإرسال بعد'}

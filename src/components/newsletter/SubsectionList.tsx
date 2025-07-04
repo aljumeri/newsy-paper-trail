@@ -11,19 +11,21 @@ interface Subsection {
 
 interface SubsectionListProps {
   subsections: Subsection[];
-  onAddSubsection: () => void;
-  onUpdateSubsection: (subsectionId: string, updates: Partial<Subsection>) => void;
-  onDeleteSubsection: (subsectionId: string) => void;
+  onAddSubsection?: () => void;
+  onUpdateSubsection?: (subsectionId: string, updates: Partial<Subsection>) => void;
+  onDeleteSubsection?: (subsectionId: string) => void;
+  readOnly?: boolean;
 }
 
 const SubsectionList: React.FC<SubsectionListProps> = ({
   subsections,
   onAddSubsection,
   onUpdateSubsection,
-  onDeleteSubsection
+  onDeleteSubsection,
+  readOnly = false,
 }) => {
   const clearSubsectionContent = (subsectionId: string) => {
-    onUpdateSubsection(subsectionId, { content: '' });
+    onUpdateSubsection && onUpdateSubsection(subsectionId, { content: '' });
   };
 
   return (
@@ -34,56 +36,62 @@ const SubsectionList: React.FC<SubsectionListProps> = ({
           <div className="flex items-center justify-between mb-2">
             <EditableText
               value={subsection.title}
-              onChange={(title) => onUpdateSubsection(subsection.id, { title })}
+              onChange={title => onUpdateSubsection && onUpdateSubsection(subsection.id, { title })}
               className="text-lg font-semibold text-gray-700"
               placeholder="عنوان القسم الفرعي..."
               isTitle={true}
+              readOnly={readOnly}
             />
-            <div className="flex gap-1">
-              {/* Clear content button - only show if there's content */}
-              {subsection.content && subsection.content.trim() && (
+            {!readOnly && (
+              <div className="flex gap-1">
+                {/* Clear content button - only show if there's content */}
+                {subsection.content && subsection.content.trim() && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => clearSubsectionContent(subsection.id)}
+                    className="text-orange-500 hover:text-orange-600"
+                    title="مسح المحتوى"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+                {/* Delete entire subsection button */}
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => clearSubsectionContent(subsection.id)}
-                  className="text-orange-500 hover:text-orange-600"
-                  title="مسح المحتوى"
+                  onClick={() => onDeleteSubsection && onDeleteSubsection(subsection.id)}
+                  className="text-red-500 hover:text-red-600"
+                  title="حذف القسم الفرعي"
                 >
-                  <X className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4" />
                 </Button>
-              )}
-              {/* Delete entire subsection button */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onDeleteSubsection(subsection.id)}
-                className="text-red-500 hover:text-red-600"
-                title="حذف القسم الفرعي"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
+              </div>
+            )}
           </div>
           <EditableText
             value={subsection.content}
-            onChange={(content) => onUpdateSubsection(subsection.id, { content })}
+            onChange={content => onUpdateSubsection && onUpdateSubsection(subsection.id, { content })}
             className="text-gray-600 text-base"
             placeholder="محتوى القسم الفرعي..."
             multiline
             isTitle={false}
+            readOnly={readOnly}
           />
         </div>
       ))}
 
       {/* Add Subsection Button */}
-      <Button
-        onClick={onAddSubsection}
-        variant="outline"
-        className="w-full mt-4 hover:bg-logo-blue hover:text-white transition-colors"
-      >
-        <Plus className="ml-2 h-4 w-4" />
-        إضافة قسم فرعي
-      </Button>
+      {!readOnly && onAddSubsection && (
+        <Button
+          onClick={onAddSubsection}
+          variant="outline"
+          className="w-full mt-4 hover:bg-logo-blue hover:text-white transition-colors"
+        >
+          <Plus className="ml-2 h-4 w-4" />
+          إضافة قسم فرعي
+        </Button>
+      )}
     </>
   );
 };

@@ -4,6 +4,7 @@ import { Facebook, Linkedin, Plus, X } from 'lucide-react';
 import { useState } from 'react';
 import EditableSection from './EditableSection';
 import NewsletterHeaderV2 from './NewsletterHeaderV2';
+import SectionDisplay from './SectionDisplay';
 
 interface MediaItem {
   id: string;
@@ -43,6 +44,13 @@ interface Section {
 interface NewsletterProps {
   sections?: Section[];
   setSections?: (sections: Section[]) => void;
+  readOnly?: boolean;
+  mainTitle?: string;
+  subTitle?: string;
+  date?: string;
+  onMainTitleChange?: (val: string) => void;
+  onSubTitleChange?: (val: string) => void;
+  onDateChange?: (val: string) => void;
 }
 
 export const defaultSections: Section[] = [
@@ -78,6 +86,13 @@ export const defaultSections: Section[] = [
 const Newsletter: React.FC<NewsletterProps> = ({
   sections: propSections,
   setSections: propSetSections,
+  readOnly = false,
+  mainTitle,
+  subTitle,
+  date,
+  onMainTitleChange,
+  onSubTitleChange,
+  onDateChange,
 }) => {
   const [internalSections, internalSetSections] =
     useState<Section[]>(defaultSections);
@@ -115,31 +130,45 @@ const Newsletter: React.FC<NewsletterProps> = ({
     <div className="min-h-screen " dir="rtl">
       <div className="space-y-6">
         {/* Newsletter Header */}
-        <NewsletterHeaderV2 />
+        <NewsletterHeaderV2
+          title={mainTitle}
+          subtitle={subTitle}
+          date={date}
+          readOnly={readOnly}
+          onTitleChange={onMainTitleChange}
+          onSubtitleChange={onSubTitleChange}
+          onDateChange={onDateChange}
+        />
 
         {/* Newsletter Sections */}
         <div className="space-y-6">
-          {sections.map(section => (
-            <EditableSection
-              key={section.id}
-              section={section}
-              onUpdate={updates => updateSection(section.id, updates)}
-              onDelete={() => deleteSection(section.id)}
-            />
-          ))}
+          {sections.map(section =>
+            readOnly ? (
+              <SectionDisplay key={section.id} section={section} />
+            ) : (
+              <EditableSection
+                key={section.id}
+                section={section}
+                onUpdate={updates => updateSection(section.id, updates)}
+                onDelete={() => deleteSection(section.id)}
+              />
+            )
+          )}
         </div>
 
         {/* Add Section Button */}
-        <Card className="p-6 border-2 border-dashed border-gray-300 hover:border-logo-blue transition-colors">
-          <Button
-            onClick={addSection}
-            variant="outline"
-            className="w-full h-16 text-lg hover:bg-logo-blue hover:text-white transition-colors"
-          >
-            <Plus className="ml-2 h-6 w-6" />
-            إضافة قسم جديد
-          </Button>
-        </Card>
+        {!readOnly && (
+          <Card className="p-6 border-2 border-dashed border-gray-300 hover:border-logo-blue transition-colors">
+            <Button
+              onClick={addSection}
+              variant="outline"
+              className="w-full h-16 text-lg hover:bg-logo-blue hover:text-white transition-colors"
+            >
+              <Plus className="ml-2 h-6 w-6" />
+              إضافة قسم جديد
+            </Button>
+          </Card>
+        )}
 
         {/* Footer with Social Media and Subscription Info */}
         <div className="text-center py-8 border-t border-gray-200 space-y-6">

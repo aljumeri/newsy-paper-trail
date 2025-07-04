@@ -1,11 +1,25 @@
 import { Card } from "@/components/ui/card";
-import { useState } from 'react';
 import EditableText from './EditableText';
 
-const NewsletterHeaderV2 = () => {
-  const [headline, setHeadline] = useState('عنوان رئيسي مهم - آخر الأخبار والتحديثات');
-  const [subheadline, setSubheadline] = useState('نشرة إخبارية شاملة تضم أحدث المستجدات في عالم التكنولوجيا والذكاء الاصطناعي');
-  const [date, setDate] = useState('الأحد، 15 ديسمبر 2024');
+interface NewsletterHeaderV2Props {
+  title?: string;
+  subtitle?: string;
+  date?: string;
+  readOnly?: boolean;
+  onTitleChange?: (val: string) => void;
+  onSubtitleChange?: (val: string) => void;
+  onDateChange?: (val: string) => void;
+}
+
+const NewsletterHeaderV2: React.FC<NewsletterHeaderV2Props> = ({
+  title = 'عنوان رئيسي مهم - آخر الأخبار والتحديثات',
+  subtitle = 'نشرة إخبارية شاملة تضم أحدث المستجدات في عالم التكنولوجيا والذكاء الاصطناعي',
+  date = 'الأحد، 15 ديسمبر 2024',
+  readOnly = false,
+  onTitleChange,
+  onSubtitleChange,
+  onDateChange,
+}) => {
 
   return (
     <Card className="relative overflow-hidden bg-transparent border-0 shadow-none">
@@ -28,31 +42,44 @@ const NewsletterHeaderV2 = () => {
 
         {/* Date Section */}
         <div className="mb-6 text-center">
-          <EditableText
-            value={date}
-            onChange={setDate}
-            className="text-sm md:text-base text-white/80"
-            placeholder="اكتب التاريخ هنا..."
-            isTitle={false}
-          />
+          {readOnly || !onDateChange ? (
+            <div className="text-sm md:text-base text-white/80">{date}</div>
+          ) : (
+            <EditableText
+              value={date}
+              onChange={onDateChange}
+              className="text-sm md:text-base text-white/80"
+              placeholder="اكتب التاريخ هنا..."
+              isTitle={false}
+            />
+          )}
         </div>
         
         {/* Header Content - Centered */}
         <div className="text-center">
-          <EditableText
-            value={headline}
-            onChange={setHeadline}
-            className="text-2xl md:text-4xl font-bold text-white mb-3 leading-tight"
-            placeholder="اكتب العنوان الرئيسي هنا..."
-            isTitle={true}
-          />
-          <EditableText
-            value={subheadline}
-            onChange={setSubheadline}
-            className="text-base md:text-lg text-white/90 leading-relaxed"
-            placeholder="اكتب الوصف التفصيلي هنا..."
-            isTitle={false}
-          />
+          {readOnly ? (
+            <>
+              <div className="text-2xl md:text-4xl font-bold text-white mb-3 leading-tight">{title}</div>
+              <div className="text-base md:text-lg text-white/90 leading-relaxed">{subtitle}</div>
+            </>
+          ) : (
+            <>
+              <EditableText
+                value={title}
+                onChange={onTitleChange || (() => {})}
+                className="text-2xl md:text-4xl font-bold text-white mb-3 leading-tight"
+                placeholder="اكتب العنوان الرئيسي هنا..."
+                isTitle={true}
+              />
+              <EditableText
+                value={subtitle}
+                onChange={onSubtitleChange || (() => {})}
+                className="text-base md:text-lg text-white/90 leading-relaxed"
+                placeholder="اكتب الوصف التفصيلي هنا..."
+                isTitle={false}
+              />
+            </>
+          )}
         </div>
         
         {/* Decorative line */}

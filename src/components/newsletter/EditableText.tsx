@@ -9,6 +9,7 @@ interface EditableTextProps {
   placeholder?: string;
   multiline?: boolean;
   isTitle?: boolean;
+  readOnly?: boolean;
 }
 
 const EditableText: React.FC<EditableTextProps> = ({
@@ -18,6 +19,7 @@ const EditableText: React.FC<EditableTextProps> = ({
   placeholder = '',
   multiline = false,
   isTitle = false,
+  readOnly = false,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [tempValue, setTempValue] = useState(value);
@@ -30,8 +32,10 @@ const EditableText: React.FC<EditableTextProps> = ({
   }, [isEditing]);
 
   const handleDoubleClick = () => {
-    setIsEditing(true);
-    setTempValue(value);
+    if (!readOnly) {
+      setIsEditing(true);
+      setTempValue(value);
+    }
   };
 
   const handleBlur = () => {
@@ -91,6 +95,17 @@ const EditableText: React.FC<EditableTextProps> = ({
     return parts.length > 0 ? parts : text;
   };
 
+  if (readOnly) {
+    return (
+      <div
+        className={`${className} rounded px-2 py-1 min-h-[1.5rem] select-text ${!value ? 'text-gray-400' : ''}`}
+        dir="rtl"
+      >
+        {renderTextWithLinks(value)}
+      </div>
+    );
+  }
+
   if (isEditing) {
     return (
       <Textarea
@@ -99,7 +114,7 @@ const EditableText: React.FC<EditableTextProps> = ({
         onChange={e => setTempValue(e.target.value)}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
-        className={`${className} resize-none border-2 border-logo-blue`}
+        className={`${className} resize-none text-black border-2 border-logo-blue`}
         placeholder={placeholder}
         rows={multiline ? 3 : 1}
         dir="rtl"

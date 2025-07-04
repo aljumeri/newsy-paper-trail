@@ -35,7 +35,7 @@ export const useNewsletterEditor = () => {
         
         const { data, error } = await supabase
           .from('newsletters')
-          .select('*')
+          .select('id, main_title, content, created_at, updated_at, created_by, updated_by, sent_at')
           .eq('id', id)
           .single();
         
@@ -62,7 +62,7 @@ export const useNewsletterEditor = () => {
         }
         
         console.log("Newsletter content loaded successfully");
-        setSubject(data.subject || '');
+        setSubject(data.main_title || '');
         // Ensure line breaks are preserved when loading content
         setContent(data.content ? data.content.replace(/<br\s*\/?>/gi, '\n') : '');
         setIsLoading(false);
@@ -121,7 +121,7 @@ export const useNewsletterEditor = () => {
         result = await supabase
           .from('newsletters')
           .update({ 
-            subject, 
+            main_title: subject, 
             content: formattedContent,
             updated_at: new Date().toISOString(),
             updated_by: userId
@@ -132,7 +132,7 @@ export const useNewsletterEditor = () => {
         result = await supabase
           .from('newsletters')
           .insert({
-            subject, 
+            main_title: subject, 
             content: formattedContent, 
             created_by: userId,
             created_at: new Date().toISOString()

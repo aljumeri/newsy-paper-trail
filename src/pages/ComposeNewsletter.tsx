@@ -1,12 +1,21 @@
-import NewsletterForm from '@/components/newsletter/NewsletterForm';
-import NewsletterHeader from '@/components/newsletter/NewsletterHeader';
-import NewsletterPreview from '@/components/newsletter/NewsletterPreview';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import Newsletter, {
+  defaultSections,
+} from '@/components/newsletter/Newsletter';
+import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAdminAuth, useRequireAdminAuth } from '@/contexts/AdminAuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+
+// Get today's Hijri date in Arabic
+const getTodayHijriDate = () => {
+  return new Date().toLocaleDateString('ar-SA-u-ca-islamic', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+};
 
 const ComposeNewsletter: React.FC = () => {
   const { user } = useAdminAuth();
@@ -14,11 +23,12 @@ const ComposeNewsletter: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const [subject, setSubject] = useState('');
-  const [content, setContent] = useState('');
+  const [sections, setSections] = useState(defaultSections); // New editor state
   const [isLoading, setIsLoading] = useState(false);
-  const [isPreview, setIsPreview] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [mainTitle, setMainTitle] = useState('');
+  const [subTitle, setSubTitle] = useState('');
+  const [headerDate] = useState(getTodayHijriDate());
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDarkMode);
@@ -34,55 +44,78 @@ const ComposeNewsletter: React.FC = () => {
   }
 
   const handleSaveNewsletter = async () => {
-    if (!subject.trim() || !content.trim()) {
-      toast({ title: 'حقول مطلوبة', description: 'يرجى ملء جميع الحقول المطلوبة', variant: 'destructive' });
+    if (!sections.length) {
+      toast({
+        title: 'حقول مطلوبة',
+        description: 'يرجى إضافة محتوى للنشرة',
+        variant: 'destructive',
+      });
       return;
     }
     setIsLoading(true);
     try {
       const userId = user!.id;
-      const { error } = await supabase
-        .from('newsletters')
-        .insert({ subject, content, created_by: userId, created_at: new Date().toISOString() });
+      const { error } = await supabase.from('newsletters').insert({
+        main_title: mainTitle,
+        sub_title: subTitle,
+        date: headerDate,
+        content: JSON.stringify(sections),
+        created_by: userId,
+        created_at: new Date().toISOString(),
+      });
       if (error) throw error;
-      toast({ title: 'تم الحفظ بنجاح', description: 'تم حفظ النشرة الإخبارية' });
+      toast({
+        title: 'تم الحفظ بنجاح',
+        description: 'تم حفظ النشرة الإخبارية',
+      });
       navigate('/admin-control/panel');
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'حدث خطأ أثناء حفظ النشرة الإخبارية';
-      toast({ title: 'خطأ في الحفظ', description: msg, variant: 'destructive' });
+      const msg =
+        err instanceof Error
+          ? err.message
+          : 'حدث خطأ أثناء حفظ النشرة الإخبارية';
+      toast({
+        title: 'خطأ في الحفظ',
+        description: msg,
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 ${isDarkMode ? 'dark' : ''}`}>
-      <NewsletterHeader
-        title="إنشاء نشرة إخبارية جديدة"
-        onThemeToggle={() => setIsDarkMode(prev => !prev)}
-        isDarkMode={isDarkMode}
-      />
-      <div className="container py-8">
-        <Card className="dark:bg-gray-800 dark:border-gray-700">
-          <CardHeader>
-            <CardTitle className="dark:text-white">إنشاء نشرة إخبارية جديدة</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isPreview ? (
-              <NewsletterPreview subject={subject} content={content} onEdit={() => setIsPreview(false)} />
-            ) : (
-              <NewsletterForm
-                subject={subject}
-                setSubject={setSubject}
-                content={content}
-                setContent={setContent}
-                onSave={handleSaveNewsletter}
-                onPreview={() => setIsPreview(true)}
-                isSaving={isLoading}
-              />
-            )}
-          </CardContent>
-        </Card>
+    <div
+      className={`min-h-screen pb-6  dark:bg-gray-900 ${
+        isDarkMode ? 'dark' : ''
+      }`}
+    >
+      {/* <NewsletterHeaderV2 /> */}
+      <div className="container max-w-5xl m-auto">
+        <CardHeader className="py-6">
+          <CardTitle className="dark:text-white">
+            إنشاء نشرة إخبارية جديدة
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Newsletter 
+            sections={sections} 
+            setSections={setSections} 
+            mainTitle={mainTitle}
+            subTitle={subTitle}
+            date={headerDate}
+            readOnly={false}
+            onMainTitleChange={setMainTitle}
+            onSubTitleChange={setSubTitle}
+          />
+          <button
+            className="mt-6 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            onClick={handleSaveNewsletter}
+            disabled={isLoading}
+          >
+            {isLoading ? 'جارٍ الحفظ...' : 'حفظ النشرة'}
+          </button>
+        </CardContent>
       </div>
     </div>
   );

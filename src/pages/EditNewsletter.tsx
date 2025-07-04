@@ -1,6 +1,4 @@
-import NewsletterForm from '@/components/newsletter/NewsletterForm';
-import NewsletterHeader from '@/components/newsletter/NewsletterHeader';
-import NewsletterPreview from '@/components/newsletter/NewsletterPreview';
+import Newsletter from '@/components/newsletter/Newsletter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAdminAuth, useRequireAdminAuth } from '@/contexts/AdminAuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -31,10 +29,39 @@ const EditNewsletter: React.FC = () => {
   } = useNewsletterEditor();
 
   const [isSending, setIsSending] = useState(false);
+  const [sections, setSections] = useState<any[]>([]);
+  const [mainTitle, setMainTitle] = useState('');
+  const [subTitle, setSubTitle] = useState('');
+  const [headerDate, setHeaderDate] = useState('');
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDarkMode);
   }, [isDarkMode]);
+
+  useEffect(() => {
+    if (!id) return;
+    const fetchNewsletter = async () => {
+      const { data, error } = await supabase
+        .from('newsletters')
+        .select('main_title, sub_title, date, content')
+        .eq('id', id)
+        .single();
+      if (error || !data || typeof data !== 'object' || 'code' in data) return;
+      const safeData = data as any;
+      setMainTitle(prev => prev || safeData.main_title || '');
+      setSubTitle(prev => prev || safeData.sub_title || '');
+      setHeaderDate(prev => prev || safeData.date || '');
+      if (safeData.content) {
+        try {
+          const parsed = JSON.parse(safeData.content);
+          if (Array.isArray(parsed)) setSections(parsed);
+        } catch (e) {
+          // fallback: legacy HTML
+        }
+      }
+    };
+    fetchNewsletter();
+  }, [id]);
 
   if (isChecking || editorLoading) {
     return (
@@ -74,34 +101,75 @@ const EditNewsletter: React.FC = () => {
     }
   };
 
+  const handleSaveNewsletter = async () => {
+    if (!sections.length) {
+      toast({
+        title: 'حقول مطلوبة',
+        description: 'يرجى إضافة محتوى للنشرة',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setIsSending(true);
+    try {
+      const userId = user!.id;
+      const { error } = await supabase.from('newsletters').update({
+        main_title: mainTitle,
+        sub_title: subTitle,
+        date: headerDate,
+        content: JSON.stringify(sections),
+        updated_by: userId,
+        updated_at: new Date().toISOString(),
+      }).eq('id', id);
+      if (error) throw error;
+      toast({
+        title: 'تم الحفظ بنجاح',
+        description: 'تم حفظ النشرة الإخبارية',
+      });
+      navigate('/admin-control/panel');
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : 'حدث خطأ أثناء حفظ النشرة الإخبارية';
+      toast({
+        title: 'خطأ في الحفظ',
+        description: msg,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   return (
     <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 ${isDarkMode ? 'dark' : ''}`}>
-      <NewsletterHeader
-        title="تعديل النشرة الإخبارية"
-        onThemeToggle={toggleDarkMode}
-        isDarkMode={isDarkMode}
-      />
       <div className="container py-8">
         <Card className="dark:bg-gray-800 dark:border-gray-700">
           <CardHeader>
             <CardTitle className="dark:text-white">تعديل النشرة الإخبارية</CardTitle>
           </CardHeader>
           <CardContent>
-            {isPreview ? (
-              <NewsletterPreview subject={subject} content={content} onEdit={handlePreview} />
-            ) : (
-              <NewsletterForm
-                subject={subject}
-                setSubject={setSubject}
-                content={content}
-                setContent={setContent}
-                onSave={handleUpdateNewsletter}
-                onPreview={handlePreview}
-                isSaving={isSaving}
-                onSend={() => handleSendNewsletter()}
-                isSending={isSending}
-              />
-            )}
+            <Newsletter 
+              sections={sections} 
+              setSections={setSections} 
+              mainTitle={mainTitle}
+              subTitle={subTitle}
+              date={headerDate}
+              readOnly={false}
+              onMainTitleChange={setMainTitle}
+              onSubTitleChange={setSubTitle}
+              onDateChange={setHeaderDate}
+            />
+            <div className="mt-6 flex justify-end">
+              <button
+                className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                onClick={handleSaveNewsletter}
+                disabled={isSaving}
+              >
+                {isSaving ? 'جارٍ الحفظ...' : 'حفظ النشرة'}
+              </button>
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom';
 
 interface Newsletter {
   id: string;
-  subject: string;
+  main_title: string;
   content: string;
   created_at: string;
   created_by: string | null;
@@ -24,7 +24,7 @@ const Archives = () => {
       try {
         const { data, error } = await supabase
           .from('newsletters')
-          .select('id, subject, content, created_at, created_by, sent_at')
+          .select('id, main_title, content, created_at, created_by, sent_at')
           .not('sent_at', 'is', null)
           .order('sent_at', { ascending: false });
 
@@ -83,7 +83,7 @@ const Archives = () => {
                       <div className="text-sm text-neutral-500 mb-1">
                         {formatDate(newsletter.sent_at || newsletter.created_at)}
                       </div>
-                      <h3 className="text-xl font-semibold font-serif leading-tight">{newsletter.subject}</h3>
+                      <h3 className="text-xl font-semibold font-serif leading-tight">{newsletter.main_title}</h3>
                     </CardHeader>
                     <CardContent className="py-2">
                       <div className="text-neutral-600 line-clamp-3" dangerouslySetInnerHTML={{ __html: newsletter.content }} />

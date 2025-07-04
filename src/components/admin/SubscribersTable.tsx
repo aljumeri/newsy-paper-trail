@@ -2,12 +2,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,11 +28,11 @@ export interface SubscribersTableProps {
   isRefreshing?: boolean;
 }
 
-const SubscribersTable: React.FC<SubscribersTableProps> = ({ 
-  subscribers, 
+const SubscribersTable: React.FC<SubscribersTableProps> = ({
+  subscribers,
   formatDate,
   onRefresh,
-  isRefreshing = false 
+  isRefreshing = false,
 }) => {
   const [newEmail, setNewEmail] = useState('');
   const [isAdding, setIsAdding] = useState(false);
@@ -42,35 +42,35 @@ const SubscribersTable: React.FC<SubscribersTableProps> = ({
   const handleAddSubscriber = async () => {
     if (!newEmail.trim()) {
       toast({
-        title: "خطأ",
-        description: "يرجى إدخال بريد إلكتروني",
-        variant: "destructive"
+        title: 'خطأ',
+        description: 'يرجى إدخال بريد إلكتروني',
+        variant: 'destructive',
       });
       return;
     }
 
     setIsAdding(true);
     try {
-      const { error } = await supabase
-        .from('subscribers')
-        .insert([{ 
+      const { error } = await supabase.from('subscribers').insert([
+        {
           email: newEmail.trim(),
-          created_at: new Date().toISOString()
-        }]);
+          created_at: new Date().toISOString(),
+        },
+      ]);
 
       if (error) throw error;
 
       toast({
-        title: "تمت الإضافة",
-        description: "تم إضافة المشترك بنجاح"
+        title: 'تمت الإضافة',
+        description: 'تم إضافة المشترك بنجاح',
       });
       setNewEmail('');
       if (onRefresh) await onRefresh();
     } catch (error: any) {
       toast({
-        title: "خطأ",
-        description: error.message || "حدث خطأ أثناء إضافة المشترك",
-        variant: "destructive"
+        title: 'خطأ',
+        description: error.message || 'حدث خطأ أثناء إضافة المشترك',
+        variant: 'destructive',
       });
     } finally {
       setIsAdding(false);
@@ -88,15 +88,15 @@ const SubscribersTable: React.FC<SubscribersTableProps> = ({
       if (error) throw error;
 
       toast({
-        title: "تم الحذف",
-        description: "تم حذف المشترك بنجاح"
+        title: 'تم الحذف',
+        description: 'تم حذف المشترك بنجاح',
       });
       if (onRefresh) await onRefresh();
     } catch (error: any) {
       toast({
-        title: "خطأ",
-        description: error.message || "حدث خطأ أثناء حذف المشترك",
-        variant: "destructive"
+        title: 'خطأ',
+        description: error.message || 'حدث خطأ أثناء حذف المشترك',
+        variant: 'destructive',
       });
     } finally {
       setIsDeleting(null);
@@ -104,8 +104,8 @@ const SubscribersTable: React.FC<SubscribersTableProps> = ({
   };
 
   return (
-    <Card className="border-2 border-emerald-500">
-      <CardHeader className="bg-emerald-50 flex flex-row items-center justify-between">
+    <Card className="border-2 border-emerald-500 mt-5 overflow-hidden">
+      <CardHeader className="bg-emerald-50  flex flex-row items-center justify-between">
         <CardTitle>المشتركين</CardTitle>
         <div className="flex gap-2">
           <div className="flex gap-2">
@@ -113,12 +113,12 @@ const SubscribersTable: React.FC<SubscribersTableProps> = ({
               type="email"
               placeholder="البريد الإلكتروني للمشترك الجديد"
               value={newEmail}
-              onChange={(e) => setNewEmail(e.target.value)}
+              onChange={e => setNewEmail(e.target.value)}
               className="w-64"
             />
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handleAddSubscriber}
               disabled={isAdding}
             >
@@ -127,14 +127,16 @@ const SubscribersTable: React.FC<SubscribersTableProps> = ({
             </Button>
           </div>
           {onRefresh && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={onRefresh} 
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onRefresh}
               disabled={isRefreshing}
               className="flex items-center"
             >
-              <RefreshCw className={`h-4 w-4 ml-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw
+                className={`h-4 w-4 ml-2 ${isRefreshing ? 'animate-spin' : ''}`}
+              />
               {isRefreshing ? 'جارِ التحديث...' : 'تحديث'}
             </Button>
           )}
@@ -152,9 +154,11 @@ const SubscribersTable: React.FC<SubscribersTableProps> = ({
           </TableHeader>
           <TableBody>
             {subscribers.length > 0 ? (
-              subscribers.map((subscriber) => (
+              subscribers.map(subscriber => (
                 <TableRow key={subscriber.id} className="hover:bg-gray-50">
-                  <TableCell className="font-medium">{subscriber.email}</TableCell>
+                  <TableCell className="font-medium">
+                    {subscriber.email}
+                  </TableCell>
                   <TableCell>{subscriber.name || '—'}</TableCell>
                   <TableCell>{formatDate(subscriber.created_at)}</TableCell>
                   <TableCell>

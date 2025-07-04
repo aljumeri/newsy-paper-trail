@@ -25,7 +25,7 @@ const EditNewsletter: React.FC = () => {
     isDarkMode,
     handleUpdateNewsletter,
     toggleDarkMode,
-    handlePreview
+    handlePreview,
   } = useNewsletterEditor();
 
   const [isSending, setIsSending] = useState(false);
@@ -87,15 +87,22 @@ const EditNewsletter: React.FC = () => {
         .update({
           sent_at: new Date().toISOString(),
           recipients_count: count || 0,
-          status: 'sent'
+          status: 'sent',
         })
         .eq('id', id);
       if (updateErr) throw updateErr;
-      toast({ title: 'تم الإرسال بنجاح', description: `تم إرسال النشرة إلى ${count} مشترك` });
+      toast({
+        title: 'تم الإرسال بنجاح',
+        description: `تم إرسال النشرة إلى ${count} مشترك`,
+      });
       navigate('/admin-control/panel');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'خطأ أثناء الإرسال';
-      toast({ title: 'فشل في الإرسال', description: msg, variant: 'destructive' });
+      toast({
+        title: 'فشل في الإرسال',
+        description: msg,
+        variant: 'destructive',
+      });
     } finally {
       setIsSending(false);
     }
@@ -113,14 +120,17 @@ const EditNewsletter: React.FC = () => {
     setIsSending(true);
     try {
       const userId = user!.id;
-      const { error } = await supabase.from('newsletters').update({
-        main_title: mainTitle,
-        sub_title: subTitle,
-        date: headerDate,
-        content: JSON.stringify(sections),
-        updated_by: userId,
-        updated_at: new Date().toISOString(),
-      }).eq('id', id);
+      const { error } = await supabase
+        .from('newsletters')
+        .update({
+          main_title: mainTitle,
+          sub_title: subTitle,
+          date: headerDate,
+          content: JSON.stringify(sections),
+          updated_by: userId,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id);
       if (error) throw error;
       toast({
         title: 'تم الحفظ بنجاح',
@@ -143,34 +153,37 @@ const EditNewsletter: React.FC = () => {
   };
 
   return (
-    <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 ${isDarkMode ? 'dark' : ''}`}>
-      <div className="container py-8">
-        <Card className="dark:bg-gray-800 dark:border-gray-700">
-          <CardHeader>
-            <CardTitle className="dark:text-white">تعديل النشرة الإخبارية</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Newsletter 
-              sections={sections} 
-              setSections={setSections} 
-              mainTitle={mainTitle}
-              subTitle={subTitle}
-              date={headerDate}
-              readOnly={false}
-              onMainTitleChange={setMainTitle}
-              onSubTitleChange={setSubTitle}
-              onDateChange={setHeaderDate}
-            />
-            <div className="mt-6 flex justify-end">
-              <button
-                className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                onClick={handleSaveNewsletter}
-                disabled={isSaving}
-              >
-                {isSaving ? 'جارٍ الحفظ...' : 'حفظ النشرة'}
-              </button>
-            </div>
-          </CardContent>
+    <div
+      className={`min-h-screen  dark:bg-gray-900 pb-8 ${
+        isDarkMode ? 'dark' : ''
+      }`}
+    >
+      <div className="container max-w-5xl m-auto">
+        <Card className="dark:bg-gray-800 dark:border-gray-700 shadow-none border-0">
+          <CardTitle className="dark:text-white py-6">
+            تعديل النشرة الإخبارية
+          </CardTitle>
+
+          <Newsletter
+            sections={sections}
+            setSections={setSections}
+            mainTitle={mainTitle}
+            subTitle={subTitle}
+            date={headerDate}
+            readOnly={false}
+            onMainTitleChange={setMainTitle}
+            onSubTitleChange={setSubTitle}
+            onDateChange={setHeaderDate}
+          />
+          <div className="mt-6 flex justify-end">
+            <button
+              className="px-6 py-2 ml-auto bg-blue-600 text-white rounded hover:bg-blue-700"
+              onClick={handleSaveNewsletter}
+              disabled={isSaving}
+            >
+              {isSaving ? 'جارٍ الحفظ...' : 'حفظ النشرة'}
+            </button>
+          </div>
         </Card>
       </div>
     </div>

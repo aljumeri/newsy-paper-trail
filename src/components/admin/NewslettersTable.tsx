@@ -1,12 +1,12 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,7 +27,11 @@ interface NewslettersTableProps {
   onRefresh?: () => Promise<void>;
 }
 
-const NewslettersTable = ({ newsletters, formatDate, onRefresh }: NewslettersTableProps) => {
+const NewslettersTable = ({
+  newsletters,
+  formatDate,
+  onRefresh,
+}: NewslettersTableProps) => {
   const [sendingId, setSendingId] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -53,8 +57,8 @@ const NewslettersTable = ({ newsletters, formatDate, onRefresh }: NewslettersTab
       if (subscribersError) throw subscribersError;
       if (!subscribers || subscribers.length === 0) {
         toast({
-          title: "لا يوجد مشتركين",
-          description: "لم يتم العثور على أي مشتركين في النشرة الإخبارية"
+          title: 'لا يوجد مشتركين',
+          description: 'لم يتم العثور على أي مشتركين في النشرة الإخبارية',
         });
         return;
       }
@@ -62,43 +66,46 @@ const NewslettersTable = ({ newsletters, formatDate, onRefresh }: NewslettersTab
       // Update newsletter as sent
       const { error: updateError } = await supabase
         .from('newsletters')
-        .update({ 
+        .update({
           sent_at: new Date().toISOString(),
           recipients_count: subscribers.length,
-          status: 'sent'
+          status: 'sent',
         })
         .eq('id', id);
 
       if (updateError) throw updateError;
 
       // Call the send-newsletter edge function
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-newsletter`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-        },
-        body: JSON.stringify({
-          newsletterId: id
-        })
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-newsletter`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            newsletterId: id,
+          }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error('Failed to send newsletter');
       }
 
       toast({
-        title: "تم الإرسال",
-        description: `تم إرسال النشرة الإخبارية إلى ${subscribers.length} مشترك`
+        title: 'تم الإرسال',
+        description: `تم إرسال النشرة الإخبارية إلى ${subscribers.length} مشترك`,
       });
 
       if (onRefresh) await onRefresh();
     } catch (error: any) {
       console.error('Error sending newsletter:', error);
       toast({
-        title: "خطأ",
-        description: error.message || "حدث خطأ أثناء إرسال النشرة الإخبارية",
-        variant: "destructive"
+        title: 'خطأ',
+        description: error.message || 'حدث خطأ أثناء إرسال النشرة الإخبارية',
+        variant: 'destructive',
       });
     } finally {
       setSendingId(null);
@@ -106,7 +113,7 @@ const NewslettersTable = ({ newsletters, formatDate, onRefresh }: NewslettersTab
   };
 
   return (
-    <Card className="border-2 border-blue-500">
+    <Card className="border-2 border-blue-500 overflow-hidden">
       <CardHeader className="bg-blue-50">
         <CardTitle>النشرات الإخبارية</CardTitle>
       </CardHeader>
@@ -122,24 +129,28 @@ const NewslettersTable = ({ newsletters, formatDate, onRefresh }: NewslettersTab
           </TableHeader>
           <TableBody>
             {newsletters.length > 0 ? (
-              newsletters.map((newsletter) => (
+              newsletters.map(newsletter => (
                 <TableRow key={newsletter.id} className="hover:bg-gray-50">
                   <TableCell>{newsletter.main_title}</TableCell>
                   <TableCell>{formatDate(newsletter.created_at)}</TableCell>
                   <TableCell>
-                    {newsletter.sent_at ? formatDate(newsletter.sent_at) : 'لم يتم الإرسال بعد'}
+                    {newsletter.sent_at
+                      ? formatDate(newsletter.sent_at)
+                      : 'لم يتم الإرسال بعد'}
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
-                        onClick={() => navigate(`/admin-control/edit/${newsletter.id}`)}
+                        onClick={() =>
+                          navigate(`/admin-control/edit/${newsletter.id}`)
+                        }
                       >
                         <Edit className="w-4 h-4 ml-1" /> تعديل
                       </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => navigate(`/newsletter/${newsletter.id}`)}
                       >
@@ -151,8 +162,13 @@ const NewslettersTable = ({ newsletters, formatDate, onRefresh }: NewslettersTab
                         asChild
                         className="text-blue-500"
                       >
-                        <a href={`/newsletter/${newsletter.id}`} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="w-4 h-4 ml-1" /> فتح في صفحة جديدة
+                        <a
+                          href={`/newsletter/${newsletter.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <ExternalLink className="w-4 h-4 ml-1" /> فتح في صفحة
+                          جديدة
                         </a>
                       </Button>
                       {!newsletter.sent_at && (
@@ -164,7 +180,9 @@ const NewslettersTable = ({ newsletters, formatDate, onRefresh }: NewslettersTab
                           className="text-green-500"
                         >
                           <Send className="w-4 h-4 ml-1" />
-                          {sendingId === newsletter.id ? 'جاري الإرسال...' : 'إرسال'}
+                          {sendingId === newsletter.id
+                            ? 'جاري الإرسال...'
+                            : 'إرسال'}
                         </Button>
                       )}
                     </div>

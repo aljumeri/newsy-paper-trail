@@ -1,10 +1,10 @@
 import { Button } from "@/components/ui/button";
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,22 +16,31 @@ interface LinkModalProps {
   onClose: () => void;
   onAddLink: (url: string, text: string) => void;
   selectedText: string;
+  initialUrl?: string;
 }
 
 const LinkModal: React.FC<LinkModalProps> = ({
   isOpen,
   onClose,
   onAddLink,
-  selectedText
+  selectedText,
+  initialUrl = ''
 }) => {
   const [url, setUrl] = useState('');
   const [linkText, setLinkText] = useState('');
 
+  const isEditing = !!initialUrl;
+
   useEffect(() => {
-    if (isOpen && selectedText) {
-      setLinkText(selectedText);
+    if (isOpen) {
+      if (selectedText) {
+        setLinkText(selectedText);
+      }
+      if (initialUrl) {
+        setUrl(initialUrl);
+      }
     }
-  }, [selectedText, isOpen]);
+  }, [selectedText, initialUrl, isOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,9 +62,9 @@ const LinkModal: React.FC<LinkModalProps> = ({
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md" dir="rtl">
         <DialogHeader>
-          <DialogTitle>إضافة رابط</DialogTitle>
+          <DialogTitle>{isEditing ? 'تعديل الرابط' : 'إضافة رابط'}</DialogTitle>
           <DialogDescription>
-            أدخل الرابط والنص المراد عرضه
+            {isEditing ? 'عدّل الرابط والنص المراد عرضه' : 'أدخل الرابط والنص المراد عرضه'}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -93,7 +102,7 @@ const LinkModal: React.FC<LinkModalProps> = ({
               disabled={!url || !linkText}
             >
               <Link2 className="ml-1 h-4 w-4" />
-              إضافة الرابط
+              {isEditing ? 'تحديث الرابط' : 'إضافة الرابط'}
             </Button>
           </div>
         </form>

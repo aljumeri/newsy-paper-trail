@@ -1,11 +1,11 @@
 import { Button } from '@/components/ui/button';
 import {
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetHeader,
-    SheetTitle,
-    SheetTrigger,
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
 } from '@/components/ui/sheet';
 import { Image, Link as LinkIcon, Palette, Video, Youtube } from 'lucide-react';
 import React from 'react';
@@ -40,7 +40,7 @@ interface Section {
 interface SectionCustomizationPanelProps {
   section: Section;
   onUpdate: (updates: Partial<Section>) => void;
-  onOpenMediaUploader: (type: string) => void;
+  onOpenMediaUploader: (type: 'image' | 'video' | 'youtube' | 'link', subsectionId?: string) => void;
 }
 
 const bgOptions = [

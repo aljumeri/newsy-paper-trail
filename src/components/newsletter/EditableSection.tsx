@@ -7,6 +7,7 @@ import MediaDisplay from './MediaDisplay';
 import MediaUploader from './MediaUploader';
 import SectionHeader from './SectionHeader';
 import SubsectionList from './SubsectionList';
+import TextSizeSelector from './TextSizeSelector';
 
 interface MediaItem {
   id: string;
@@ -34,6 +35,9 @@ interface Subsection {
   id: string;
   title: string;
   content: string;
+  mediaItems?: MediaItem[];
+  titleFontSize?: string;
+  contentFontSize?: string;
 }
 
 interface Section {
@@ -45,6 +49,8 @@ interface Section {
   subsections: Subsection[];
   mediaItems?: MediaItem[];
   lists?: ListData[];
+  titleFontSize?: string;
+  contentFontSize?: string;
 }
 
 interface EditableSectionProps {
@@ -61,12 +67,16 @@ const EditableSection: React.FC<EditableSectionProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [isMediaUploaderOpen, setIsMediaUploaderOpen] = useState(false);
   const [selectedMediaType, setSelectedMediaType] = useState<'image' | 'video' | 'youtube' | 'link'>('image');
+  const [selectedSubsectionId, setSelectedSubsectionId] = useState<string | null>(null);
 
   const addSubsection = () => {
     const newSubsection: Subsection = {
       id: Date.now().toString(),
       title: 'عنوان فرعي جديد',
       content: 'محتوى القسم الفرعي',
+      mediaItems: [],
+      titleFontSize: 'text-lg',
+      contentFontSize: 'text-base',
     };
     onUpdate({
       subsections: [...section.subsections, newSubsection],
@@ -97,10 +107,18 @@ const EditableSection: React.FC<EditableSectionProps> = ({
       size: 'medium',
       alignment: 'center',
     };
-    const currentMedia = section.mediaItems || [];
-    onUpdate({
-      mediaItems: [...currentMedia, newMediaItem],
-    });
+    
+    if (selectedSubsectionId) {
+      // Add to subsection
+      addSubsectionMediaItem(selectedSubsectionId, mediaData);
+      setSelectedSubsectionId(null);
+    } else {
+      // Add to main section
+      const currentMedia = section.mediaItems || [];
+      onUpdate({
+        mediaItems: [...currentMedia, newMediaItem],
+      });
+    }
   };
 
   const removeMediaItem = (mediaId: string) => {
@@ -112,19 +130,91 @@ const EditableSection: React.FC<EditableSectionProps> = ({
 
   const updateMediaItem = (mediaId: string, updates: Partial<MediaItem>) => {
     const currentMedia = section.mediaItems || [];
-    onUpdate({
-      mediaItems: currentMedia.map(item =>
-        item.id === mediaId ? { ...item, ...updates } : item
-      ),
-    });
+    const itemToUpdate = currentMedia.find(item => item.id === mediaId);
+    
+    // If this is a link, prevent size changes
+    if (itemToUpdate?.type === 'link' && updates.size !== undefined) {
+      // Remove size from updates for links
+      const { size, ...updatesWithoutSize } = updates;
+      onUpdate({
+        mediaItems: currentMedia.map(item =>
+          item.id === mediaId ? { ...item, ...updatesWithoutSize } : item
+        ),
+      });
+    } else {
+      onUpdate({
+        mediaItems: currentMedia.map(item =>
+          item.id === mediaId ? { ...item, ...updates } : item
+        ),
+      });
+    }
   };
 
   const updateLists = (lists: ListData[]) => {
     onUpdate({ lists });
   };
 
-  const handleOpenMediaUploader = (type: 'image' | 'video' | 'youtube' | 'link') => {
+  const addSubsectionMediaItem = (subsectionId: string, mediaData: Omit<MediaItem, 'id'>) => {
+    const newMediaItem: MediaItem = {
+      ...mediaData,
+      id: Date.now().toString(),
+      size: 'medium',
+      alignment: 'center',
+    };
+    
+    onUpdate({
+      subsections: section.subsections.map(sub =>
+        sub.id === subsectionId 
+          ? { 
+              ...sub, 
+              mediaItems: [...(sub.mediaItems || []), newMediaItem] 
+            }
+          : sub
+      ),
+    });
+  };
+
+  const removeSubsectionMediaItem = (subsectionId: string, mediaId: string) => {
+    onUpdate({
+      subsections: section.subsections.map(sub =>
+        sub.id === subsectionId 
+          ? { 
+              ...sub, 
+              mediaItems: (sub.mediaItems || []).filter(item => item.id !== mediaId) 
+            }
+          : sub
+      ),
+    });
+  };
+
+  const updateSubsectionMediaItem = (subsectionId: string, mediaId: string, updates: Partial<MediaItem>) => {
+    onUpdate({
+      subsections: section.subsections.map(sub =>
+        sub.id === subsectionId 
+          ? { 
+              ...sub, 
+              mediaItems: (sub.mediaItems || []).map(item => {
+                if (item.id === mediaId) {
+                  // If this is a link, prevent size changes
+                  if (item.type === 'link' && updates.size !== undefined) {
+                    // Remove size from updates for links
+                    const { size, ...updatesWithoutSize } = updates;
+                    return { ...item, ...updatesWithoutSize };
+                  } else {
+                    return { ...item, ...updates };
+                  }
+                }
+                return item;
+              })
+            }
+          : sub
+      ),
+    });
+  };
+
+  const handleOpenMediaUploader = (type: 'image' | 'video' | 'youtube' | 'link', subsectionId?: string) => {
     setSelectedMediaType(type);
+    setSelectedSubsectionId(subsectionId || null);
     setIsMediaUploaderOpen(true);
   };
 
@@ -151,23 +241,46 @@ const EditableSection: React.FC<EditableSectionProps> = ({
           />
 
           {/* Section Title */}
-          <EditableText
-            value={section.title}
-            onChange={title => onUpdate({ title })}
-            className="text-2xl font-bold text-gray-800 mb-4"
-            placeholder="عنوان القسم..."
-            isTitle={true}
-          />
+          <div className="flex items-center justify-between mb-4">
+            <EditableText
+              value={section.title}
+              onChange={title => onUpdate({ title })}
+              className="font-bold text-gray-800"
+              fontSize={section.titleFontSize || 'text-2xl'}
+              placeholder="عنوان القسم..."
+              isTitle={true}
+            />
+            {isEditing && (
+              <TextSizeSelector
+                currentSize={section.titleFontSize || 'text-2xl'}
+                onSizeChange={(size) => onUpdate({ titleFontSize: size })}
+                label="حجم عنوان القسم"
+              />
+            )}
+          </div>
 
           {/* Section Content */}
-          <EditableText
-            value={section.content}
-            onChange={content => onUpdate({ content })}
-            className="text-gray-700 mb-6 leading-relaxed text-lg"
-            placeholder="محتوى القسم..."
-            multiline
-            isTitle={false}
-          />
+          <div className="flex items-start justify-between mb-6">
+            <div className="flex-1">
+              <EditableText
+                value={section.content}
+                onChange={content => onUpdate({ content })}
+                className="text-gray-700 leading-relaxed"
+                fontSize={section.contentFontSize || 'text-lg'}
+                placeholder="محتوى القسم..."
+                multiline
+                isTitle={false}
+              />
+            </div>
+            {isEditing && (
+              <TextSizeSelector
+                currentSize={section.contentFontSize || 'text-lg'}
+                onSizeChange={(size) => onUpdate({ contentFontSize: size })}
+                label="حجم محتوى القسم"
+                className="ml-2"
+              />
+            )}
+          </div>
 
           {/* Media Items */}
           <MediaDisplay
@@ -193,6 +306,10 @@ const EditableSection: React.FC<EditableSectionProps> = ({
             onAddSubsection={addSubsection}
             onUpdateSubsection={updateSubsection}
             onDeleteSubsection={deleteSubsection}
+            onAddSubsectionMedia={addSubsectionMediaItem}
+            onRemoveSubsectionMedia={removeSubsectionMediaItem}
+            onUpdateSubsectionMedia={updateSubsectionMediaItem}
+            onOpenMediaUploader={handleOpenMediaUploader}
           />
         </div>
       </Card>

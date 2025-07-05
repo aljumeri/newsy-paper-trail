@@ -24,7 +24,7 @@ interface SectionHeaderProps {
   onUpdate: (updates: Partial<Section>) => void;
   onDelete: () => void;
   onToggleEdit: () => void;
-  onOpenMediaUploader: () => void;
+  onOpenMediaUploader: (type: 'image' | 'video' | 'youtube' | 'link', subsectionId?: string) => void;
 }
 
 const SectionHeader: React.FC<SectionHeaderProps> = ({

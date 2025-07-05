@@ -20,6 +20,7 @@ const TextSelectionHandler: React.FC<TextSelectionHandlerProps> = ({
     selectionRange,
     showLinkButton,
     buttonPosition,
+    linkInfo,
     containerRef,
     handleTextSelection,
     clearSelection,
@@ -38,16 +39,38 @@ const TextSelectionHandler: React.FC<TextSelectionHandlerProps> = ({
     setIsLinkModalOpen(false);
   };
 
+  const handleRemoveLink = () => {
+    if (!selectionRange || !linkInfo) return;
+    const { start, end } = selectionRange;
+    const beforeText = value.substring(0, start);
+    const afterText = value.substring(end);
+    // Replace the link with just the link text
+    const newText = beforeText + linkInfo.linkText + afterText;
+    onTextChange(newText);
+    clearSelection();
+  };
+
   const handleMouseUp = (e: React.MouseEvent) => {
     setTimeout(() => {
-      handleTextSelection();
+      handleTextSelection(value);
     }, 150);
   };
 
-  const handleLinkButtonClick = (e: React.MouseEvent) => {
+  const handleLinkButtonClick = (e: React.MouseEvent, action: 'add' | 'edit' | 'remove') => {
     e.stopPropagation();
     e.preventDefault();
-    setIsLinkModalOpen(true);
+    
+    switch (action) {
+      case 'add':
+        setIsLinkModalOpen(true);
+        break;
+      case 'edit':
+        setIsLinkModalOpen(true);
+        break;
+      case 'remove':
+        handleRemoveLink();
+        break;
+    }
   };
 
   const handleModalClose = () => {
@@ -87,6 +110,7 @@ const TextSelectionHandler: React.FC<TextSelectionHandlerProps> = ({
           <LinkButton
             position={buttonPosition}
             onClick={handleLinkButtonClick}
+            linkInfo={linkInfo}
           />
         </div>
       )}
@@ -94,7 +118,8 @@ const TextSelectionHandler: React.FC<TextSelectionHandlerProps> = ({
         isOpen={isLinkModalOpen}
         onClose={handleModalClose}
         onAddLink={handleAddLink}
-        selectedText={selectedText}
+        selectedText={linkInfo?.isLink ? linkInfo.linkText : selectedText}
+        initialUrl={linkInfo?.isLink ? linkInfo.url : ''}
       />
     </div>
   );

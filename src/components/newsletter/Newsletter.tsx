@@ -36,9 +36,14 @@ interface Section {
     id: string;
     title: string;
     content: string;
+    mediaItems?: MediaItem[];
+    titleFontSize?: string;
+    contentFontSize?: string;
   }>;
   mediaItems?: MediaItem[];
   lists?: ListData[];
+  titleFontSize?: string;
+  contentFontSize?: string;
 }
 
 interface NewsletterProps {
@@ -61,11 +66,16 @@ export const defaultSections: Section[] = [
       'محتوى القسم الرئيسي يمكن تحريره هنا. أضف النصوص والروابط والصور حسب الحاجة.',
     backgroundColor: 'bg-gradient-to-r from-blue-50 to-indigo-50',
     sideLineColor: '#4F46E5',
+    titleFontSize: 'text-2xl',
+    contentFontSize: 'text-lg',
     subsections: [
       {
         id: '1-1',
         title: 'عنوان فرعي أول',
         content: 'محتوى القسم الفرعي الأول',
+        mediaItems: [],
+        titleFontSize: 'text-lg',
+        contentFontSize: 'text-base',
       },
     ],
     mediaItems: [],
@@ -77,6 +87,8 @@ export const defaultSections: Section[] = [
     content: 'آخر التطورات في عالم التكنولوجيا والذكاء الاصطناعي.',
     backgroundColor: 'bg-gradient-to-r from-pink-50 to-rose-50',
     sideLineColor: '#EC4899',
+    titleFontSize: 'text-2xl',
+    contentFontSize: 'text-lg',
     subsections: [],
     mediaItems: [],
     lists: [],
@@ -107,6 +119,8 @@ const Newsletter: React.FC<NewsletterProps> = ({
       content: 'محتوى القسم الجديد',
       backgroundColor: 'bg-gradient-to-r from-cyan-50 to-blue-50',
       sideLineColor: '#06B6D4',
+      titleFontSize: 'text-2xl',
+      contentFontSize: 'text-lg',
       subsections: [],
       mediaItems: [],
       lists: [],

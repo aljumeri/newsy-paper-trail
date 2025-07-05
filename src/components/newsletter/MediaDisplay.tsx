@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ExternalLink, Settings, Trash2 } from "lucide-react";
+import { Settings, Trash2 } from "lucide-react";
 import React, { useState } from 'react';
 
 interface MediaItem {
@@ -27,11 +27,21 @@ const MediaDisplay: React.FC<MediaDisplayProps> = ({ items, onRemove, onUpdate, 
 
   const getSizeClass = (size: string = 'medium') => {
     switch (size) {
-      case 'small': return 'max-w-xs h-32';
-      case 'medium': return 'max-w-md h-48';
-      case 'large': return 'max-w-lg h-64';
-      case 'full': return 'max-w-2xl h-96';
-      default: return 'max-w-md h-48';
+      case 'small': return 'max-w-xs';
+      case 'medium': return 'max-w-md';
+      case 'large': return 'max-w-lg';
+      case 'full': return 'w-full max-w-full';
+      default: return 'max-w-md';
+    }
+  };
+
+  const getIframeContainerClass = (size: string = 'medium') => {
+    switch (size) {
+      case 'small': return 'max-w-xs';
+      case 'medium': return 'max-w-md';
+      case 'large': return 'max-w-lg';
+      case 'full': return 'w-full max-w-full';
+      default: return 'max-w-md';
     }
   };
 
@@ -76,20 +86,23 @@ const MediaDisplay: React.FC<MediaDisplayProps> = ({ items, onRemove, onUpdate, 
                 </Button>
                 {editingId === item.id && (
                   <div className="flex items-center gap-2">
-                    <Select
-                      value={item.size || 'medium'}
-                      onValueChange={(value) => updateMediaItem(item.id, 'size', value)}
-                    >
-                      <SelectTrigger className="w-24 h-8 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="small">صغير</SelectItem>
-                        <SelectItem value="medium">متوسط</SelectItem>
-                        <SelectItem value="large">كبير</SelectItem>
-                        <SelectItem value="full">كامل</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    {/* Only show size selector for non-link items */}
+                    {item.type !== 'link' && (
+                      <Select
+                        value={item.size || 'medium'}
+                        onValueChange={(value) => updateMediaItem(item.id, 'size', value)}
+                      >
+                        <SelectTrigger className="w-24 h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="small">صغير</SelectItem>
+                          <SelectItem value="medium">متوسط</SelectItem>
+                          <SelectItem value="large">كبير</SelectItem>
+                          <SelectItem value="full">كامل</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
                     <Select
                       value={item.alignment || 'center'}
                       onValueChange={(value) => updateMediaItem(item.id, 'alignment', value)}
@@ -119,49 +132,48 @@ const MediaDisplay: React.FC<MediaDisplayProps> = ({ items, onRemove, onUpdate, 
 
           <div className={`flex-1 ${getContainerAlignmentClass(item.alignment)}`}>
             {item.type === 'image' && (
-              <div>
+              <div className="w-full">
                 <img 
                   src={item.url} 
                   alt="Uploaded content" 
-                  className={`${getSizeClass(item.size)} ${getAlignmentClass(item.alignment)} object-cover rounded`}
+                  className={`${getSizeClass(item.size)} ${item.size === 'full' ? 'w-full' : getAlignmentClass(item.alignment)} object-cover rounded`}
                 />
               </div>
             )}
             
             {item.type === 'video' && (
-              <div>
+              <div className="w-full">
                 <video 
                   src={item.url} 
                   controls 
-                  className={`${getSizeClass(item.size)} ${getAlignmentClass(item.alignment)} rounded`}
+                  className={`${getSizeClass(item.size)} ${item.size === 'full' ? 'w-full' : getAlignmentClass(item.alignment)} rounded`}
                 />
               </div>
             )}
             
             {item.type === 'youtube' && (
-              <div className={`${getSizeClass(item.size)} ${getAlignmentClass(item.alignment)} rounded overflow-hidden`}>
-                <iframe
-                  src={item.url}
-                  className="w-full h-full"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                ></iframe>
+              <div className={`${getIframeContainerClass(item.size)} ${item.size === 'full' ? 'w-full' : getAlignmentClass(item.alignment)}`}>
+                <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                  <iframe
+                    src={item.url}
+                    className="absolute top-0 left-0 w-full h-full rounded"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  ></iframe>
+                </div>
               </div>
             )}
             
             {item.type === 'link' && (
-              <div className={`flex items-center gap-2 p-3 bg-blue-50 rounded border-r-4 border-blue-500 ${getAlignmentClass(item.alignment)} ${getSizeClass(item.size)} mt-2`}>
-                <ExternalLink className="h-5 w-5 text-blue-600" />
-                <a 
-                  href={item.url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-800 text-lg hover:underline"
-                >
-                  {item.title || item.url}
-                </a>
-              </div>
+              <a 
+                href={item.url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className={`text-blue-600 hover:text-blue-800 hover:underline ${getAlignmentClass(item.alignment)} ${getSizeClass(item.size)} block`}
+              >
+                {item.title || item.url}
+              </a>
             )}
           </div>
         </div>

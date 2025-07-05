@@ -10,6 +10,8 @@ interface EditableTextProps {
   multiline?: boolean;
   isTitle?: boolean;
   readOnly?: boolean;
+  showPlaceholder?: boolean;
+  fontSize?: string;
 }
 
 const EditableText: React.FC<EditableTextProps> = ({
@@ -20,6 +22,8 @@ const EditableText: React.FC<EditableTextProps> = ({
   multiline = false,
   isTitle = false,
   readOnly = false,
+  showPlaceholder = true,
+  fontSize,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [tempValue, setTempValue] = useState(value);
@@ -56,7 +60,7 @@ const EditableText: React.FC<EditableTextProps> = ({
 
   // Function to render markdown links as actual links
   const renderTextWithLinks = (text: string) => {
-    if (!text) return placeholder;
+    if (!text) return showPlaceholder ? placeholder : '';
 
     // Simple markdown link regex: [text](url)
     const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
@@ -98,7 +102,7 @@ const EditableText: React.FC<EditableTextProps> = ({
   if (readOnly) {
     return (
       <div
-        className={`${className} rounded px-2 py-1 min-h-[1.5rem] select-text ${!value ? 'text-gray-400' : ''}`}
+        className={`${className} ${fontSize || ''} rounded px-2 py-1 min-h-[1.5rem] select-text ${!value ? 'text-gray-400' : ''}`}
         dir="rtl"
       >
         {renderTextWithLinks(value)}
@@ -114,7 +118,7 @@ const EditableText: React.FC<EditableTextProps> = ({
         onChange={e => setTempValue(e.target.value)}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
-        className={`${className} resize-none text-black border-2 border-logo-blue`}
+        className={`${className} ${fontSize || ''} resize-none text-black border-2 border-logo-blue`}
         placeholder={placeholder}
         rows={multiline ? 3 : 1}
         dir="rtl"
@@ -126,7 +130,7 @@ const EditableText: React.FC<EditableTextProps> = ({
     <TextSelectionHandler value={value} onTextChange={onChange}>
       <div
         onDoubleClick={handleDoubleClick}
-        className={`${className} rounded px-2 py-1 transition-colors min-h-[1.5rem] select-text ${
+        className={`${className} ${fontSize || ''} rounded px-2 py-1 transition-colors min-h-[1.5rem] select-text ${
           !value ? 'text-gray-400' : ''
         }`}
         dir="rtl"

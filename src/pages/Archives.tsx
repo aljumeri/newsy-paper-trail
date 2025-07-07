@@ -86,7 +86,7 @@ const Archives = () => {
                       <h3 className="text-xl font-semibold font-serif leading-tight">{newsletter.main_title}</h3>
                     </CardHeader>
                     <CardContent className="py-2">
-                      <div className="text-neutral-600 line-clamp-3" dangerouslySetInnerHTML={{ __html: newsletter.content }} />
+                      <div className="text-neutral-600 line-clamp-3 whitespace-pre-line" dangerouslySetInnerHTML={{ __html: newsletter.content }} />
                       <div className="mt-4">
                         <Link to={`/newsletter/${newsletter.id}`} className="text-purple-600 hover:text-purple-700 font-medium">
                           قراءة العدد ←

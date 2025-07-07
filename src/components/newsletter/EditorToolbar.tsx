@@ -1,33 +1,33 @@
 
-import React from 'react';
 import { Button } from '@/components/ui/button';
-import { 
-  AlignLeft,
-  AlignCenter, 
-  AlignRight, 
-  Bold, 
-  Italic, 
-  Underline, 
-  Image,
-  Youtube,
-  Link,
-  Type,
-  ListOrdered,
-  List,
-  Heading1,
-  Heading2,
-  Heading3,
-  Redo,
-  Undo,
-  TextCursorInput,
-} from 'lucide-react';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Separator } from '@/components/ui/separator';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+    AlignCenter,
+    AlignLeft,
+    AlignRight,
+    Bold,
+    Heading1,
+    Heading2,
+    Heading3,
+    Image,
+    Italic,
+    Link,
+    List,
+    ListOrdered,
+    Redo,
+    TextCursorInput,
+    Type,
+    Underline,
+    Undo,
+    Youtube,
+} from 'lucide-react';
+import React from 'react';
 
 interface EditorToolbarProps {
   onBold: () => void;
@@ -80,16 +80,40 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
     <div className="flex flex-wrap items-center gap-1 border rounded-md p-1 mb-2 bg-white">
       {/* Text styling */}
       <div className="flex gap-1">
-        <Button variant="ghost" size="icon" onClick={onBold} title="تخط عريض">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={onBold} 
+          onMouseDown={(e) => e.preventDefault()}
+          title="تخط عريض"
+        >
           <Bold className="h-4 w-4" />
         </Button>
-        <Button variant="ghost" size="icon" onClick={onItalic} title="مائل">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={onItalic} 
+          onMouseDown={(e) => e.preventDefault()}
+          title="مائل"
+        >
           <Italic className="h-4 w-4" />
         </Button>
-        <Button variant="ghost" size="icon" onClick={onUnderline} title="تحته خط">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={onUnderline} 
+          onMouseDown={(e) => e.preventDefault()}
+          title="تحته خط"
+        >
           <Underline className="h-4 w-4" />
         </Button>
-        <Button variant="ghost" size="icon" onClick={onLink} title="إضافة رابط">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={onLink} 
+          onMouseDown={(e) => e.preventDefault()}
+          title="إضافة رابط"
+        >
           <Link className="h-4 w-4" />
         </Button>
       </div>
@@ -147,13 +171,31 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
       
       {/* Headers */}
       <div className="flex gap-1">
-        <Button variant="ghost" size="icon" onClick={() => onHeading(1)} title="عنوان 1">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => onHeading(1)} 
+          onMouseDown={(e) => e.preventDefault()}
+          title="عنوان 1"
+        >
           <Heading1 className="h-4 w-4" />
         </Button>
-        <Button variant="ghost" size="icon" onClick={() => onHeading(2)} title="عنوان 2">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => onHeading(2)} 
+          onMouseDown={(e) => e.preventDefault()}
+          title="عنوان 2"
+        >
           <Heading2 className="h-4 w-4" />
         </Button>
-        <Button variant="ghost" size="icon" onClick={() => onHeading(3)} title="عنوان 3">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => onHeading(3)} 
+          onMouseDown={(e) => e.preventDefault()}
+          title="عنوان 3"
+        >
           <Heading3 className="h-4 w-4" />
         </Button>
       </div>
@@ -162,10 +204,22 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
 
       {/* Lists */}
       <div className="flex gap-1">
-        <Button variant="ghost" size="icon" onClick={() => onList('ordered')} title="قائمة مرقمة">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => onList('ordered')} 
+          onMouseDown={(e) => e.preventDefault()}
+          title="قائمة مرقمة"
+        >
           <ListOrdered className="h-4 w-4" />
         </Button>
-        <Button variant="ghost" size="icon" onClick={() => onList('unordered')} title="قائمة نقطية">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => onList('unordered')} 
+          onMouseDown={(e) => e.preventDefault()}
+          title="قائمة نقطية"
+        >
           <List className="h-4 w-4" />
         </Button>
       </div>

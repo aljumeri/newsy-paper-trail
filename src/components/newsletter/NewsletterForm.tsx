@@ -584,7 +584,7 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({
           value={content}
           onChange={(e) => setContent(e.target.value)}
           rows={10}
-          className="w-full p-3 border rounded-md mt-2 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+          className="w-full p-3 border rounded-md mt-2 dark:bg-gray-700 dark:text-white dark:border-gray-600 whitespace-pre-line"
           placeholder="اكتب محتوى النشرة هنا..."
           style={{ direction: textDirection }}
         />

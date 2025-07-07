@@ -8,50 +8,7 @@ import MediaUploader from './MediaUploader';
 import SectionHeader from './SectionHeader';
 import SubsectionList from './SubsectionList';
 import TextSizeSelector from './TextSizeSelector';
-
-interface MediaItem {
-  id: string;
-  type: 'image' | 'video' | 'youtube' | 'link';
-  url: string;
-  title?: string;
-  description?: string;
-  size?: 'small' | 'medium' | 'large' | 'full';
-  alignment?: 'left' | 'center' | 'right';
-}
-
-interface ListItem {
-  id: string;
-  text: string;
-  color: string;
-}
-
-interface ListData {
-  id: string;
-  type: 'bullet' | 'numbered';
-  items: ListItem[];
-}
-
-interface Subsection {
-  id: string;
-  title: string;
-  content: string;
-  mediaItems?: MediaItem[];
-  titleFontSize?: string;
-  contentFontSize?: string;
-}
-
-interface Section {
-  id: string;
-  title: string;
-  content: string;
-  backgroundColor: string;
-  sideLineColor: string;
-  subsections: Subsection[];
-  mediaItems?: MediaItem[];
-  lists?: ListData[];
-  titleFontSize?: string;
-  contentFontSize?: string;
-}
+import { ListData, MediaItem, Section, Subsection } from './types';
 
 interface EditableSectionProps {
   section: Section;
@@ -123,9 +80,21 @@ const EditableSection: React.FC<EditableSectionProps> = ({
 
   const removeMediaItem = (mediaId: string) => {
     const currentMedia = section.mediaItems || [];
-    onUpdate({
-      mediaItems: currentMedia.filter(item => item.id !== mediaId),
-    });
+    const mediaToRemove = currentMedia.find(item => item.id === mediaId);
+    
+    // If the media item has text content, preserve it by adding it to the section's text content
+    if (mediaToRemove?.textContent) {
+      const currentContent = section.content || '';
+      const newContent = currentContent + (currentContent ? '\n\n' : '') + mediaToRemove.textContent;
+      onUpdate({
+        content: newContent,
+        mediaItems: currentMedia.filter(item => item.id !== mediaId),
+      });
+    } else {
+      onUpdate({
+        mediaItems: currentMedia.filter(item => item.id !== mediaId),
+      });
+    }
   };
 
   const updateMediaItem = (mediaId: string, updates: Partial<MediaItem>) => {
@@ -175,16 +144,40 @@ const EditableSection: React.FC<EditableSectionProps> = ({
   };
 
   const removeSubsectionMediaItem = (subsectionId: string, mediaId: string) => {
-    onUpdate({
-      subsections: section.subsections.map(sub =>
-        sub.id === subsectionId 
-          ? { 
-              ...sub, 
-              mediaItems: (sub.mediaItems || []).filter(item => item.id !== mediaId) 
-            }
-          : sub
-      ),
-    });
+    const subsection = section.subsections.find(sub => sub.id === subsectionId);
+    if (!subsection) return;
+    
+    const currentMedia = subsection.mediaItems || [];
+    const mediaToRemove = currentMedia.find(item => item.id === mediaId);
+    
+    // If the media item has text content, preserve it by adding it to the subsection's content
+    if (mediaToRemove?.textContent) {
+      const currentContent = subsection.content || '';
+      const newContent = currentContent + (currentContent ? '\n\n' : '') + mediaToRemove.textContent;
+      
+      onUpdate({
+        subsections: section.subsections.map(sub =>
+          sub.id === subsectionId 
+            ? { 
+                ...sub, 
+                content: newContent,
+                mediaItems: currentMedia.filter(item => item.id !== mediaId) 
+              }
+            : sub
+        ),
+      });
+    } else {
+      onUpdate({
+        subsections: section.subsections.map(sub =>
+          sub.id === subsectionId 
+            ? { 
+                ...sub, 
+                mediaItems: currentMedia.filter(item => item.id !== mediaId) 
+              }
+            : sub
+        ),
+      });
+    }
   };
 
   const updateSubsectionMediaItem = (subsectionId: string, mediaId: string, updates: Partial<MediaItem>) => {

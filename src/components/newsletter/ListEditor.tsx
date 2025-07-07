@@ -172,7 +172,7 @@ const ListEditor: React.FC<ListEditorProps> = ({ lists, onUpdate }) => {
                   <Input
                     value={item.text}
                     onChange={(e) => updateListItem(list.id, item.id, { text: e.target.value })}
-                    className="text-gray-700 border-none bg-transparent p-0 focus:ring-0 text-lg"
+                    className="text-gray-700 border-none bg-transparent p-0 focus:ring-0 text-lg whitespace-pre-line"
                     dir="rtl"
                   />
                 </div>

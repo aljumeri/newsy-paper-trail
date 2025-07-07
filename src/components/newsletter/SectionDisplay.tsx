@@ -2,59 +2,31 @@ import { Card } from '@/components/ui/card';
 import ListDisplay from './ListDisplay';
 import MediaDisplay from './MediaDisplay';
 import SubsectionList from './SubsectionList';
-
-interface MediaItem {
-  id: string;
-  type: 'image' | 'video' | 'youtube' | 'link';
-  url: string;
-  title?: string;
-  description?: string;
-  size?: 'small' | 'medium' | 'large' | 'full';
-  alignment?: 'left' | 'center' | 'right';
-}
-
-interface ListItem {
-  id: string;
-  text: string;
-  color: string;
-}
-
-interface ListData {
-  id: string;
-  type: 'bullet' | 'numbered';
-  items: ListItem[];
-}
-
-interface Subsection {
-  id: string;
-  title: string;
-  content: string;
-  mediaItems?: MediaItem[];
-  titleFontSize?: string;
-  contentFontSize?: string;
-}
-
-interface Section {
-  id: string;
-  title: string;
-  content: string;
-  backgroundColor: string;
-  sideLineColor: string;
-  subsections: Subsection[];
-  mediaItems?: MediaItem[];
-  lists?: ListData[];
-  titleFontSize?: string;
-  contentFontSize?: string;
-}
+import { Section } from './types';
 
 interface SectionDisplayProps {
   section: Section;
 }
 
 const SectionDisplay: React.FC<SectionDisplayProps> = ({ section }) => {
-  // Function to render markdown links as actual links
+  // Function to render markdown links and bold text
   const renderTextWithLinks = (text: string) => {
     if (!text) return '';
+
+    // Process bold text first: **text** -> <strong>text</strong>
+    const boldRegex = /\*\*(.*?)\*\*/g;
+    let processedText = text;
+    let boldMatches = [];
+    let boldMatch;
+    
+    // Find all bold matches
+    while ((boldMatch = boldRegex.exec(text)) !== null) {
+      boldMatches.push({
+        index: boldMatch.index,
+        text: boldMatch[1],
+        fullMatch: boldMatch[0]
+      });
+    }
 
     // Simple markdown link regex: [text](url)
     const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
@@ -62,10 +34,12 @@ const SectionDisplay: React.FC<SectionDisplayProps> = ({ section }) => {
     let lastIndex = 0;
     let match;
 
-    while ((match = linkRegex.exec(text)) !== null) {
+    while ((match = linkRegex.exec(processedText)) !== null) {
       // Add text before the link
       if (match.index > lastIndex) {
-        parts.push(text.substring(lastIndex, match.index));
+        const textBefore = processedText.substring(lastIndex, match.index);
+        // Process bold text in this segment
+        parts.push(processBoldText(textBefore));
       }
 
       // Add the link
@@ -80,6 +54,38 @@ const SectionDisplay: React.FC<SectionDisplayProps> = ({ section }) => {
         >
           {match[1]}
         </a>
+      );
+
+      lastIndex = match.index + match[0].length;
+    }
+
+    // Add remaining text
+    if (lastIndex < processedText.length) {
+      const remainingText = processedText.substring(lastIndex);
+      parts.push(processBoldText(remainingText));
+    }
+
+    return parts.length > 0 ? parts : processBoldText(processedText);
+  };
+
+  // Helper function to process bold text
+  const processBoldText = (text: string) => {
+    const boldRegex = /\*\*(.*?)\*\*/g;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = boldRegex.exec(text)) !== null) {
+      // Add text before the bold
+      if (match.index > lastIndex) {
+        parts.push(text.substring(lastIndex, match.index));
+      }
+
+      // Add the bold text
+      parts.push(
+        <strong key={match.index}>
+          {match[1]}
+        </strong>
       );
 
       lastIndex = match.index + match[0].length;

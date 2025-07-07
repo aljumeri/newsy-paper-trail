@@ -87,9 +87,12 @@ async function sendEmail(
 function convertMarkdownLinks(text: string): string {
   if (!text) return '';
   
+  // Process bold text first: **text** -> <strong>text</strong>
+  let processedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  
   // Simple markdown link regex: [text](url)
   const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
-  return text.replace(linkRegex, '<a href="$2" target="_blank" style="color: #0066cc; text-decoration: underline;">$1</a>');
+  return processedText.replace(linkRegex, '<a href="$2" target="_blank" style="color: #0066cc; text-decoration: underline;">$1</a>');
 }
 
 // Helper: Render newsletter JSON to HTML for email
@@ -149,8 +152,8 @@ function renderNewsletterHtml(newsletter: any): string {
         // Section background and side line
         html += `<div class="section-container" style="background:${section.backgroundColor?.includes('white') ? '#fff' : section.backgroundColor?.includes('pink') ? '#fde4ec' : section.backgroundColor?.includes('green') ? '#e9fbe5' : section.backgroundColor?.includes('blue') ? '#e6f0fa' : section.backgroundColor?.includes('cyan') ? '#e0f7fa' : section.backgroundColor?.includes('purple') ? '#f3e8ff' : '#fff'}; margin:24px 0; border-radius:12px; box-shadow:0 2px 8px #0001; padding:24px; position:relative;">
           <div style="position:absolute; right:0; top:0; bottom:0; width:8px; border-radius:8px; background:${section.sideLineColor || '#3b82f6'};"></div>
-          <h2 style="color:#3b82f6; margin-top:0; font-size:${section.titleFontSize === 'text-xs' ? '12px' : section.titleFontSize === 'text-sm' ? '14px' : section.titleFontSize === 'text-base' ? '16px' : section.titleFontSize === 'text-lg' ? '18px' : section.titleFontSize === 'text-xl' ? '20px' : section.titleFontSize === 'text-2xl' ? '24px' : section.titleFontSize === 'text-3xl' ? '30px' : section.titleFontSize === 'text-4xl' ? '36px' : '24px'}; font-weight:bold;">${convertMarkdownLinks(section.title || '')}</h2>
-          <div style="margin-bottom:12px; color:#333; font-size:${section.contentFontSize === 'text-xs' ? '12px' : section.contentFontSize === 'text-sm' ? '14px' : section.contentFontSize === 'text-base' ? '16px' : section.contentFontSize === 'text-lg' ? '18px' : section.contentFontSize === 'text-xl' ? '20px' : section.contentFontSize === 'text-2xl' ? '24px' : section.contentFontSize === 'text-3xl' ? '30px' : section.contentFontSize === 'text-4xl' ? '36px' : '18px'}; line-height:1.6;">${convertMarkdownLinks(section.content || '')}</div>`;
+          <h2 style="color:#3b82f6; margin-top:0; margin-bottom:16px; font-size:${section.titleFontSize === 'text-xs' ? '12px' : section.titleFontSize === 'text-sm' ? '14px' : section.titleFontSize === 'text-base' ? '16px' : section.titleFontSize === 'text-lg' ? '18px' : section.titleFontSize === 'text-xl' ? '20px' : section.titleFontSize === 'text-2xl' ? '24px' : section.titleFontSize === 'text-3xl' ? '30px' : section.titleFontSize === 'text-4xl' ? '36px' : '24px'}; font-weight:bold;">${convertMarkdownLinks(section.title || '')}</h2>
+          <div style="margin-bottom:12px; color:#333; font-size:${section.contentFontSize === 'text-xs' ? '12px' : section.contentFontSize === 'text-sm' ? '14px' : section.contentFontSize === 'text-base' ? '16px' : section.contentFontSize === 'text-lg' ? '18px' : section.contentFontSize === 'text-xl' ? '20px' : section.contentFontSize === 'text-2xl' ? '24px' : section.contentFontSize === 'text-3xl' ? '30px' : section.contentFontSize === 'text-4xl' ? '36px' : '18px'}; line-height:1.6; white-space:pre-line;">${convertMarkdownLinks(section.content || '')}</div>`;
         // Media Items
         if (section.mediaItems && section.mediaItems.length) {
           for (const item of section.mediaItems) {
@@ -186,12 +189,18 @@ function renderNewsletterHtml(newsletter: any): string {
               html += `<div class="media-container" style="text-align:${containerAlign}; margin-bottom:16px;">
                 <img class="media-item" src="${item.url}" alt="" style="display:inline-block; width:${width}; max-width:${maxWidth}; height:auto; object-fit:cover; border-radius:8px;" />
               </div>`;
+              if (item.textContent) {
+                html += `<div style="margin-bottom:16px; color:#333; font-size:16px; line-height:1.6; white-space:pre-line;">${convertMarkdownLinks(item.textContent)}</div>`;
+              }
             } else if (item.type === 'video') {
               html += `<div class="media-container" style="text-align:${containerAlign}; margin-bottom:16px;">
                 <a href="${item.url}" target="_blank">
-                  <img class="media-item" src="https://www.biblecenterchurch.com/wp-content/uploads/2018/10/video-placeholder-4453_1080x675.png" alt="" style="display:inline-block; width:${width}; max-width:${maxWidth}; height:auto; object-fit:cover; border-radius:8px;" />
+                  <img class="media-item" src="https://vqkdadugmkwnthkfjbla.supabase.co/storage/v1/object/public/newsletter-assets/newsletter_images/video-placeholder/video-placeholder.jpeg" alt="" style="display:inline-block; width:${width}; max-width:${maxWidth}; height:auto; object-fit:cover; border-radius:8px;" />
                 </a>
               </div>`;
+              if (item.textContent) {
+                html += `<div style="margin-bottom:16px; color:#333; font-size:16px; line-height:1.6; white-space:pre-line;">${convertMarkdownLinks(item.textContent)}</div>`;
+              }
             } else if (item.type === 'youtube') {
               let videoId = '';
               let ytThumb = 'https://cdn-icons-png.flaticon.com/512/1384/1384060.png';
@@ -200,11 +209,14 @@ function renderNewsletterHtml(newsletter: any): string {
                 videoId = ytMatch[1];
                 ytThumb = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
               }
-              html += `<div class="media-container" style="text-align:${containerAlign}; margin-bottom:16px;">
-                <a href="${item.url}" target="_blank">
-                  <img class="media-item" src="https://whyhunger.org/wp-content/uploads/2021/07/youtube-placeholder.jpeg" alt="" style="display:inline-block; width:${width}; max-width:${maxWidth}; height:auto; object-fit:cover; border-radius:8px;" />
+              html += `<div class="media-container" style="text-align:${containerAlign}; margin-bottom:16px; position:relative; display:inline-block;">
+                <a href="${item.url}" target="_blank" style="position:relative; display:inline-block;">
+                  <img class="media-item" src="${ytThumb}" alt="" style="display:inline-block; width:${width}; max-width:${maxWidth}; height:auto; object-fit:cover; border-radius:8px; position:relative; z-index:1;" />
                 </a>
               </div>`;
+              if (item.textContent) {
+                html += `<div style="margin-bottom:16px; color:#333; font-size:16px; line-height:1.6; white-space:pre-line;">${convertMarkdownLinks(item.textContent)}</div>`;
+              }
             } else if (item.type === 'link') {
               html += `<div class="media-container" style="text-align:${containerAlign}; margin-bottom:16px;">
                 <a href="${item.url}" target="_blank" class="link-container" style="display:inline-block; width:${width}; max-width:${maxWidth};">
@@ -238,7 +250,7 @@ function renderNewsletterHtml(newsletter: any): string {
         if (section.subsections && section.subsections.length) {
           html += '<div style="margin-top:18px;">';
           for (const sub of section.subsections) {
-            html += `<div style="margin-bottom:10px;"><span style="font-weight:bold;color:#3b82f6; font-size:${sub.titleFontSize === 'text-xs' ? '12px' : sub.titleFontSize === 'text-sm' ? '14px' : sub.titleFontSize === 'text-base' ? '16px' : sub.titleFontSize === 'text-lg' ? '18px' : sub.titleFontSize === 'text-xl' ? '20px' : sub.titleFontSize === 'text-2xl' ? '24px' : sub.titleFontSize === 'text-3xl' ? '30px' : sub.titleFontSize === 'text-4xl' ? '36px' : '18px'}; font-weight:bold;">${convertMarkdownLinks(sub.title)}:</span> <span style="color:#333; font-size:${sub.contentFontSize === 'text-xs' ? '12px' : sub.contentFontSize === 'text-sm' ? '14px' : sub.contentFontSize === 'text-base' ? '16px' : sub.contentFontSize === 'text-lg' ? '18px' : sub.contentFontSize === 'text-xl' ? '20px' : sub.contentFontSize === 'text-2xl' ? '24px' : sub.contentFontSize === 'text-3xl' ? '30px' : sub.contentFontSize === 'text-4xl' ? '36px' : '16px'}; line-height:1.5;">${convertMarkdownLinks(sub.content)}</span></div>`;
+            html += `<div style="margin-bottom:16px;"><div style="font-weight:bold;color:#3b82f6; font-size:${sub.titleFontSize === 'text-xs' ? '12px' : sub.titleFontSize === 'text-sm' ? '14px' : sub.titleFontSize === 'text-base' ? '16px' : sub.titleFontSize === 'text-lg' ? '18px' : sub.titleFontSize === 'text-xl' ? '20px' : sub.titleFontSize === 'text-2xl' ? '24px' : sub.titleFontSize === 'text-3xl' ? '30px' : sub.titleFontSize === 'text-4xl' ? '36px' : '18px'}; margin-bottom:8px;">${convertMarkdownLinks(sub.title)}</div><div style="color:#333; font-size:${sub.contentFontSize === 'text-xs' ? '12px' : sub.contentFontSize === 'text-sm' ? '14px' : sub.contentFontSize === 'text-base' ? '16px' : sub.contentFontSize === 'text-lg' ? '18px' : sub.contentFontSize === 'text-xl' ? '20px' : sub.contentFontSize === 'text-2xl' ? '24px' : sub.contentFontSize === 'text-3xl' ? '30px' : sub.contentFontSize === 'text-4xl' ? '36px' : '16px'}; line-height:1.5; white-space:pre-line;">${convertMarkdownLinks(sub.content)}</div></div>`;
             
             // Subsection Media Items
             if (sub.mediaItems && sub.mediaItems.length) {
@@ -275,12 +287,18 @@ function renderNewsletterHtml(newsletter: any): string {
                   html += `<div class="media-container" style="text-align:${containerAlign}; margin-bottom:16px;">
                     <img class="media-item" src="${item.url}" alt="" style="display:inline-block; width:${width}; max-width:${maxWidth}; height:auto; object-fit:cover; border-radius:8px;" />
                   </div>`;
+                  if (item.textContent) {
+                    html += `<div style="margin-bottom:16px; color:#333; font-size:16px; line-height:1.6; white-space:pre-line;">${convertMarkdownLinks(item.textContent)}</div>`;
+                  }
                 } else if (item.type === 'video') {
                   html += `<div class="media-container" style="text-align:${containerAlign}; margin-bottom:16px;">
                     <a href="${item.url}" target="_blank">
-                      <img class="media-item" src="https://www.biblecenterchurch.com/wp-content/uploads/2018/10/video-placeholder-4453_1080x675.png" alt="" style="display:inline-block; width:${width}; max-width:${maxWidth}; height:auto; object-fit:cover; border-radius:8px;" />
+                      <img class="media-item" src="https://vqkdadugmkwnthkfjbla.supabase.co/storage/v1/object/public/newsletter-assets/newsletter_images/video-placeholder/video-placeholder.jpeg" alt="" style="display:inline-block; width:${width}; max-width:${maxWidth}; height:auto; object-fit:cover; border-radius:8px;" />
                     </a>
                   </div>`;
+                  if (item.textContent) {
+                    html += `<div style="margin-bottom:16px; color:#333; font-size:16px; line-height:1.6; white-space:pre-line;">${convertMarkdownLinks(item.textContent)}</div>`;
+                  }
                 } else if (item.type === 'youtube') {
                   let marginStyle = align === 'left' ? 'margin-right:auto;margin-left:0;' : align === 'right' ? 'margin-left:auto;margin-right:0;' : 'margin-left:auto;margin-right:auto;';
                   let videoId = '';
@@ -290,11 +308,14 @@ function renderNewsletterHtml(newsletter: any): string {
                     videoId = ytMatch[1];
                     ytThumb = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
                   }
-                  html += `<div class="media-container" style="text-align:${containerAlign}; margin-bottom:16px;">
-                    <a href="${item.url}" target="_blank">
-                      <img class="media-item" src="https://whyhunger.org/wp-content/uploads/2021/07/youtube-placeholder.jpeg" alt="" style="display:inline-block; width:${width}; max-width:${maxWidth}; height:auto; object-fit:cover; border-radius:8px;" />
+                  html += `<div class="media-container" style="text-align:${containerAlign}; margin-bottom:16px; position:relative; display:inline-block;">
+                    <a href="${item.url}" target="_blank" style="position:relative; display:inline-block;">
+                      <img class="media-item" src="${ytThumb}" alt="" style="display:inline-block; width:${width}; max-width:${maxWidth}; height:auto; object-fit:cover; border-radius:8px; position:relative; z-index:1;" />
                     </a>
                   </div>`;
+                  if (item.textContent) {
+                    html += `<div style="margin-bottom:16px; color:#333; font-size:16px; line-height:1.6; white-space:pre-line;">${convertMarkdownLinks(item.textContent)}</div>`;
+                  }
                 } else if (item.type === 'link') {
                   html += `<div class="media-container" style="text-align:${containerAlign}; margin-bottom:16px;">
                     <a href="${item.url}" target="_blank" class="link-container" style="display:inline-block; width:${width}; max-width:${maxWidth};">

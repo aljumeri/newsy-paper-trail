@@ -1,10 +1,10 @@
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,16 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Link as LinkIcon, Upload, Youtube } from "lucide-react";
 import React, { useState } from 'react';
-
-interface MediaItem {
-  id: string;
-  type: 'image' | 'video' | 'youtube' | 'link';
-  url: string;
-  title?: string;
-  description?: string;
-  size?: 'small' | 'medium' | 'large' | 'full';
-  alignment?: 'left' | 'center' | 'right';
-}
+import { MediaItem } from './types';
 
 interface MediaUploaderProps {
   isOpen: boolean;

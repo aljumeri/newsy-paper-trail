@@ -46,9 +46,27 @@ export const useTextSelection = () => {
       return;
     }
     const range = selection.getRangeAt(0);
-    const isWithinContainer = containerRef.current.contains(range.commonAncestorContainer) ||
-                             containerRef.current.contains(range.startContainer) ||
-                             containerRef.current.contains(range.endContainer);
+    
+    // More strict container checking to prevent interference with other text areas
+    const isWithinContainer = containerRef.current.contains(range.commonAncestorContainer) &&
+                             (containerRef.current === range.commonAncestorContainer || 
+                              containerRef.current.contains(range.commonAncestorContainer.parentElement));
+    
+    // Additional check to ensure we're not interfering with other text areas
+    const selectedElement = range.commonAncestorContainer.nodeType === Node.TEXT_NODE 
+      ? range.commonAncestorContainer.parentElement 
+      : range.commonAncestorContainer as Element;
+    
+    if (selectedElement && selectedElement.hasAttribute('data-text-id')) {
+      const containerElement = containerRef.current.querySelector('[data-text-id]');
+      if (containerElement && containerElement.getAttribute('data-text-id') !== selectedElement.getAttribute('data-text-id')) {
+        setShowLinkButton(false);
+        setSelectedText('');
+        setLinkInfo(null);
+        return;
+      }
+    }
+    
     if (!isWithinContainer) {
       setShowLinkButton(false);
       setSelectedText('');

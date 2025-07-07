@@ -5,46 +5,7 @@ import { useState } from 'react';
 import EditableSection from './EditableSection';
 import NewsletterHeaderV2 from './NewsletterHeaderV2';
 import SectionDisplay from './SectionDisplay';
-
-interface MediaItem {
-  id: string;
-  type: 'image' | 'video' | 'youtube' | 'link';
-  url: string;
-  title?: string;
-  description?: string;
-}
-
-interface ListItem {
-  id: string;
-  text: string;
-  color: string;
-}
-
-interface ListData {
-  id: string;
-  type: 'bullet' | 'numbered';
-  items: ListItem[];
-}
-
-interface Section {
-  id: string;
-  title: string;
-  content: string;
-  backgroundColor: string;
-  sideLineColor: string;
-  subsections: Array<{
-    id: string;
-    title: string;
-    content: string;
-    mediaItems?: MediaItem[];
-    titleFontSize?: string;
-    contentFontSize?: string;
-  }>;
-  mediaItems?: MediaItem[];
-  lists?: ListData[];
-  titleFontSize?: string;
-  contentFontSize?: string;
-}
+import { Section, Subsection } from './types';
 
 interface NewsletterProps {
   sections?: Section[];
@@ -76,7 +37,7 @@ export const defaultSections: Section[] = [
         mediaItems: [],
         titleFontSize: 'text-lg',
         contentFontSize: 'text-base',
-      },
+      } as Subsection,
     ],
     mediaItems: [],
     lists: [],

@@ -4,25 +4,7 @@ import React from 'react';
 import EditableText from './EditableText';
 import MediaDisplay from './MediaDisplay';
 import TextSizeSelector from './TextSizeSelector';
-
-interface MediaItem {
-  id: string;
-  type: 'image' | 'video' | 'youtube' | 'link';
-  url: string;
-  title?: string;
-  description?: string;
-  size?: 'small' | 'medium' | 'large' | 'full';
-  alignment?: 'left' | 'center' | 'right';
-}
-
-interface Subsection {
-  id: string;
-  title: string;
-  content: string;
-  mediaItems?: MediaItem[];
-  titleFontSize?: string;
-  contentFontSize?: string;
-}
+import { MediaItem, Subsection } from './types';
 
 interface SubsectionListProps {
   subsections: Subsection[];

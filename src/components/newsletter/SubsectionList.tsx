@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { Image, Link, Plus, Trash2, Video, X, Youtube } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Image, Link, Palette, Plus, Trash2, Video, X, Youtube } from "lucide-react";
 import React from 'react';
 import EditableText from './EditableText';
 import MediaDisplay from './MediaDisplay';
@@ -58,13 +59,39 @@ const SubsectionList: React.FC<SubsectionListProps> = ({
                 placeholder="عنوان القسم الفرعي..."
                 isTitle={true}
                 readOnly={readOnly}
+                style={subsection.titleColor ? { color: subsection.titleColor } : undefined}
               />
               {!readOnly && (
-                <TextSizeSelector
-                  currentSize={subsection.titleFontSize || 'text-lg'}
-                  onSizeChange={(size) => onUpdateSubsection && onUpdateSubsection(subsection.id, { titleFontSize: size })}
-                  label="حجم عنوان القسم الفرعي"
-                />
+                <>
+                  <TextSizeSelector
+                    currentSize={subsection.titleFontSize || 'text-lg'}
+                    onSizeChange={(size) => onUpdateSubsection && onUpdateSubsection(subsection.id, { titleFontSize: size })}
+                    label="حجم عنوان القسم الفرعي"
+                  />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
+                        className="w-6 h-6 rounded-full border ml-1 flex items-center justify-center"
+                        style={{ backgroundColor: subsection.titleColor || '#6366F1' }}
+                        title="تغيير لون العنوان"
+                        type="button"
+                      >
+                        <Palette size={16} className="text-white" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="flex gap-2 p-2 w-auto min-w-0">
+                      {["#EC4899", "#10B981", "#6366F1", "#06B6D4", "#A78BFA", "#EF4444", "#EAB308", "#F59E42"].map(color => (
+                        <button
+                          key={color}
+                          className={`w-5 h-5 rounded-full border-2 ${subsection.titleColor === color ? 'border-logo-blue ring-2 ring-logo-blue' : 'border-gray-200'}`}
+                          style={{ backgroundColor: color }}
+                          onClick={() => onUpdateSubsection && onUpdateSubsection(subsection.id, { titleColor: color })}
+                          type="button"
+                        />
+                      ))}
+                    </PopoverContent>
+                  </Popover>
+                </>
               )}
             </div>
             {!readOnly && (

@@ -1,11 +1,11 @@
 import { Button } from '@/components/ui/button';
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTitle,
+    SheetTrigger,
 } from '@/components/ui/sheet';
 import { Image, Link as LinkIcon, Palette, Video, Youtube } from 'lucide-react';
 import React from 'react';
@@ -100,7 +100,7 @@ const SectionCustomizationPanel: React.FC<SectionCustomizationPanelProps> = ({
           <SheetTitle>تخصيص القسم</SheetTitle>
           <SheetDescription>قم بتخصيص شكل ومحتوى هذا القسم</SheetDescription>
         </SheetHeader>
-        <div className="space-y-6 mt-6">
+        <div className="space-y-6 mt-6 overflow-y-auto max-h-[calc(100vh-120px)] pr-2 pb-32">
           <div>
             <label className="text-sm font-medium mb-2 block">لون الخلفية</label>
             <div className="grid grid-cols-2 gap-2">
@@ -135,6 +135,24 @@ const SectionCustomizationPanel: React.FC<SectionCustomizationPanelProps> = ({
             </div>
           </div>
 
+          <div>
+            <label className="text-sm font-medium mb-2 block">لون عنوان القسم</label>
+            <div className="grid grid-cols-2 gap-2">
+              {colorOptions.map(opt => (
+                <button
+                  key={opt.value}
+                  className={`rounded-lg border px-4 py-2 flex items-center justify-between text-sm font-medium transition-colors ${section.titleColor === opt.value ? 'border-logo-blue ring-2 ring-logo-blue' : 'border-gray-200'}`}
+                  onClick={() => onUpdate({ titleColor: opt.value })}
+                  type="button"
+                >
+                  <span>{opt.label}</span>
+                  <span className={`ml-2 w-4 h-4 rounded-full inline-block ${opt.dot}`}></span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="sticky bottom-0 left-0 right-0 bg-white pt-4 pb-4 px-2 border-t z-10">
           <div className="space-y-2">
             <label className="text-sm font-medium">إضافة محتوى</label>
             <div className="grid grid-cols-2 gap-2">

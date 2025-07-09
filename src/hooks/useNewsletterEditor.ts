@@ -204,6 +204,43 @@ export const useNewsletterEditor = () => {
     setIsDarkMode(prevMode => !prevMode);
   };
 
+  // Helper to generate YouTube preview image and upload to Supabase
+  async function generateAndUploadYoutubePreview(videoId: string, supabase: any): Promise<string | null> {
+    try {
+      const thumbUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+      const playBtnUrl = '/youtube_button.png';
+      const [thumbImg, playBtnImg] = await Promise.all([
+        loadImage(thumbUrl),
+        loadImage(playBtnUrl)
+      ]);
+      const canvas = document.createElement('canvas');
+      canvas.width = thumbImg.width;
+      canvas.height = thumbImg.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(thumbImg, 0, 0);
+      const btnW = thumbImg.width * 0.25;
+      const btnH = btnW * (playBtnImg.height / playBtnImg.width);
+      ctx.drawImage(playBtnImg, (thumbImg.width - btnW) / 2, (thumbImg.height - btnH) / 2, btnW, btnH);
+      const blob: Blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+      const filePath = `youtube-previews/${videoId}.jpg`;
+      const { data, error } = await supabase.storage.from('newsletter-assets').upload(filePath, blob, { upsert: true, contentType: 'image/jpeg' });
+      if (error) return null;
+      const { publicUrl } = supabase.storage.from('newsletter-assets').getPublicUrl(filePath);
+      return publicUrl;
+    } catch (err) {
+      return null;
+    }
+  }
+  function loadImage(src: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const img = new window.Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
+  }
+
   return {
     subject,
     setSubject,

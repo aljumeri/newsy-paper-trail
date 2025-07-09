@@ -6,6 +6,20 @@ import EditableText from './EditableText';
 import TextSizeSelector from './TextSizeSelector';
 import { MediaItem } from './types';
 
+// Helper to convert YouTube URLs to embed format
+function getYouTubeEmbedUrl(url: string): string {
+  if (!url) return '';
+  // If already an embed URL, return as is
+  if (url.includes('youtube.com/embed/')) return url;
+  // Try to extract video ID from various formats
+  // Handles: https://www.youtube.com/watch?v=VIDEO_ID, https://youtu.be/VIDEO_ID, https://youtube.com/embed/VIDEO_ID
+  const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{11})/);
+  const videoId = match ? match[1] : null;
+  const embedUrl = videoId ? `https://www.youtube.com/embed/${videoId}` : url;
+  console.log('YouTube embed src:', embedUrl, 'from original:', url);
+  return embedUrl;
+}
+
 interface MediaDisplayProps {
   items: MediaItem[];
   onRemove: (id: string) => void;
@@ -151,7 +165,7 @@ const MediaDisplay: React.FC<MediaDisplayProps> = ({ items, onRemove, onUpdate, 
                 <div className={`${getIframeContainerClass(item.size)} ${item.size === 'full' ? 'w-full' : getAlignmentClass(item.alignment)}`}>
                   <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
                     <iframe
-                      src={item.url}
+                      src={getYouTubeEmbedUrl(item.url)}
                       className="absolute top-0 left-0 w-full h-full rounded"
                       frameBorder="0"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

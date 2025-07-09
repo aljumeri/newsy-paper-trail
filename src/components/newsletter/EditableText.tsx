@@ -15,6 +15,7 @@ interface EditableTextProps {
   showPlaceholder?: boolean;
   fontSize?: string;
   uniqueId?: string;
+  style?: React.CSSProperties;
 }
 
 const EditableText: React.FC<EditableTextProps> = ({
@@ -28,6 +29,7 @@ const EditableText: React.FC<EditableTextProps> = ({
   showPlaceholder = true,
   fontSize,
   uniqueId,
+  style,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [tempValue, setTempValue] = useState(value);
@@ -351,6 +353,7 @@ const EditableText: React.FC<EditableTextProps> = ({
         className={`${className} ${fontSize || ''} rounded px-2 py-1 min-h-[1.5rem] select-text whitespace-pre-line`}
         dir="rtl"
         data-text-id={uniqueId}
+        style={style}
       >
         {renderTextWithLinks(value)}
       </div>
@@ -419,6 +422,7 @@ const EditableText: React.FC<EditableTextProps> = ({
         }`}
         dir="rtl"
         data-text-id={uniqueId}
+        style={style}
       >
         {!value || value.trim() === '' ? placeholder : renderTextWithLinks(value)}
       </div>

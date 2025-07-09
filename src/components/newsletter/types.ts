@@ -4,8 +4,9 @@ export interface MediaItem {
   url: string;
   title?: string;
   description?: string;
-  size?: 'small' | 'medium' | 'large' | 'full';
+  size?: 'small' | 'medium' | 'large';
   alignment?: 'left' | 'center' | 'right';
+  previewUrl?: string;
   textContent?: string;
   textFontSize?: string;
 }
@@ -29,6 +30,7 @@ export interface Subsection {
   mediaItems?: MediaItem[];
   titleFontSize?: string;
   contentFontSize?: string;
+  titleColor?: string;
 }
 
 export interface Section {
@@ -42,4 +44,5 @@ export interface Section {
   lists?: ListData[];
   titleFontSize?: string;
   contentFontSize?: string;
+  titleColor?: string;
 } 

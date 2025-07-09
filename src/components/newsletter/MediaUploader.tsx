@@ -1,10 +1,10 @@
 import { Button } from "@/components/ui/button";
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,6 +35,7 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({ isOpen, onClose, onAddMed
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [linkUrl, setLinkUrl] = useState('');
   const [linkTitle, setLinkTitle] = useState('');
+  const [isUploadingYoutube, setIsUploadingYoutube] = useState(false);
 
   const handleImageFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -211,13 +212,130 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({ isOpen, onClose, onAddMed
     setIsUploadingVideo(false);
   };
 
-  const addYouTubeLink = () => {
+  // Utility to generate a YouTube preview image (thumbnail + play button overlay) and upload to Supabase
+  async function generateAndUploadYouTubePreview(videoId: string): Promise<string | undefined> {
+    try {
+      console.log('[YouTube Preview] Start generation for videoId:', videoId);
+      const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+      console.log('[YouTube Preview] Thumbnail URL:', thumbnailUrl);
+      // 2. Load the thumbnail and play button images
+      const [thumbnailImg, playButtonImg] = await Promise.all([
+        loadImage(thumbnailUrl),
+        loadImage('/youtube_button.png'), // public path
+      ]);
+      console.log('[YouTube Preview] Images loaded:', thumbnailImg, playButtonImg);
+      // 3. Draw on canvas
+      const canvas = document.createElement('canvas');
+      canvas.width = thumbnailImg.width;
+      canvas.height = thumbnailImg.height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Could not get canvas context');
+      // Draw the thumbnail first
+      ctx.drawImage(thumbnailImg, 0, 0, canvas.width, canvas.height);
+      // Resize play button if too large (max 25% of thumbnail width)
+      let pbW = playButtonImg.width;
+      let pbH = playButtonImg.height;
+      const maxPlayButtonWidth = canvas.width * 0.25;
+      if (pbW > maxPlayButtonWidth) {
+        const scale = maxPlayButtonWidth / pbW;
+        pbW = pbW * scale;
+        pbH = pbH * scale;
+      }
+      // Center the play button
+      const pbX = (canvas.width - pbW) / 2;
+      const pbY = (canvas.height - pbH) / 2;
+      ctx.drawImage(playButtonImg, pbX, pbY, pbW, pbH);
+      console.log('[YouTube Preview] Canvas drawn. Thumbnail size:', canvas.width, canvas.height, 'Play button size:', pbW, pbH, 'Position:', pbX, pbY);
+      // 4. Convert to blob
+      const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.92));
+      if (!blob) throw new Error('Failed to create image blob');
+      console.log('[YouTube Preview] Canvas to blob success:', blob);
+      // 5. Upload to Supabase Storage
+      const fileName = `youtube_preview_${videoId}_${Date.now()}.jpg`;
+      const filePath = `youtube-previews/${fileName}`;
+      const { data, error } = await supabase.storage
+        .from('newsletter-assets')
+        .upload(filePath, blob, { contentType: 'image/jpeg' });
+      if (error) {
+        console.error('[YouTube Preview] Supabase upload error:', error);
+        throw error;
+      }
+      // 6. Get public URL
+      const { data: publicUrlData } = supabase.storage
+        .from('newsletter-assets')
+        .getPublicUrl(filePath);
+      console.log('[YouTube Preview] Uploaded. Public URL:', publicUrlData?.publicUrl);
+      return publicUrlData.publicUrl;
+    } catch (err) {
+      console.error('[YouTube Preview] Error in generateAndUploadYouTubePreview:', err);
+      toast({
+        title: 'خطأ في توليد صورة معاينة يوتيوب',
+        description: err instanceof Error ? err.message : String(err),
+        variant: 'destructive',
+      });
+      return undefined;
+    }
+  }
+
+  function loadImage(src: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const img = new window.Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
+  }
+
+  const addYouTubeLink = async () => {
     if (youtubeUrl) {
-      const videoId = youtubeUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/)?.[1];
-      const embedUrl = videoId ? `https://www.youtube.com/embed/${videoId}` : youtubeUrl;
-      onAddMedia({ id: Date.now().toString(), type: 'youtube', url: embedUrl, title: '', description: '', size: 'medium', alignment: 'center' });
-      setYoutubeUrl('');
-      onClose();
+      setIsUploadingYoutube(true);
+      try {
+        console.log('[YouTube Add] Adding YouTube link:', youtubeUrl);
+        const videoId = youtubeUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/)?.[1];
+        const embedUrl = videoId ? `https://www.youtube.com/embed/${videoId}` : youtubeUrl;
+        let previewUrl: string | undefined = undefined;
+        if (videoId) {
+          try {
+            previewUrl = await generateAndUploadYouTubePreview(videoId);
+          } catch (err) {
+            console.error('[YouTube Add] Error generating/uploading preview:', err);
+            toast({
+              title: 'خطأ في رفع صورة معاينة يوتيوب',
+              description: err instanceof Error ? err.message : String(err),
+              variant: 'destructive',
+            });
+          }
+        } else {
+          console.warn('[YouTube Add] Could not extract videoId from URL:', youtubeUrl);
+          toast({
+            title: 'رابط يوتيوب غير صالح',
+            description: 'تعذر استخراج معرف الفيديو من الرابط المدخل.',
+            variant: 'destructive',
+          });
+        }
+        onAddMedia({
+          id: Date.now().toString(),
+          type: 'youtube',
+          url: embedUrl,
+          title: '',
+          description: '',
+          size: 'medium',
+          alignment: 'center',
+          previewUrl,
+        });
+        setYoutubeUrl('');
+        onClose();
+      } catch (error) {
+        console.error('[YouTube Add] General error:', error);
+        toast({
+          title: 'خطأ في إضافة فيديو يوتيوب',
+          description: error instanceof Error ? error.message : String(error),
+          variant: 'destructive',
+        });
+      } finally {
+        setIsUploadingYoutube(false);
+      }
     }
   };
 
@@ -328,9 +446,9 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({ isOpen, onClose, onAddMed
                 dir="ltr"
               />
             </div>
-            <Button onClick={addYouTubeLink} disabled={!youtubeUrl} className="w-full">
+            <Button onClick={addYouTubeLink} disabled={!youtubeUrl || isUploadingYoutube} className="w-full">
               <Youtube className="ml-2 h-4 w-4" />
-              إضافة فيديو يوتيوب
+              {isUploadingYoutube ? 'جارِ التحميل...' : 'إضافة فيديو يوتيوب'}
             </Button>
           </TabsContent>
           

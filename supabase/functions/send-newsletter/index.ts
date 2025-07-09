@@ -41,12 +41,7 @@ async function sendEmail(
   }/unsubscribe?email=${encodeURIComponent(to)}&token=${unsubscribeToken}`;
 
   // Compose the email body (HTML)
-  const emailHtml = `
-    ${html}
-    <div style="direction: rtl; margin-top:30px; padding-top:20px; border-top:1px solid #eee; font-size:12px; color:#666;">
-      <p>إذا كنت ترغب في إلغاء الاشتراك… <a href="${unsubscribeLink}">النقر هنا</a>.</p>
-    </div>
-  `;
+  const emailHtml = html;
 
   // Brevo API endpoint
   const url = 'https://api.brevo.com/v3/smtp/email';
@@ -96,7 +91,7 @@ function convertMarkdownLinks(text: string): string {
 }
 
 // Helper: Render newsletter JSON to HTML for email
-function renderNewsletterHtml(newsletter: any): string {
+async function renderNewsletterHtml(newsletter: any, unsubscribeLink: string, supabase: any): Promise<string> {
   const fontStyle = `
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic&display=swap');
@@ -152,7 +147,7 @@ function renderNewsletterHtml(newsletter: any): string {
         // Section background and side line
         html += `<div class="section-container" style="background:${section.backgroundColor?.includes('white') ? '#fff' : section.backgroundColor?.includes('pink') ? '#fde4ec' : section.backgroundColor?.includes('green') ? '#e9fbe5' : section.backgroundColor?.includes('blue') ? '#e6f0fa' : section.backgroundColor?.includes('cyan') ? '#e0f7fa' : section.backgroundColor?.includes('purple') ? '#f3e8ff' : '#fff'}; margin:24px 0; border-radius:12px; box-shadow:0 2px 8px #0001; padding:24px; position:relative;">
           <div style="position:absolute; right:0; top:0; bottom:0; width:8px; border-radius:8px; background:${section.sideLineColor || '#3b82f6'};"></div>
-          <h2 style="color:#3b82f6; margin-top:0; margin-bottom:16px; font-size:${section.titleFontSize === 'text-xs' ? '12px' : section.titleFontSize === 'text-sm' ? '14px' : section.titleFontSize === 'text-base' ? '16px' : section.titleFontSize === 'text-lg' ? '18px' : section.titleFontSize === 'text-xl' ? '20px' : section.titleFontSize === 'text-2xl' ? '24px' : section.titleFontSize === 'text-3xl' ? '30px' : section.titleFontSize === 'text-4xl' ? '36px' : '24px'}; font-weight:bold;">${convertMarkdownLinks(section.title || '')}</h2>
+          <h2 style="color:${section.titleColor || '#3b82f6'}; margin-top:0; margin-bottom:16px; font-size:${section.titleFontSize === 'text-xs' ? '12px' : section.titleFontSize === 'text-sm' ? '14px' : section.titleFontSize === 'text-base' ? '16px' : section.titleFontSize === 'text-lg' ? '18px' : section.titleFontSize === 'text-xl' ? '20px' : section.titleFontSize === 'text-2xl' ? '24px' : section.titleFontSize === 'text-3xl' ? '30px' : section.titleFontSize === 'text-4xl' ? '36px' : '24px'}; font-weight:bold;">${convertMarkdownLinks(section.title || '')}</h2>
           <div style="margin-bottom:12px; color:#333; font-size:${section.contentFontSize === 'text-xs' ? '12px' : section.contentFontSize === 'text-sm' ? '14px' : section.contentFontSize === 'text-base' ? '16px' : section.contentFontSize === 'text-lg' ? '18px' : section.contentFontSize === 'text-xl' ? '20px' : section.contentFontSize === 'text-2xl' ? '24px' : section.contentFontSize === 'text-3xl' ? '30px' : section.contentFontSize === 'text-4xl' ? '36px' : '18px'}; line-height:1.6; white-space:pre-line;">${convertMarkdownLinks(section.content || '')}</div>`;
         // Media Items
         if (section.mediaItems && section.mediaItems.length) {
@@ -207,7 +202,7 @@ function renderNewsletterHtml(newsletter: any): string {
               const ytMatch = item.url.match(/(?:youtube\.com\/embed\/|youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
               if (ytMatch && ytMatch[1]) {
                 videoId = ytMatch[1];
-                ytThumb = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+                ytThumb = item.previewUrl || `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
               }
               html += `<div class="media-container" style="text-align:${containerAlign}; margin-bottom:16px; position:relative; display:inline-block;">
                 <a href="${item.url}" target="_blank" style="position:relative; display:inline-block;">
@@ -250,7 +245,7 @@ function renderNewsletterHtml(newsletter: any): string {
         if (section.subsections && section.subsections.length) {
           html += '<div style="margin-top:18px;">';
           for (const sub of section.subsections) {
-            html += `<div style="margin-bottom:16px;"><div style="font-weight:bold;color:#3b82f6; font-size:${sub.titleFontSize === 'text-xs' ? '12px' : sub.titleFontSize === 'text-sm' ? '14px' : sub.titleFontSize === 'text-base' ? '16px' : sub.titleFontSize === 'text-lg' ? '18px' : sub.titleFontSize === 'text-xl' ? '20px' : sub.titleFontSize === 'text-2xl' ? '24px' : sub.titleFontSize === 'text-3xl' ? '30px' : sub.titleFontSize === 'text-4xl' ? '36px' : '18px'}; margin-bottom:8px;">${convertMarkdownLinks(sub.title)}</div><div style="color:#333; font-size:${sub.contentFontSize === 'text-xs' ? '12px' : sub.contentFontSize === 'text-sm' ? '14px' : sub.contentFontSize === 'text-base' ? '16px' : sub.contentFontSize === 'text-lg' ? '18px' : sub.contentFontSize === 'text-xl' ? '20px' : sub.contentFontSize === 'text-2xl' ? '24px' : sub.contentFontSize === 'text-3xl' ? '30px' : sub.contentFontSize === 'text-4xl' ? '36px' : '16px'}; line-height:1.5; white-space:pre-line;">${convertMarkdownLinks(sub.content)}</div></div>`;
+            html += `<div style="margin-bottom:16px;"><div style="font-weight:bold;color:${sub.titleColor || '#3b82f6'}; font-size:${sub.titleFontSize === 'text-xs' ? '12px' : sub.titleFontSize === 'text-sm' ? '14px' : sub.titleFontSize === 'text-base' ? '16px' : sub.titleFontSize === 'text-lg' ? '18px' : sub.titleFontSize === 'text-xl' ? '20px' : sub.titleFontSize === 'text-2xl' ? '24px' : sub.titleFontSize === 'text-3xl' ? '30px' : sub.titleFontSize === 'text-4xl' ? '36px' : '18px'}; margin-bottom:8px;">${convertMarkdownLinks(sub.title)}</div><div style="color:#333; font-size:${sub.contentFontSize === 'text-xs' ? '12px' : sub.contentFontSize === 'text-sm' ? '14px' : sub.contentFontSize === 'text-base' ? '16px' : sub.contentFontSize === 'text-lg' ? '18px' : sub.contentFontSize === 'text-xl' ? '20px' : sub.contentFontSize === 'text-2xl' ? '24px' : sub.contentFontSize === 'text-3xl' ? '30px' : sub.contentFontSize === 'text-4xl' ? '36px' : '16px'}; line-height:1.5; white-space:pre-line;">${convertMarkdownLinks(sub.content)}</div></div>`;
             
             // Subsection Media Items
             if (sub.mediaItems && sub.mediaItems.length) {
@@ -300,13 +295,12 @@ function renderNewsletterHtml(newsletter: any): string {
                     html += `<div style="margin-bottom:16px; color:#333; font-size:16px; line-height:1.6; white-space:pre-line;">${convertMarkdownLinks(item.textContent)}</div>`;
                   }
                 } else if (item.type === 'youtube') {
-                  let marginStyle = align === 'left' ? 'margin-right:auto;margin-left:0;' : align === 'right' ? 'margin-left:auto;margin-right:0;' : 'margin-left:auto;margin-right:auto;';
                   let videoId = '';
                   let ytThumb = 'https://cdn-icons-png.flaticon.com/512/1384/1384060.png';
                   const ytMatch = item.url.match(/(?:youtube\.com\/embed\/|youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
                   if (ytMatch && ytMatch[1]) {
                     videoId = ytMatch[1];
-                    ytThumb = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+                    ytThumb = item.previewUrl || `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
                   }
                   html += `<div class="media-container" style="text-align:${containerAlign}; margin-bottom:16px; position:relative; display:inline-block;">
                     <a href="${item.url}" target="_blank" style="position:relative; display:inline-block;">
@@ -339,6 +333,28 @@ function renderNewsletterHtml(newsletter: any): string {
     html += `<div>${newsletter.content}</div>`;
   }
   // Wrap all content in RTL container
+  html += `
+    <div style="text-align:center; padding:32px 0 0 0; border-top:1px solid #eee; margin-top:40px;">
+      <div style="margin-bottom:18px;">
+        <a href="#" style="display:inline-block;margin:0 8px;"><img src='https://cdn-icons-png.flaticon.com/512/733/733635.png' alt='X' style='width:28px;height:28px;vertical-align:middle;'/></a>
+        <a href="#" style="display:inline-block;margin:0 8px;"><img src='https://cdn-icons-png.flaticon.com/512/733/733547.png' alt='Facebook' style='width:28px;height:28px;vertical-align:middle;'/></a>
+        <a href="#" style="display:inline-block;margin:0 8px;"><img src='https://cdn-icons-png.flaticon.com/512/733/733561.png' alt='LinkedIn' style='width:28px;height:28px;vertical-align:middle;'/></a>
+      </div>
+      <div style="color:#666;font-size:14px;margin-bottom:10px;">
+        هل وصلتك هذه النشرة عبر صديق؟
+        <a href="#" style="color:#2563eb;text-decoration:underline;font-weight:500;margin:0 4px;">اشترك من هنا</a>
+        ، ليصلك جديدنا
+      </div>
+      <div style="color:#888;font-size:13px;margin-bottom:10px;">
+        <a href="${unsubscribeLink}" style="color:#888;text-decoration:underline;">لإلغاء الاشتراك هنا</a>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding-top:12px;border-top:1px solid #f3f3f3;margin-top:18px;">
+        <img src="https://solo4ai.com/lovable-uploads/b40e2534-e282-4e60-9ca0-91070f9c6ad7.png" alt="Solo for AI Logo" style="height:32px;width:32px;" />
+        <span style="color:#aaa;font-size:13px;text-align:center;display:block;">© 2025 جميع الحقوق محفوظة لـ سولو للذكاء الاصطناعي</span>
+      </div>
+    </div>
+  `;
+  // Replace {UNSUBSCRIBE_LINK} with the actual link if available
   return ` ${fontStyle}<div class="newsletter-container" dir="rtl" style="text-align: right; font-family: 'Noto Naskh Arabic', serif; max-width: 100%; width: 100%;">${html}</div>`;
 }
 
@@ -486,7 +502,8 @@ serve(async (req: Request) => {
         try {
           console.log(`Attempting to send email to: ${subscriber.email}`);
           // Render HTML for email
-          const htmlBody = renderNewsletterHtml(newsletter);
+          const unsubscribeLink = `${Deno.env.get('SITE_URL') || 'https://solo4ai.com'}/unsubscribe?email=${encodeURIComponent(subscriber.email)}&token=${subscriber.unsubscribe_token}`;
+          const htmlBody = await renderNewsletterHtml(newsletter, unsubscribeLink, supabase);
           await sendEmail(
             subscriber.email,
             fromEmail,

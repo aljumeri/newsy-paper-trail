@@ -242,6 +242,7 @@ const EditableSection: React.FC<EditableSectionProps> = ({
               fontSize={section.titleFontSize || 'text-2xl'}
               placeholder="عنوان القسم..."
               isTitle={true}
+              style={section.titleColor ? { color: section.titleColor } : undefined}
             />
             {isEditing && (
               <TextSizeSelector

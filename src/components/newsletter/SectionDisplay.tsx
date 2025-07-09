@@ -108,7 +108,12 @@ const SectionDisplay: React.FC<SectionDisplayProps> = ({ section }) => {
       />
       <div className="p-6 pr-8 pl-6">
         {/* Section Title */}
-        <h2 className={`font-bold text-gray-800 mb-4 ${section.titleFontSize || 'text-2xl'}`}>{renderTextWithLinks(section.title)}</h2>
+        <h2
+          className={`font-bold mb-4 ${section.titleFontSize || 'text-2xl'}`}
+          style={section.titleColor ? { color: section.titleColor } : undefined}
+        >
+          {renderTextWithLinks(section.title)}
+        </h2>
         {/* Section Content */}
         <div className={`text-gray-700 mb-6 leading-relaxed ${section.contentFontSize || 'text-lg'} whitespace-pre-line`}>{renderTextWithLinks(section.content)}</div>
         {/* Media Items */}

@@ -336,9 +336,8 @@ async function renderNewsletterHtml(newsletter: any, unsubscribeLink: string, su
   html += `
     <div style="text-align:center; padding:32px 0 0 0; border-top:1px solid #eee; margin-top:40px;">
       <div class="footer-social-icons" style="margin-bottom:18px;">
-        <a href="#" style="display:inline-block;margin:0 8px 8px 8px;"><img src='https://cdn-icons-png.flaticon.com/512/733/733635.png' alt='X' style='width:28px;height:28px;vertical-align:middle;'/></a>
-        <a href="#" style="display:inline-block;margin:0 8px 8px 8px;"><img src='https://cdn-icons-png.flaticon.com/512/733/733547.png' alt='Facebook' style='width:28px;height:28px;vertical-align:middle;'/></a>
-        <a href="#" style="display:inline-block;margin:0 8px 8px 8px;"><img src='https://cdn-icons-png.flaticon.com/512/733/733561.png' alt='LinkedIn' style='width:28px;height:28px;vertical-align:middle;'/></a>
+        <a href="https://x.com/solo4ai?s=11" style="display:inline-block;margin:0 8px 8px 8px;"><img src='https://cdn-icons-png.flaticon.com/512/5968/5968830.png' alt='X' style='width:28px;height:28px;vertical-align:middle;'/></a>
+        <a href="https://www.facebook.com/profile.php?id=61576451549251&mibextid=wwXIfr&mibextid=wwXIfr" style="display:inline-block;margin:0 8px 8px 8px;"><img src='https://cdn-icons-png.flaticon.com/512/733/733547.png' alt='Facebook' style='width:28px;height:28px;vertical-align:middle;'/></a>
       </div>
       <style>
         @media only screen and (max-width: 600px) {

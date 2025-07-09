@@ -335,11 +335,22 @@ async function renderNewsletterHtml(newsletter: any, unsubscribeLink: string, su
   // Wrap all content in RTL container
   html += `
     <div style="text-align:center; padding:32px 0 0 0; border-top:1px solid #eee; margin-top:40px;">
-      <div style="margin-bottom:18px;">
-        <a href="#" style="display:inline-block;margin:0 8px;"><img src='https://cdn-icons-png.flaticon.com/512/733/733635.png' alt='X' style='width:28px;height:28px;vertical-align:middle;'/></a>
-        <a href="#" style="display:inline-block;margin:0 8px;"><img src='https://cdn-icons-png.flaticon.com/512/733/733547.png' alt='Facebook' style='width:28px;height:28px;vertical-align:middle;'/></a>
-        <a href="#" style="display:inline-block;margin:0 8px;"><img src='https://cdn-icons-png.flaticon.com/512/733/733561.png' alt='LinkedIn' style='width:28px;height:28px;vertical-align:middle;'/></a>
+      <div class="footer-social-icons" style="margin-bottom:18px;">
+        <a href="#" style="display:inline-block;margin:0 8px 8px 8px;"><img src='https://cdn-icons-png.flaticon.com/512/733/733635.png' alt='X' style='width:28px;height:28px;vertical-align:middle;'/></a>
+        <a href="#" style="display:inline-block;margin:0 8px 8px 8px;"><img src='https://cdn-icons-png.flaticon.com/512/733/733547.png' alt='Facebook' style='width:28px;height:28px;vertical-align:middle;'/></a>
+        <a href="#" style="display:inline-block;margin:0 8px 8px 8px;"><img src='https://cdn-icons-png.flaticon.com/512/733/733561.png' alt='LinkedIn' style='width:28px;height:28px;vertical-align:middle;'/></a>
       </div>
+      <style>
+        @media only screen and (max-width: 600px) {
+          .footer-social-icons a {
+            display: block !important;
+            margin: 0 auto 12px auto !important;
+          }
+          .footer-social-icons img {
+            margin: 0 auto !important;
+          }
+        }
+      </style>
       <div style="color:#666;font-size:14px;margin-bottom:10px;">
         هل وصلتك هذه النشرة عبر صديق؟
         <a href="#" style="color:#2563eb;text-decoration:underline;font-weight:500;margin:0 4px;">اشترك من هنا</a>

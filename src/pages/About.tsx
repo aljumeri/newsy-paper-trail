@@ -1,10 +1,9 @@
 
-import React from 'react';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import CallToAction from '@/components/CallToAction';
+import Footer from '@/components/Footer';
+import Navbar from '@/components/Navbar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 
 const About = () => {
   return (
@@ -93,7 +92,7 @@ const About = () => {
                   name: "ندى حسن",
                   role: "محررة وصانعة محتوى",
                   bio: "تتمتع بخبرة في التسويق الرقمي وإدارة المحتوى عبر المنصات الاجتماعية. تسهم في إعداد النشرة بصياغة مهنية ومتابعة مستمرة لأحدث أدوات وتقنيات الذكاء الاصطناعي.",
-                  avatar: "https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?ixlib=rb-4.0.3&auto=format&fit=crop&w=1305&q=80"
+                  avatar: "/lovable-uploads/nada-hassan.jpeg"
                 }
               ].map((person, index) => (
                 <div key={index} className="text-center">

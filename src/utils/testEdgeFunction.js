@@ -47,22 +47,41 @@ async function testEdgeFunction() {
     const newsletterId = newsletters[0].id;
     console.log("Using newsletter ID:", newsletterId);
     
-    // Step 3: Call the Edge Function
-    console.log("Calling Edge Function...");
-    const { data, error } = await supabase.functions.invoke('send-newsletter', {
-      body: { newsletterId }
+    // Step 3: Test single email sending
+    console.log("\n=== Testing Single Email Mode ===");
+    const { data: singleEmailData, error: singleEmailError } = await supabase.functions.invoke('send-newsletter', {
+      body: { 
+        newsletterId,
+        mode: 'single',
+        email: 'test@example.com'  // Replace with your test email
+      }
     });
     
-    if (error) {
-      console.error("Edge Function error:", error);
-      return;
+    if (singleEmailError) {
+      console.error("Single email test error:", singleEmailError);
+    } else {
+      console.log("Single email test result:", singleEmailData);
     }
     
-    console.log("Edge Function response:", data);
-    console.log("Test completed successfully!");
+    // Step 4: Test all subscribers mode
+    console.log("\n=== Testing All Subscribers Mode ===");
+    const { data: allSubscribersData, error: allSubscribersError } = await supabase.functions.invoke('send-newsletter', {
+      body: { 
+        newsletterId,
+        mode: 'all'  // This is the default mode
+      }
+    });
+    
+    if (allSubscribersError) {
+      console.error("All subscribers test error:", allSubscribersError);
+    } else {
+      console.log("All subscribers test result:", allSubscribersData);
+    }
+    
+    console.log("\n=== Test Completed ===");
     
   } catch (error) {
-    console.error("Unexpected error:", error);
+    console.error("Test failed:", error);
   }
 }
 

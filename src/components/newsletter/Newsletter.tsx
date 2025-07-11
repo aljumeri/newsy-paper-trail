@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
 import { Facebook, Linkedin, Plus, X } from 'lucide-react';
 import { useState } from 'react';
 import EditableSection from './EditableSection';
@@ -67,6 +68,8 @@ const Newsletter: React.FC<NewsletterProps> = ({
   onSubTitleChange,
   onDateChange,
 }) => {
+  const { toast } = useToast();
+  
   const [internalSections, internalSetSections] =
     useState<Section[]>(defaultSections);
   const sections = propSections !== undefined ? propSections : internalSections;
@@ -101,9 +104,174 @@ const Newsletter: React.FC<NewsletterProps> = ({
     setSections(sections.filter(section => section.id !== id));
   };
 
+  const moveSection = (index: number, direction: 'up' | 'down') => {
+    const newSections = [...sections];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= newSections.length) return;
+    [newSections[index], newSections[targetIndex]] = [newSections[targetIndex], newSections[index]];
+    setSections(newSections);
+  };
+
+  const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
+  const shareTitle = mainTitle || 'النشرة الإخبارية';
+  
+  const handleShareX = () => {
+    console.log('Share X clicked, URL:', shareUrl, 'Title:', shareTitle);
+    try {
+      const shareUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(shareTitle)}`;
+      console.log('Opening URL:', shareUrl);
+      window.open(shareUrl, '_blank', 'noopener,noreferrer');
+    } catch (error) {
+      console.error('Error sharing to X:', error);
+      toast({
+        title: 'حدث خطأ في المشاركة على X',
+        description: error.message,
+      });
+    }
+  };
+  
+  const handleShareFacebook = () => {
+    console.log('Share Facebook clicked, URL:', shareUrl);
+    try {
+      // Copy link to clipboard and show instructions
+              if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(window.location.href).then(() => {
+            toast({
+              title: 'تم نسخ الرابط!',
+              description: 'افتح Facebook وانسخ الرابط في منشورك',
+            });
+          });
+        } else {
+          // Fallback for older browsers
+          const textArea = document.createElement('textarea');
+          textArea.value = window.location.href;
+          textArea.style.position = 'fixed';
+          textArea.style.left = '-999999px';
+          textArea.style.top = '-999999px';
+          document.body.appendChild(textArea);
+          textArea.focus();
+          textArea.select();
+          try {
+            document.execCommand('copy');
+            toast({
+              title: 'تم نسخ الرابط!',
+              description: 'افتح Facebook وانسخ الرابط في منشورك',
+            });
+          } catch (err) {
+            toast({
+              title: 'فشل في نسخ الرابط',
+              description: 'يرجى نسخ الرابط يدوياً',
+            });
+          }
+          document.body.removeChild(textArea);
+        }
+    } catch (error) {
+      console.error('Error sharing to Facebook:', error);
+      toast({
+        title: 'حدث خطأ في المشاركة على Facebook',
+        description: error.message,
+      });
+    }
+  };
+  
+  const handleShareLinkedIn = () => {
+    console.log('Share LinkedIn clicked, URL:', shareUrl);
+    try {
+      // Copy link to clipboard and show instructions
+              if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(window.location.href).then(() => {
+            toast({
+              title: 'تم نسخ الرابط!',
+              description: 'افتح LinkedIn وانسخ الرابط في منشورك',
+            });
+          });
+        } else {
+          // Fallback for older browsers
+          const textArea = document.createElement('textarea');
+          textArea.value = window.location.href;
+          textArea.style.position = 'fixed';
+          textArea.style.left = '-999999px';
+          textArea.style.top = '-999999px';
+          document.body.appendChild(textArea);
+          textArea.focus();
+          textArea.select();
+          try {
+            document.execCommand('copy');
+            toast({
+              title: 'تم نسخ الرابط!',
+              description: 'افتح LinkedIn وانسخ الرابط في منشورك',
+            });
+          } catch (err) {
+            toast({
+              title: 'فشل في نسخ الرابط',
+              description: 'يرجى نسخ الرابط يدوياً',
+            });
+          }
+          document.body.removeChild(textArea);
+        }
+    } catch (error) {
+      console.error('Error sharing to LinkedIn:', error);
+      toast({
+        title: 'حدث خطأ في المشاركة على LinkedIn',
+        description: error.message,
+      });
+    }
+  };
+  
+  const handleCopyLink = () => {
+    console.log('Copy link clicked, URL:', shareUrl);
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(window.location.href).then(() => {
+          toast({
+            title: 'تم نسخ رابط النشرة!',
+            description: 'تم نسخ رابط النشرة!',
+          });
+        }).catch((err) => {
+          console.error('Clipboard API failed:', err);
+          fallbackCopyTextToClipboard(window.location.href);
+        });
+      } else {
+        fallbackCopyTextToClipboard(window.location.href);
+      }
+    } catch (error) {
+      console.error('Error copying link:', error);
+      toast({
+        title: 'حدث خطأ في نسخ الرابط',
+        description: error.message,
+      });
+    }
+  };
+
+  // Fallback copy function for older browsers
+  const fallbackCopyTextToClipboard = (text: string) => {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      toast({
+        title: 'تم نسخ رابط النشرة!',
+        description: 'تم نسخ رابط النشرة!',
+      });
+    } catch (err) {
+      console.error('Fallback copy failed:', err);
+      toast({
+        title: 'فشل في نسخ الرابط',
+        description: 'فشل في نسخ الرابط',
+      });
+    }
+    document.body.removeChild(textArea);
+  };
+
   return (
     <div className="min-h-screen " dir="rtl">
-      <div className="space-y-6">
+      <div className="space-y-6 px-2 sm:px-0">
         {/* Newsletter Header */}
         <NewsletterHeaderV2
           title={mainTitle}
@@ -117,7 +285,7 @@ const Newsletter: React.FC<NewsletterProps> = ({
 
         {/* Newsletter Sections */}
         <div className="space-y-6">
-          {sections.map(section =>
+          {sections.map((section, idx) =>
             readOnly ? (
               <SectionDisplay key={section.id} section={section} />
             ) : (
@@ -126,6 +294,10 @@ const Newsletter: React.FC<NewsletterProps> = ({
                 section={section}
                 onUpdate={updates => updateSection(section.id, updates)}
                 onDelete={() => deleteSection(section.id)}
+                moveUp={() => moveSection(idx, 'up')}
+                moveDown={() => moveSection(idx, 'down')}
+                disableUp={idx === 0}
+                disableDown={idx === sections.length - 1}
               />
             )
           )}
@@ -133,11 +305,11 @@ const Newsletter: React.FC<NewsletterProps> = ({
 
         {/* Add Section Button */}
         {!readOnly && (
-          <Card className="p-6 border-2 border-dashed border-gray-300 hover:border-logo-blue transition-colors">
+          <Card className="p-4 sm:p-6 border-2 border-dashed border-gray-300 hover:border-logo-blue transition-colors">
             <Button
               onClick={addSection}
               variant="outline"
-              className="w-full h-16 text-lg hover:bg-logo-blue hover:text-white transition-colors"
+              className="w-full h-14 sm:h-16 text-base sm:text-lg hover:bg-logo-blue hover:text-white transition-colors"
             >
               <Plus className="ml-2 h-6 w-6" />
               إضافة قسم جديد
@@ -148,25 +320,44 @@ const Newsletter: React.FC<NewsletterProps> = ({
         {/* Footer with Social Media and Subscription Info */}
         <div className="text-center py-8 border-t border-gray-200 space-y-6">
           {/* Social Media Icons */}
+          <div className="flex justify-center items-center space-x-4 space-x-reverse mb-4">
+            <h3 className="text-lg font-semibold mb-4">شارك هذا العدد</h3>
+          </div>
           <div className="flex justify-center items-center space-x-4 space-x-reverse">
-            <a
-              href="#"
-              className="text-gray-600 hover:text-logo-blue transition-colors"
+            <button
+              onClick={handleShareX}
+              className="p-3 bg-gray-100 hover:bg-blue-100 rounded-full transition-colors"
+              title="مشاركة على X"
+              type="button"
             >
-              <X className="h-6 w-6" />
-            </a>
-            <a
-              href="#"
-              className="text-gray-600 hover:text-logo-blue transition-colors"
+              <X className="h-6 w-6 text-gray-700" />
+            </button>
+            <button
+              onClick={handleShareFacebook}
+              className="p-3 bg-gray-100 hover:bg-blue-100 rounded-full transition-colors"
+              title="مشاركة على Facebook"
+              type="button"
             >
-              <Facebook className="h-6 w-6" />
-            </a>
-            <a
-              href="#"
-              className="text-gray-600 hover:text-logo-blue transition-colors"
+              <Facebook className="h-6 w-6 text-gray-700" />
+            </button>
+            <button
+              onClick={handleShareLinkedIn}
+              className="p-3 bg-gray-100 hover:bg-blue-100 rounded-full transition-colors"
+              title="مشاركة على LinkedIn"
+              type="button"
             >
-              <Linkedin className="h-6 w-6" />
-            </a>
+              <Linkedin className="h-6 w-6 text-gray-700" />
+            </button>
+            <button
+              onClick={handleCopyLink}
+              className="p-3 bg-gray-100 hover:bg-blue-100 rounded-full transition-colors"
+              title="نسخ رابط النشرة"
+              type="button"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-6 w-6 text-gray-700">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m2 0a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v3a2 2 0 002 2zm0 0v3a2 2 0 01-2 2H7a2 2 0 01-2-2v-3" />
+              </svg>
+            </button>
           </div>
 
           {/* Subscription Text */}

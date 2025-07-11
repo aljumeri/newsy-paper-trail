@@ -130,3 +130,40 @@ export const subscriptionService = {
     }
   }
 };
+
+/**
+ * Send newsletter to a single email address
+ * @param newsletterId - The ID of the newsletter to send
+ * @param email - The email address to send to
+ * @returns Promise with the result
+ */
+export const sendNewsletterToSingleEmail = async (newsletterId: string, email: string) => {
+  try {
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-newsletter`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          newsletterId,
+          mode: 'single',
+          email,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to send newsletter');
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error sending newsletter to single email:', error);
+    throw error;
+  }
+};

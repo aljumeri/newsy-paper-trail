@@ -1,18 +1,31 @@
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Edit, ExternalLink, Eye, Send } from 'lucide-react';
+import { Edit, ExternalLink, Eye, Mail, Send, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { sendNewsletterToSingleEmail } from '../../utils/subscriptionService';
 
 interface Newsletter {
   id: string;
@@ -33,6 +46,11 @@ const NewslettersTable = ({
   onRefresh,
 }: NewslettersTableProps) => {
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [testingId, setTestingId] = useState<string | null>(null);
+  const [testEmail, setTestEmail] = useState<string>('');
+  const [showTestDialog, setShowTestDialog] = useState<boolean>(false);
+  const [selectedNewsletterId, setSelectedNewsletterId] = useState<string>('');
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -112,6 +130,67 @@ const NewslettersTable = ({
     }
   };
 
+  const handleDeleteNewsletter = async (id: string) => {
+    setDeletingId(id);
+    try {
+      const { error } = await supabase
+        .from('newsletters')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'تم الحذف بنجاح',
+        description: 'تم حذف النشرة الإخبارية بنجاح',
+      });
+
+      if (onRefresh) await onRefresh();
+    } catch (error: any) {
+      console.error('Error deleting newsletter:', error);
+      toast({
+        title: 'خطأ في الحذف',
+        description: error.message || 'حدث خطأ أثناء حذف النشرة الإخبارية',
+        variant: 'destructive',
+      });
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleTestEmail = async (id: string) => {
+    if (!testEmail.trim()) {
+      toast({
+        title: 'خطأ',
+        description: 'يرجى إدخال عنوان البريد الإلكتروني',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setTestingId(id);
+    try {
+      const result = await sendNewsletterToSingleEmail(id, testEmail.trim());
+      
+      toast({
+        title: 'تم الإرسال بنجاح',
+        description: `تم إرسال النشرة الإخبارية إلى ${testEmail}`,
+      });
+
+      setTestEmail('');
+      setShowTestDialog(false);
+    } catch (error: any) {
+      console.error('Error sending test email:', error);
+      toast({
+        title: 'خطأ',
+        description: error.message || 'حدث خطأ أثناء إرسال البريد الإلكتروني التجريبي',
+        variant: 'destructive',
+      });
+    } finally {
+      setTestingId(null);
+    }
+  };
+
   return (
     <Card className="border-2 border-blue-500 overflow-hidden">
       <CardHeader className="bg-blue-50">
@@ -172,19 +251,67 @@ const NewslettersTable = ({
                         </a>
                       </Button>
                       {!newsletter.sent_at && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleSendNewsletter(newsletter.id)}
-                          disabled={sendingId === newsletter.id}
-                          className="text-green-500"
-                        >
-                          <Send className="w-4 h-4 ml-1" />
-                          {sendingId === newsletter.id
-                            ? 'جاري الإرسال...'
-                            : 'إرسال'}
-                        </Button>
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleSendNewsletter(newsletter.id)}
+                            disabled={sendingId === newsletter.id}
+                            className="text-green-500"
+                          >
+                            <Send className="w-4 h-4 ml-1" />
+                            {sendingId === newsletter.id
+                              ? 'جاري الإرسال...'
+                              : 'إرسال'}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedNewsletterId(newsletter.id);
+                              setShowTestDialog(true);
+                            }}
+                            disabled={testingId === newsletter.id}
+                            className="text-blue-500"
+                          >
+                            <Mail className="w-4 h-4 ml-1" />
+                            {testingId === newsletter.id
+                              ? 'جاري الإرسال...'
+                              : 'إرسال تجريبي'}
+                          </Button>
+                        </>
                       )}
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                            disabled={deletingId === newsletter.id}
+                          >
+                            <Trash2 className="w-4 h-4 ml-1" />
+                            {deletingId === newsletter.id ? 'جاري الحذف...' : 'حذف'}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              هل أنت متأكد من رغبتك في حذف النشرة الإخبارية "{newsletter.main_title}"؟ 
+                              لا يمكن التراجع عن هذا الإجراء.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteNewsletter(newsletter.id)}
+                              className="bg-red-500 hover:bg-red-600"
+                            >
+                              حذف
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -199,6 +326,41 @@ const NewslettersTable = ({
           </TableBody>
         </Table>
       </CardContent>
+      
+      {/* Test Email Dialog */}
+      <AlertDialog open={showTestDialog} onOpenChange={setShowTestDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>إرسال تجريبي</AlertDialogTitle>
+            <AlertDialogDescription>
+              أدخل عنوان البريد الإلكتروني لإرسال النشرة الإخبارية كتجربة
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Input
+              type="email"
+              placeholder="example@email.com"
+              value={testEmail}
+              onChange={(e) => setTestEmail(e.target.value)}
+              className="w-full"
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setTestEmail('');
+              setShowTestDialog(false);
+            }}>
+              إلغاء
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => handleTestEmail(selectedNewsletterId)}
+              disabled={!testEmail.trim() || testingId !== null}
+            >
+              إرسال
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };

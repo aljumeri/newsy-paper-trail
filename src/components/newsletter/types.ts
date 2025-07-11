@@ -31,6 +31,9 @@ export interface Subsection {
   titleFontSize?: string;
   contentFontSize?: string;
   titleColor?: string;
+  lists?: ListData[];
+  afterListContent?: string;
+  afterListContentFontSize?: string;
 }
 
 export interface Section {
@@ -45,4 +48,6 @@ export interface Section {
   titleFontSize?: string;
   contentFontSize?: string;
   titleColor?: string;
+  afterListContent?: string;
+  afterListContentFontSize?: string;
 } 

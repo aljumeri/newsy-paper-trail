@@ -19,7 +19,8 @@ interface Subscriber {
 
 interface Newsletter {
   id: string;
-  subject: string;
+  main_title: string;
+  sub_title?: string;
   created_at: string;
   sent_at: string | null;
 }
@@ -119,7 +120,11 @@ const AdminControlPanel: React.FC = () => {
           </div>
         )}
 
-        <NewslettersTable newsletters={newsletters} formatDate={formatDate} />
+        <NewslettersTable 
+          newsletters={newsletters} 
+          formatDate={formatDate} 
+          onRefresh={handleRefresh}
+        />
         <SubscribersTable
           subscribers={subscribers}
           formatDate={formatDate}

@@ -10,6 +10,8 @@ const corsHeaders = {
 
 interface NewsletterRequest {
   newsletterId: string;
+  mode?: 'all' | 'single'; // 'all' for all subscribers, 'single' for single email
+  email?: string; // Required when mode is 'single'
 }
 
 interface NewsletterData {
@@ -90,6 +92,33 @@ function convertMarkdownLinks(text: string): string {
   return processedText.replace(linkRegex, '<a href="$2" target="_blank" style="color: #0066cc; text-decoration: underline;">$1</a>');
 }
 
+// Helper: Convert font size class to CSS value
+function fontSizeToCss(fontSize: string): string {
+  switch (fontSize) {
+    case 'text-xs': return '12px';
+    case 'text-sm': return '14px';
+    case 'text-base': return '16px';
+    case 'text-lg': return '18px';
+    case 'text-xl': return '20px';
+    case 'text-2xl': return '24px';
+    case 'text-3xl': return '30px';
+    case 'text-4xl': return '36px';
+    default: return '18px';
+  }
+}
+
+// Helper: Get bullet size based on font size
+function getBulletSize(fontSize: string): string {
+  switch (fontSize) {
+    case 'text-xs': return '8px';
+    case 'text-sm': return '10px';
+    case 'text-base': return '12px';
+    case 'text-lg': return '14px';
+    case 'text-xl': return '16px';
+    default: return '12px';
+  }
+}
+
 // Helper: Render newsletter JSON to HTML for email
 async function renderNewsletterHtml(newsletter: any, unsubscribeLink: string, supabase: any): Promise<string> {
   const fontStyle = `
@@ -139,16 +168,19 @@ async function renderNewsletterHtml(newsletter: any, unsubscribeLink: string, su
         : ''
     }
   </div>`;
+  // Add gap between header and first section
+  html += '<div style="height:32px;"></div>';
   // Sections
   try {
     const sections = JSON.parse(newsletter.content);
     if (Array.isArray(sections)) {
       for (const section of sections) {
-        // Section background and side line
-        html += `<div class="section-container" style="background:${section.backgroundColor?.includes('white') ? '#fff' : section.backgroundColor?.includes('pink') ? '#fde4ec' : section.backgroundColor?.includes('green') ? '#e9fbe5' : section.backgroundColor?.includes('blue') ? '#e6f0fa' : section.backgroundColor?.includes('cyan') ? '#e0f7fa' : section.backgroundColor?.includes('purple') ? '#f3e8ff' : '#fff'}; margin:24px 0; border-radius:12px; box-shadow:0 2px 8px #0001; padding:24px; position:relative;">
-          <div style="position:absolute; right:0; top:0; bottom:0; width:8px; border-radius:8px; background:${section.sideLineColor || '#3b82f6'};"></div>
-          <h2 style="color:${section.titleColor || '#3b82f6'}; margin-top:0; margin-bottom:16px; font-size:${section.titleFontSize === 'text-xs' ? '12px' : section.titleFontSize === 'text-sm' ? '14px' : section.titleFontSize === 'text-base' ? '16px' : section.titleFontSize === 'text-lg' ? '18px' : section.titleFontSize === 'text-xl' ? '20px' : section.titleFontSize === 'text-2xl' ? '24px' : section.titleFontSize === 'text-3xl' ? '30px' : section.titleFontSize === 'text-4xl' ? '36px' : '24px'}; font-weight:bold;">${convertMarkdownLinks(section.title || '')}</h2>
-          <div style="margin-bottom:12px; color:#333; font-size:${section.contentFontSize === 'text-xs' ? '12px' : section.contentFontSize === 'text-sm' ? '14px' : section.contentFontSize === 'text-base' ? '16px' : section.contentFontSize === 'text-lg' ? '18px' : section.contentFontSize === 'text-xl' ? '20px' : section.contentFontSize === 'text-2xl' ? '24px' : section.contentFontSize === 'text-3xl' ? '30px' : section.contentFontSize === 'text-4xl' ? '36px' : '18px'}; line-height:1.6; white-space:pre-line;">${convertMarkdownLinks(section.content || '')}</div>`;
+        html += `
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0;padding:0;border-collapse:separate;"><tr><td>
+  <div class="section-container" style="background:${section.backgroundColor?.includes('white') ? '#fff' : section.backgroundColor?.includes('pink') ? '#fde4ec' : section.backgroundColor?.includes('green') ? '#e9fbe5' : section.backgroundColor?.includes('blue') ? '#e6f0fa' : section.backgroundColor?.includes('cyan') ? '#e0f7fa' : section.backgroundColor?.includes('purple') ? '#f3e8ff' : '#fff'}; border-radius:12px; box-shadow:0 2px 8px #0001; padding:24px; position:relative; background-clip:padding-box;">
+    <div style="position:absolute; right:0; top:0; bottom:0; width:8px; border-radius:8px; background:${section.sideLineColor || '#3b82f6'};"></div>
+    <h2 style="color:${section.titleColor || '#3b82f6'}; margin-top:0; margin-bottom:16px; font-size:${fontSizeToCss(section.titleFontSize || 'text-2xl')}; font-weight:bold;">${convertMarkdownLinks(section.title || '')}</h2>
+    <div style="margin-bottom:12px; color:#333; font-size:${fontSizeToCss(section.contentFontSize || 'text-lg')}; line-height:1.6; white-space:pre-line;">${convertMarkdownLinks(section.content || '')}</div>`;
         // Media Items
         if (section.mediaItems && section.mediaItems.length) {
           for (const item of section.mediaItems) {
@@ -185,7 +217,7 @@ async function renderNewsletterHtml(newsletter: any, unsubscribeLink: string, su
                 <img class="media-item" src="${item.url}" alt="" style="display:inline-block; width:${width}; max-width:${maxWidth}; height:auto; object-fit:cover; border-radius:8px;" />
               </div>`;
               if (item.textContent) {
-                html += `<div style="margin-bottom:16px; color:#333; font-size:16px; line-height:1.6; white-space:pre-line;">${convertMarkdownLinks(item.textContent)}</div>`;
+                html += `<div style="margin-bottom:16px; color:#333; font-size:${fontSizeToCss(item.textFontSize || 'text-base')}; line-height:1.6; white-space:pre-line;">${convertMarkdownLinks(item.textContent)}</div>`;
               }
             } else if (item.type === 'video') {
               html += `<div class="media-container" style="text-align:${containerAlign}; margin-bottom:16px;">
@@ -194,7 +226,7 @@ async function renderNewsletterHtml(newsletter: any, unsubscribeLink: string, su
                 </a>
               </div>`;
               if (item.textContent) {
-                html += `<div style="margin-bottom:16px; color:#333; font-size:16px; line-height:1.6; white-space:pre-line;">${convertMarkdownLinks(item.textContent)}</div>`;
+                html += `<div style="margin-bottom:16px; color:#333; font-size:${fontSizeToCss(item.textFontSize || 'text-base')}; line-height:1.6; white-space:pre-line;">${convertMarkdownLinks(item.textContent)}</div>`;
               }
             } else if (item.type === 'youtube') {
               let videoId = '';
@@ -210,7 +242,7 @@ async function renderNewsletterHtml(newsletter: any, unsubscribeLink: string, su
                 </a>
               </div>`;
               if (item.textContent) {
-                html += `<div style="margin-bottom:16px; color:#333; font-size:16px; line-height:1.6; white-space:pre-line;">${convertMarkdownLinks(item.textContent)}</div>`;
+                html += `<div style="margin-bottom:16px; color:#333; font-size:${fontSizeToCss(item.textFontSize || 'text-base')}; line-height:1.6; white-space:pre-line;">${convertMarkdownLinks(item.textContent)}</div>`;
               }
             } else if (item.type === 'link') {
               html += `<div class="media-container" style="text-align:${containerAlign}; margin-bottom:16px;">
@@ -229,23 +261,30 @@ async function renderNewsletterHtml(newsletter: any, unsubscribeLink: string, su
             if (list.type === 'bullet') {
               html += '<div style="margin-bottom:16px;">';
               for (const item of list.items) {
-                html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><span style="display:inline-block;width:16px;height:16px;border-radius:50%;background:${item.color};"></span><span style="font-size:16px;color:#333;">${convertMarkdownLinks(item.text)}</span></div>`;
+                const itemFontSize = item.fontSize || list.fontSize || 'text-lg';
+                const bulletSize = getBulletSize(itemFontSize);
+                html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><span style="display:inline-block;width:${bulletSize};height:${bulletSize};border-radius:50%;background:${item.color};"></span><span style="font-size:${fontSizeToCss(itemFontSize)};color:#333;">${convertMarkdownLinks(item.text)}</span></div>`;
               }
               html += '</div>';
             } else if (list.type === 'numbered') {
               html += '<div style="margin-bottom:16px;">';
               list.items.forEach((item, idx) => {
-                html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><span style="font-weight:bold;font-size:18px;color:${item.color};width:24px;display:inline-block;">${String(idx + 1).padStart(2, '0')}</span><span style="font-size:16px;color:#333;">${convertMarkdownLinks(item.text)}</span></div>`;
+                const itemFontSize = item.fontSize || list.fontSize || 'text-lg';
+                html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><span style="font-weight:bold;font-size:${fontSizeToCss(itemFontSize)};color:${item.color};width:24px;display:inline-block;">${String(idx + 1).padStart(2, '0')}</span><span style="font-size:${fontSizeToCss(itemFontSize)};color:#333;">${convertMarkdownLinks(item.text)}</span></div>`;
               });
               html += '</div>';
             }
           }
         }
+        // Content after lists
+        if (section.afterListContent) {
+          html += `<div style="margin-bottom:16px; color:#333; font-size:${fontSizeToCss(section.afterListContentFontSize || section.contentFontSize || 'text-lg')}; line-height:1.6; white-space:pre-line;">${convertMarkdownLinks(section.afterListContent)}</div>`;
+        }
         // Subsections
         if (section.subsections && section.subsections.length) {
           html += '<div style="margin-top:18px;">';
           for (const sub of section.subsections) {
-            html += `<div style="margin-bottom:16px;"><div style="font-weight:bold;color:${sub.titleColor || '#3b82f6'}; font-size:${sub.titleFontSize === 'text-xs' ? '12px' : sub.titleFontSize === 'text-sm' ? '14px' : sub.titleFontSize === 'text-base' ? '16px' : sub.titleFontSize === 'text-lg' ? '18px' : sub.titleFontSize === 'text-xl' ? '20px' : sub.titleFontSize === 'text-2xl' ? '24px' : sub.titleFontSize === 'text-3xl' ? '30px' : sub.titleFontSize === 'text-4xl' ? '36px' : '18px'}; margin-bottom:8px;">${convertMarkdownLinks(sub.title)}</div><div style="color:#333; font-size:${sub.contentFontSize === 'text-xs' ? '12px' : sub.contentFontSize === 'text-sm' ? '14px' : sub.contentFontSize === 'text-base' ? '16px' : sub.contentFontSize === 'text-lg' ? '18px' : sub.contentFontSize === 'text-xl' ? '20px' : sub.contentFontSize === 'text-2xl' ? '24px' : sub.contentFontSize === 'text-3xl' ? '30px' : sub.contentFontSize === 'text-4xl' ? '36px' : '16px'}; line-height:1.5; white-space:pre-line;">${convertMarkdownLinks(sub.content)}</div></div>`;
+            html += `<div style="margin-bottom:16px;"><div style="font-weight:bold;color:${sub.titleColor || '#3b82f6'}; font-size:${fontSizeToCss(sub.titleFontSize || 'text-lg')}; margin-bottom:8px;">${convertMarkdownLinks(sub.title)}</div><div style="color:#333; font-size:${fontSizeToCss(sub.contentFontSize || 'text-base')}; line-height:1.5; white-space:pre-line;">${convertMarkdownLinks(sub.content)}</div>`;
             
             // Subsection Media Items
             if (sub.mediaItems && sub.mediaItems.length) {
@@ -283,7 +322,7 @@ async function renderNewsletterHtml(newsletter: any, unsubscribeLink: string, su
                     <img class="media-item" src="${item.url}" alt="" style="display:inline-block; width:${width}; max-width:${maxWidth}; height:auto; object-fit:cover; border-radius:8px;" />
                   </div>`;
                   if (item.textContent) {
-                    html += `<div style="margin-bottom:16px; color:#333; font-size:16px; line-height:1.6; white-space:pre-line;">${convertMarkdownLinks(item.textContent)}</div>`;
+                    html += `<div style="margin-bottom:16px; color:#333; font-size:${fontSizeToCss(item.textFontSize || 'text-base')}; line-height:1.6; white-space:pre-line;">${convertMarkdownLinks(item.textContent)}</div>`;
                   }
                 } else if (item.type === 'video') {
                   html += `<div class="media-container" style="text-align:${containerAlign}; margin-bottom:16px;">
@@ -292,7 +331,7 @@ async function renderNewsletterHtml(newsletter: any, unsubscribeLink: string, su
                     </a>
                   </div>`;
                   if (item.textContent) {
-                    html += `<div style="margin-bottom:16px; color:#333; font-size:16px; line-height:1.6; white-space:pre-line;">${convertMarkdownLinks(item.textContent)}</div>`;
+                    html += `<div style="margin-bottom:16px; color:#333; font-size:${fontSizeToCss(item.textFontSize || 'text-base')}; line-height:1.6; white-space:pre-line;">${convertMarkdownLinks(item.textContent)}</div>`;
                   }
                 } else if (item.type === 'youtube') {
                   let videoId = '';
@@ -308,7 +347,7 @@ async function renderNewsletterHtml(newsletter: any, unsubscribeLink: string, su
                     </a>
                   </div>`;
                   if (item.textContent) {
-                    html += `<div style="margin-bottom:16px; color:#333; font-size:16px; line-height:1.6; white-space:pre-line;">${convertMarkdownLinks(item.textContent)}</div>`;
+                    html += `<div style="margin-bottom:16px; color:#333; font-size:${fontSizeToCss(item.textFontSize || 'text-base')}; line-height:1.6; white-space:pre-line;">${convertMarkdownLinks(item.textContent)}</div>`;
                   }
                 } else if (item.type === 'link') {
                   html += `<div class="media-container" style="text-align:${containerAlign}; margin-bottom:16px;">
@@ -321,10 +360,39 @@ async function renderNewsletterHtml(newsletter: any, unsubscribeLink: string, su
                 }
               }
             }
+            
+            // Subsection Lists
+            if (sub.lists && sub.lists.length) {
+              for (const list of sub.lists) {
+                if (list.type === 'bullet') {
+                  html += '<div style="margin-bottom:16px;">';
+                  for (const item of list.items) {
+                    const itemFontSize = item.fontSize || list.fontSize || 'text-base';
+                    const bulletSize = getBulletSize(itemFontSize);
+                    html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><span style="display:inline-block;width:${bulletSize};height:${bulletSize};border-radius:50%;background:${item.color};"></span><span style="font-size:${fontSizeToCss(itemFontSize)};color:#333;">${convertMarkdownLinks(item.text)}</span></div>`;
+                  }
+                  html += '</div>';
+                } else if (list.type === 'numbered') {
+                  html += '<div style="margin-bottom:16px;">';
+                  list.items.forEach((item, idx) => {
+                    const itemFontSize = item.fontSize || list.fontSize || 'text-base';
+                    html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><span style="font-weight:bold;font-size:${fontSizeToCss(itemFontSize)};color:${item.color};width:24px;display:inline-block;">${String(idx + 1).padStart(2, '0')}</span><span style="font-size:${fontSizeToCss(itemFontSize)};color:#333;">${convertMarkdownLinks(item.text)}</span></div>`;
+                  });
+                  html += '</div>';
+                }
+              }
+            }
+            
+            // Subsection content after lists
+            if (sub.afterListContent) {
+              html += `<div style="margin-bottom:16px; color:#333; font-size:${fontSizeToCss(sub.afterListContentFontSize || sub.contentFontSize || 'text-base')}; line-height:1.6; white-space:pre-line;">${convertMarkdownLinks(sub.afterListContent)}</div>`;
+            }
           }
           html += '</div>';
         }
-        html += '</div>';
+        html += '</div></td></tr>';
+        // Add spacing row between sections
+        html += '<tr><td height="32"></td></tr></table>';
       }
     } else {
       html += `<div>${newsletter.content}</div>`;
@@ -404,14 +472,12 @@ serve(async (req: Request) => {
       JSON.stringify(requestBody)
     );
     
-    const { newsletterId } = requestBody as NewsletterRequest;
+    const { newsletterId, mode, email } = requestBody as NewsletterRequest;
     
     if (!newsletterId) {
       console.error('Edge Function: Missing newsletterId in request');
       throw new Error('Newsletter ID is required');
     }
-    
-    console.log(`Edge Function: Processing newsletter ID: ${newsletterId}`);
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -442,55 +508,82 @@ serve(async (req: Request) => {
     
     console.log(`Edge Function: Newsletter found: ${newsletter.main_title}`);
     
-    // Get all subscribers with their unsubscribe tokens
-    console.log('Edge Function: Fetching subscribers');
-    const { data: subscribers, error: subscribersError } = await supabase
-      .from('subscribers')
-      .select('email, unsubscribe_token')
-      .order('created_at', { ascending: false });
-      
-    if (subscribersError) {
-      console.error(
-        `Edge Function: Subscribers fetch error: ${subscribersError.message}`
-      );
-      throw new Error(
-        `Failed to fetch subscribers: ${subscribersError.message}`
-      );
-    }
+    // Determine sending mode and get recipients
+    const sendMode = mode || 'all';
+    console.log(`Edge Function: Sending mode: ${sendMode}`);
     
-    console.log(`Edge Function: Found ${subscribers?.length || 0} subscribers`);
+    let recipients: SubscriberData[] = [];
     
-    if (!subscribers || subscribers.length === 0) {
-      console.log('Edge Function: No subscribers found');
-      return new Response(
-        JSON.stringify({
-          message: 'No subscribers found',
-          success: true,
-          subscribers: 0,
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200,
-        }
-      );
-    }
-
-    // Update newsletter as sent
-    console.log('Edge Function: Marking newsletter as sent');
-    const { error: updateError } = await supabase
-      .from('newsletters')
-      .update({ 
-        sent_at: new Date().toISOString(),
-        recipients_count: subscribers.length,
-        status: 'sent',
-      })
-      .eq('id', newsletterId);
+    if (sendMode === 'single') {
+      // Single email mode - create a temporary subscriber object
+      if (!email) {
+        throw new Error('Email is required for single mode');
+      }
       
-    if (updateError) {
-      console.error(`Edge Function: Update error: ${updateError.message}`);
-      // Continue anyway as this is not critical
+      // Generate a temporary unsubscribe token for single email
+      const tempUnsubscribeToken = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      recipients = [{
+        email: email,
+        unsubscribe_token: tempUnsubscribeToken
+      }];
+      
+      console.log(`Edge Function: Single email mode - sending to: ${email}`);
     } else {
-      console.log('Edge Function: Newsletter marked as sent successfully');
+      // All subscribers mode - fetch from database
+      console.log('Edge Function: Fetching all subscribers');
+      const { data: subscribers, error: subscribersError } = await supabase
+        .from('subscribers')
+        .select('email, unsubscribe_token')
+        .order('created_at', { ascending: false });
+        
+      if (subscribersError) {
+        console.error(
+          `Edge Function: Subscribers fetch error: ${subscribersError.message}`
+        );
+        throw new Error(
+          `Failed to fetch subscribers: ${subscribersError.message}`
+        );
+      }
+      
+      console.log(`Edge Function: Found ${subscribers?.length || 0} subscribers`);
+      
+      if (!subscribers || subscribers.length === 0) {
+        console.log('Edge Function: No subscribers found');
+        return new Response(
+          JSON.stringify({
+            message: 'No subscribers found',
+            success: true,
+            subscribers: 0,
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+          }
+        );
+      }
+      
+      recipients = subscribers;
+    }
+    
+    // Update newsletter as sent
+    if (sendMode !== 'single') {
+      console.log('Edge Function: Marking newsletter as sent');
+      const { error: updateError } = await supabase
+        .from('newsletters')
+        .update({ 
+          sent_at: new Date().toISOString(),
+          recipients_count: recipients.length,
+          status: 'sent',
+        })
+        .eq('id', newsletterId);
+      
+      if (updateError) {
+        console.error(`Edge Function: Update error: ${updateError.message}`);
+        // Continue anyway as this is not critical
+      } else {
+        console.log('Edge Function: Newsletter marked as sent successfully');
+      }
     }
     
     // Send emails to all subscribers with rate limiting
@@ -503,8 +596,8 @@ serve(async (req: Request) => {
     // Process emails in smaller batches to avoid overwhelming the service
     const batchSize = 10;
     const batches = [];
-    for (let i = 0; i < subscribers.length; i += batchSize) {
-      batches.push(subscribers.slice(i, i + batchSize));
+    for (let i = 0; i < recipients.length; i += batchSize) {
+      batches.push(recipients.slice(i, i + batchSize));
     }
 
     for (const batch of batches) {
@@ -561,12 +654,16 @@ serve(async (req: Request) => {
     
     // Return success response with details
     const responseData = { 
-      message: `Newsletter sent to ${successfulSends} subscribers${
-        failedSends > 0 ? ` (${failedSends} failed)` : ''
-      }`,
+      message: sendMode === 'single' 
+        ? `Newsletter sent to ${email} successfully`
+        : `Newsletter sent to ${successfulSends} subscribers${
+            failedSends > 0 ? ` (${failedSends} failed)` : ''
+          }`,
       subscribers: successfulSends,
       failed: failedSends,
       success: successfulSends > 0,
+      mode: sendMode,
+      email: sendMode === 'single' ? email : undefined,
       errors: failedSends > 0 ? errors.slice(0, 5) : [], // Limit error details in response
     };
 

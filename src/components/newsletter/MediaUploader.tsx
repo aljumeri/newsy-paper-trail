@@ -1,10 +1,10 @@
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -292,8 +292,8 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({ isOpen, onClose, onAddMed
       setIsUploadingYoutube(true);
       try {
         console.log('[YouTube Add] Adding YouTube link:', youtubeUrl);
-        const videoId = youtubeUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/)?.[1];
-        const embedUrl = videoId ? `https://www.youtube.com/embed/${videoId}` : youtubeUrl;
+      const videoId = youtubeUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/)?.[1];
+      const embedUrl = videoId ? `https://www.youtube.com/embed/${videoId}` : youtubeUrl;
         let previewUrl: string | undefined = undefined;
         if (videoId) {
           try {
@@ -324,8 +324,8 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({ isOpen, onClose, onAddMed
           alignment: 'center',
           previewUrl,
         });
-        setYoutubeUrl('');
-        onClose();
+      setYoutubeUrl('');
+      onClose();
       } catch (error) {
         console.error('[YouTube Add] General error:', error);
         toast({

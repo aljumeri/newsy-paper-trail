@@ -14,12 +14,20 @@ interface EditableSectionProps {
   section: Section;
   onUpdate: (updates: Partial<Section>) => void;
   onDelete: () => void;
+  moveUp: () => void;
+  moveDown: () => void;
+  disableUp: boolean;
+  disableDown: boolean;
 }
 
 const EditableSection: React.FC<EditableSectionProps> = ({
   section,
   onUpdate,
   onDelete,
+  moveUp,
+  moveDown,
+  disableUp,
+  disableDown,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isMediaUploaderOpen, setIsMediaUploaderOpen] = useState(false);
@@ -216,6 +224,10 @@ const EditableSection: React.FC<EditableSectionProps> = ({
       <Card
         className={`${section.backgroundColor} relative overflow-hidden shadow-lg`}
       >
+        <div className="flex items-center gap-2 mb-2 p-2">
+          <button onClick={moveUp} disabled={disableUp} className="px-2 py-1 rounded border bg-gray-100 disabled:opacity-50">↑</button>
+          <button onClick={moveDown} disabled={disableDown} className="px-2 py-1 rounded border bg-gray-100 disabled:opacity-50">↓</button>
+        </div>
         {/* Decorative side line - right side only for RTL layout */}
         <div
           className="absolute right-0 top-0 bottom-0 w-2 rounded-r-lg"
@@ -285,13 +297,39 @@ const EditableSection: React.FC<EditableSectionProps> = ({
 
           {/* Lists */}
           {isEditing ? (
-            <div className="mb-6">
-              <ListEditor lists={section.lists || []} onUpdate={updateLists} />
-            </div>
+            <>
+              <div className="mb-6">
+                <ListEditor lists={section.lists || []} onUpdate={updateLists} />
+              </div>
+              <div className="flex items-start justify-between mt-2">
+                <div className="flex-1">
+                  <EditableText
+                    value={section.afterListContent || ''}
+                    onChange={val => onUpdate({ afterListContent: val })}
+                    className="text-gray-700 leading-relaxed"
+                    fontSize={section.afterListContentFontSize || section.contentFontSize || 'text-lg'}
+                    placeholder="أضف محتوى بعد القائمة..."
+                    multiline
+                    isTitle={false}
+                  />
+                </div>
+                <TextSizeSelector
+                  currentSize={section.afterListContentFontSize || section.contentFontSize || 'text-lg'}
+                  onSizeChange={size => onUpdate({ afterListContentFontSize: size })}
+                  label="حجم الخط بعد القائمة"
+                  className="ml-2"
+                />
+              </div>
+            </>
           ) : (
-            <div className="mb-6">
-              <ListDisplay lists={section.lists || []} />
-            </div>
+            <>
+              <div className="mb-6">
+                <ListDisplay lists={section.lists || []} />
+              </div>
+              {section.afterListContent && (
+                <div className={`text-gray-700 leading-relaxed mt-2 ${section.afterListContentFontSize || section.contentFontSize || 'text-lg'}`}>{section.afterListContent}</div>
+              )}
+            </>
           )}
 
           {/* Subsections */}
@@ -304,6 +342,7 @@ const EditableSection: React.FC<EditableSectionProps> = ({
             onRemoveSubsectionMedia={removeSubsectionMediaItem}
             onUpdateSubsectionMedia={updateSubsectionMediaItem}
             onOpenMediaUploader={handleOpenMediaUploader}
+            readOnly={!isEditing ? false : undefined}
           />
         </div>
       </Card>

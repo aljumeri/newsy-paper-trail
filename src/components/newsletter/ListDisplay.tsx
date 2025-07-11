@@ -4,109 +4,32 @@ interface ListItem {
   id: string;
   text: string;
   color: string;
+  fontSize?: string; // Added fontSize to ListItem interface
 }
 
 interface ListData {
   id: string;
   type: 'bullet' | 'numbered';
   items: ListItem[];
+  fontSize?: string; // Added fontSize to ListData interface
 }
 
 interface ListDisplayProps {
   lists: ListData[];
 }
 
+function bulletSizeClass(fontSize) {
+  switch (fontSize) {
+    case 'text-xs': return 'w-2 h-2';
+    case 'text-sm': return 'w-2.5 h-2.5';
+    case 'text-base': return 'w-3 h-3';
+    case 'text-lg': return 'w-3.5 h-3.5';
+    case 'text-xl': return 'w-4 h-4';
+    default: return 'w-3 h-3';
+  }
+}
+
 const ListDisplay: React.FC<ListDisplayProps> = ({ lists }) => {
-  // Function to render markdown links and bold text
-  const renderTextWithLinks = (text: string) => {
-    if (!text) return '';
-
-    // Process bold text first: **text** -> <strong>text</strong>
-    const boldRegex = /\*\*(.*?)\*\*/g;
-    let processedText = text;
-    let boldMatches = [];
-    let boldMatch;
-    
-    // Find all bold matches
-    while ((boldMatch = boldRegex.exec(text)) !== null) {
-      boldMatches.push({
-        index: boldMatch.index,
-        text: boldMatch[1],
-        fullMatch: boldMatch[0]
-      });
-    }
-
-    // Simple markdown link regex: [text](url)
-    const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
-    const parts = [];
-    let lastIndex = 0;
-    let match;
-
-    while ((match = linkRegex.exec(processedText)) !== null) {
-      // Add text before the link
-      if (match.index > lastIndex) {
-        const textBefore = processedText.substring(lastIndex, match.index);
-        // Process bold text in this segment
-        parts.push(processBoldText(textBefore));
-      }
-
-      // Add the link
-      parts.push(
-        <a
-          key={match.index}
-          href={match[2]}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-600 hover:text-blue-800 underline"
-          onClick={e => e.stopPropagation()}
-        >
-          {match[1]}
-        </a>
-      );
-
-      lastIndex = match.index + match[0].length;
-    }
-
-    // Add remaining text
-    if (lastIndex < processedText.length) {
-      const remainingText = processedText.substring(lastIndex);
-      parts.push(processBoldText(remainingText));
-    }
-
-    return parts.length > 0 ? parts : processBoldText(processedText);
-  };
-
-  // Helper function to process bold text
-  const processBoldText = (text: string) => {
-    const boldRegex = /\*\*(.*?)\*\*/g;
-    const parts = [];
-    let lastIndex = 0;
-    let match;
-
-    while ((match = boldRegex.exec(text)) !== null) {
-      // Add text before the bold
-      if (match.index > lastIndex) {
-        parts.push(text.substring(lastIndex, match.index));
-      }
-
-      // Add the bold text
-      parts.push(
-        <strong key={match.index}>
-          {match[1]}
-        </strong>
-      );
-
-      lastIndex = match.index + match[0].length;
-    }
-
-    // Add remaining text
-    if (lastIndex < text.length) {
-      parts.push(text.substring(lastIndex));
-    }
-
-    return parts.length > 0 ? parts : text;
-  };
-
   if (lists.length === 0) return null;
 
   return (
@@ -114,12 +37,12 @@ const ListDisplay: React.FC<ListDisplayProps> = ({ lists }) => {
       {lists.map((list) => (
         <div key={list.id} className="space-y-3">
           {list.items.map((item, itemIndex) => (
-            <div key={item.id} className="flex items-start gap-4 text-right" dir="rtl">
+            <div key={item.id} className={`flex items-start gap-1 text-right w-full ${itemIndex === 0 ? 'mt-3' : ''}`} dir="rtl">
               {/* Bullet or Number */}
               <div className="flex-shrink-0 mt-1">
                 {list.type === 'bullet' ? (
                   <div
-                    className="w-4 h-4 rounded-full shadow-sm"
+                    className={`rounded-full shadow-sm ${bulletSizeClass(item.fontSize || list.fontSize || 'text-lg')}`}
                     style={{ backgroundColor: item.color }}
                   />
                 ) : (
@@ -133,9 +56,9 @@ const ListDisplay: React.FC<ListDisplayProps> = ({ lists }) => {
               </div>
 
               {/* Text Content */}
-              <div className="flex-1">
-                <p className="text-gray-700 text-lg leading-relaxed whitespace-pre-line">
-                  {renderTextWithLinks(item.text)}
+              <div className="flex-1 w-full">
+                <p className={`text-gray-700 leading-relaxed whitespace-pre-line break-words w-full ${item.fontSize || list.fontSize || 'text-lg'}`}>
+                  {item.text}
                 </p>
               </div>
             </div>

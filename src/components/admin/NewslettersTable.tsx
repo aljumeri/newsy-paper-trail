@@ -1,31 +1,31 @@
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { Edit, ExternalLink, Eye, Mail, Send, Trash2 } from 'lucide-react';
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { sendNewsletterToSingleEmail } from '../../utils/subscriptionService';
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Edit, ExternalLink, Eye, Mail, Send, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { sendNewsletterToSingleEmail } from "../../utils/subscriptionService";
 
 interface Newsletter {
   id: string;
@@ -48,9 +48,11 @@ const NewslettersTable = ({
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [testingId, setTestingId] = useState<string | null>(null);
-  const [testEmail, setTestEmail] = useState<string>('');
+  const [testEmail, setTestEmail] = useState<string>(
+    "su.alshehri.ai@gmail.com"
+  );
   const [showTestDialog, setShowTestDialog] = useState<boolean>(false);
-  const [selectedNewsletterId, setSelectedNewsletterId] = useState<string>('');
+  const [selectedNewsletterId, setSelectedNewsletterId] = useState<string>("");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -59,37 +61,37 @@ const NewslettersTable = ({
     try {
       // First, get the newsletter content
       const { data: newsletter, error: newsletterError } = await supabase
-        .from('newsletters')
-        .select('main_title, content')
-        .eq('id', id)
+        .from("newsletters")
+        .select("main_title, content")
+        .eq("id", id)
         .single();
 
       if (newsletterError) throw newsletterError;
-      if (!newsletter) throw new Error('Newsletter not found');
+      if (!newsletter) throw new Error("Newsletter not found");
 
       // Get all subscribers
       const { data: subscribers, error: subscribersError } = await supabase
-        .from('subscribers')
-        .select('email');
+        .from("subscribers")
+        .select("email");
 
       if (subscribersError) throw subscribersError;
       if (!subscribers || subscribers.length === 0) {
         toast({
-          title: 'لا يوجد مشتركين',
-          description: 'لم يتم العثور على أي مشتركين في النشرة الإخبارية',
+          title: "لا يوجد مشتركين",
+          description: "لم يتم العثور على أي مشتركين في النشرة الإخبارية",
         });
         return;
       }
 
       // Update newsletter as sent
       const { error: updateError } = await supabase
-        .from('newsletters')
+        .from("newsletters")
         .update({
           sent_at: new Date().toISOString(),
           recipients_count: subscribers.length,
-          status: 'sent',
+          status: "sent",
         })
-        .eq('id', id);
+        .eq("id", id);
 
       if (updateError) throw updateError;
 
@@ -97,9 +99,9 @@ const NewslettersTable = ({
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-newsletter`,
         {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
           },
           body: JSON.stringify({
@@ -109,21 +111,21 @@ const NewslettersTable = ({
       );
 
       if (!response.ok) {
-        throw new Error('Failed to send newsletter');
+        throw new Error("Failed to send newsletter");
       }
 
       toast({
-        title: 'تم الإرسال',
+        title: "تم الإرسال",
         description: `تم إرسال النشرة الإخبارية إلى ${subscribers.length} مشترك`,
       });
 
       if (onRefresh) await onRefresh();
     } catch (error: any) {
-      console.error('Error sending newsletter:', error);
+      console.error("Error sending newsletter:", error);
       toast({
-        title: 'خطأ',
-        description: error.message || 'حدث خطأ أثناء إرسال النشرة الإخبارية',
-        variant: 'destructive',
+        title: "خطأ",
+        description: error.message || "حدث خطأ أثناء إرسال النشرة الإخبارية",
+        variant: "destructive",
       });
     } finally {
       setSendingId(null);
@@ -134,24 +136,24 @@ const NewslettersTable = ({
     setDeletingId(id);
     try {
       const { error } = await supabase
-        .from('newsletters')
+        .from("newsletters")
         .delete()
-        .eq('id', id);
+        .eq("id", id);
 
       if (error) throw error;
 
       toast({
-        title: 'تم الحذف بنجاح',
-        description: 'تم حذف النشرة الإخبارية بنجاح',
+        title: "تم الحذف بنجاح",
+        description: "تم حذف النشرة الإخبارية بنجاح",
       });
 
       if (onRefresh) await onRefresh();
     } catch (error: any) {
-      console.error('Error deleting newsletter:', error);
+      console.error("Error deleting newsletter:", error);
       toast({
-        title: 'خطأ في الحذف',
-        description: error.message || 'حدث خطأ أثناء حذف النشرة الإخبارية',
-        variant: 'destructive',
+        title: "خطأ في الحذف",
+        description: error.message || "حدث خطأ أثناء حذف النشرة الإخبارية",
+        variant: "destructive",
       });
     } finally {
       setDeletingId(null);
@@ -161,9 +163,9 @@ const NewslettersTable = ({
   const handleTestEmail = async (id: string) => {
     if (!testEmail.trim()) {
       toast({
-        title: 'خطأ',
-        description: 'يرجى إدخال عنوان البريد الإلكتروني',
-        variant: 'destructive',
+        title: "خطأ",
+        description: "يرجى إدخال عنوان البريد الإلكتروني",
+        variant: "destructive",
       });
       return;
     }
@@ -171,20 +173,21 @@ const NewslettersTable = ({
     setTestingId(id);
     try {
       const result = await sendNewsletterToSingleEmail(id, testEmail.trim());
-      
+
       toast({
-        title: 'تم الإرسال بنجاح',
+        title: "تم الإرسال بنجاح",
         description: `تم إرسال النشرة الإخبارية إلى ${testEmail}`,
       });
 
-      setTestEmail('');
+      setTestEmail("");
       setShowTestDialog(false);
     } catch (error: any) {
-      console.error('Error sending test email:', error);
+      console.error("Error sending test email:", error);
       toast({
-        title: 'خطأ',
-        description: error.message || 'حدث خطأ أثناء إرسال البريد الإلكتروني التجريبي',
-        variant: 'destructive',
+        title: "خطأ",
+        description:
+          error.message || "حدث خطأ أثناء إرسال البريد الإلكتروني التجريبي",
+        variant: "destructive",
       });
     } finally {
       setTestingId(null);
@@ -208,14 +211,14 @@ const NewslettersTable = ({
           </TableHeader>
           <TableBody>
             {newsletters.length > 0 ? (
-              newsletters.map(newsletter => (
+              newsletters.map((newsletter) => (
                 <TableRow key={newsletter.id} className="hover:bg-gray-50">
                   <TableCell>{newsletter.main_title}</TableCell>
                   <TableCell>{formatDate(newsletter.created_at)}</TableCell>
                   <TableCell>
                     {newsletter.sent_at
                       ? formatDate(newsletter.sent_at)
-                      : 'لم يتم الإرسال بعد'}
+                      : "لم يتم الإرسال بعد"}
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
@@ -261,8 +264,8 @@ const NewslettersTable = ({
                           >
                             <Send className="w-4 h-4 ml-1" />
                             {sendingId === newsletter.id
-                              ? 'جاري الإرسال...'
-                              : 'إرسال'}
+                              ? "جاري الإرسال..."
+                              : "إرسال"}
                           </Button>
                           <Button
                             variant="outline"
@@ -276,8 +279,8 @@ const NewslettersTable = ({
                           >
                             <Mail className="w-4 h-4 ml-1" />
                             {testingId === newsletter.id
-                              ? 'جاري الإرسال...'
-                              : 'إرسال تجريبي'}
+                              ? "جاري الإرسال..."
+                              : "إرسال تجريبي"}
                           </Button>
                         </>
                       )}
@@ -290,21 +293,26 @@ const NewslettersTable = ({
                             disabled={deletingId === newsletter.id}
                           >
                             <Trash2 className="w-4 h-4 ml-1" />
-                            {deletingId === newsletter.id ? 'جاري الحذف...' : 'حذف'}
+                            {deletingId === newsletter.id
+                              ? "جاري الحذف..."
+                              : "حذف"}
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
                             <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
                             <AlertDialogDescription>
-                              هل أنت متأكد من رغبتك في حذف النشرة الإخبارية "{newsletter.main_title}"؟ 
-                              لا يمكن التراجع عن هذا الإجراء.
+                              هل أنت متأكد من رغبتك في حذف النشرة الإخبارية "
+                              {newsletter.main_title}"؟ لا يمكن التراجع عن هذا
+                              الإجراء.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>إلغاء</AlertDialogCancel>
                             <AlertDialogAction
-                              onClick={() => handleDeleteNewsletter(newsletter.id)}
+                              onClick={() =>
+                                handleDeleteNewsletter(newsletter.id)
+                              }
                               className="bg-red-500 hover:bg-red-600"
                             >
                               حذف
@@ -326,7 +334,7 @@ const NewslettersTable = ({
           </TableBody>
         </Table>
       </CardContent>
-      
+
       {/* Test Email Dialog */}
       <AlertDialog open={showTestDialog} onOpenChange={setShowTestDialog}>
         <AlertDialogContent>
@@ -346,10 +354,12 @@ const NewslettersTable = ({
             />
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => {
-              setTestEmail('');
-              setShowTestDialog(false);
-            }}>
+            <AlertDialogCancel
+              onClick={() => {
+                setTestEmail("");
+                setShowTestDialog(false);
+              }}
+            >
               إلغاء
             </AlertDialogCancel>
             <AlertDialogAction

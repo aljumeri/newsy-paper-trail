@@ -171,7 +171,7 @@ const SectionDisplay: React.FC<SectionDisplayProps> = ({ section }) => {
                   className="break-words"
                   style={contentColor ? { color: contentColor } : undefined}
                 >
-                  {item.replace(/^([•\d]+\.\s)/, '')}
+                  {renderTextWithLinks(item.replace(/^([•\d]+\.\s)/, ''))}
                 </span>
               </li>
             ))}
@@ -203,7 +203,7 @@ const SectionDisplay: React.FC<SectionDisplayProps> = ({ section }) => {
             } break-words text-justify`}
             style={contentColor ? { color: contentColor } : undefined}
           >
-            {line}
+            {renderTextWithLinks(line)}
           </div>
         );
       }
@@ -263,7 +263,7 @@ const SectionDisplay: React.FC<SectionDisplayProps> = ({ section }) => {
               section.contentColor ? { color: section.contentColor } : undefined
             }
           >
-            {section.afterListContent}
+            {renderTextWithLinks(section.afterListContent)}
           </div>
         )}
         {/* Subsections */}

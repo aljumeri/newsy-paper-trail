@@ -1,6 +1,19 @@
-import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Image, Link, Palette, Plus, Trash2, Video, X, Youtube } from "lucide-react";
+import { Button } from '@/components/ui/button';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Image,
+  Link,
+  Palette,
+  Plus,
+  Trash2,
+  Video,
+  X,
+  Youtube,
+} from 'lucide-react';
 import React from 'react';
 import EditableText from './EditableText';
 import ListDisplay from './ListDisplay';
@@ -12,17 +25,34 @@ import { MediaItem, Subsection } from './types';
 interface SubsectionListProps {
   subsections: Subsection[];
   onAddSubsection?: () => void;
-  onUpdateSubsection?: (subsectionId: string, updates: Partial<Subsection>) => void;
+  onUpdateSubsection?: (
+    subsectionId: string,
+    updates: Partial<Subsection>
+  ) => void;
   onDeleteSubsection?: (subsectionId: string) => void;
-  onAddSubsectionMedia?: (subsectionId: string, mediaData: Omit<MediaItem, 'id'>) => void;
+  onAddSubsectionMedia?: (
+    subsectionId: string,
+    mediaData: Omit<MediaItem, 'id'>
+  ) => void;
   onRemoveSubsectionMedia?: (subsectionId: string, mediaId: string) => void;
-  onUpdateSubsectionMedia?: (subsectionId: string, mediaId: string, updates: Partial<MediaItem>) => void;
-  onOpenMediaUploader?: (type: 'image' | 'video' | 'youtube' | 'link', subsectionId: string) => void;
+  onUpdateSubsectionMedia?: (
+    subsectionId: string,
+    mediaId: string,
+    updates: Partial<MediaItem>
+  ) => void;
+  onOpenMediaUploader?: (
+    type: 'image' | 'video' | 'youtube' | 'link',
+    subsectionId: string
+  ) => void;
   readOnly?: boolean;
 }
 
 // Helper function to render styled bullet/numbered lists inside content
-const renderStyledContent = (content: string, fontSize: string, bulletColor: string) => {
+const renderStyledContent = (
+  content: string,
+  fontSize: string,
+  bulletColor: string
+) => {
   if (!content) return null;
   const lines = content.split('\n');
   const elements = [];
@@ -32,15 +62,29 @@ const renderStyledContent = (content: string, fontSize: string, bulletColor: str
   const flushList = () => {
     if (listItems.length > 0 && listType) {
       elements.push(
-        <ul key={elements.length} className={`mb-2 pl-6`} style={{ listStyle: 'none' }}>
+        <ul
+          key={elements.length}
+          className={`mb-2 pl-6`}
+          style={{ listStyle: 'none' }}
+        >
           {listItems.map((item, idx) => (
             <li key={idx} className="flex items-start gap-2">
               {listType === 'bullet' ? (
-                <span className="inline-block mt-2 w-3 h-3 rounded-full" style={{ backgroundColor: bulletColor, minWidth: '0.75rem' }} />
+                <span
+                  className="inline-block mt-2 w-3 h-3 rounded-full"
+                  style={{ backgroundColor: bulletColor, minWidth: '0.75rem' }}
+                />
               ) : (
-                <span className="inline-block font-bold mr-1" style={{ color: bulletColor }}>{idx + 1}.</span>
+                <span
+                  className="inline-block font-bold mr-1"
+                  style={{ color: bulletColor }}
+                >
+                  {idx + 1}.
+                </span>
               )}
-              <span className={`break-words ${fontSize || 'text-base'}`}>{item.replace(/^([•\d]+\.\s)/, '')}</span>
+              <span className={`break-words ${fontSize || 'text-base'}`}>
+                {item.replace(/^([•\d]+\.\s)/, '')}
+              </span>
             </li>
           ))}
         </ul>
@@ -64,7 +108,12 @@ const renderStyledContent = (content: string, fontSize: string, bulletColor: str
     } else {
       flushList();
       elements.push(
-        <div key={elements.length} className={`mb-2 ${fontSize || 'text-base'} break-words`}>{line}</div>
+        <div
+          key={elements.length}
+          className={`mb-2 ${fontSize || 'text-base'} break-words`}
+        >
+          {line}
+        </div>
       );
     }
   });
@@ -84,10 +133,15 @@ const SubsectionList: React.FC<SubsectionListProps> = ({
   readOnly = false,
 }) => {
   const clearSubsectionContent = (subsectionId: string) => {
-    onUpdateSubsection && onUpdateSubsection(subsectionId, { content: '' });
+    if (onUpdateSubsection) {
+      onUpdateSubsection(subsectionId, { content: '' });
+    }
   };
 
-  const handleAddMedia = (subsectionId: string, type: 'image' | 'video' | 'youtube' | 'link') => {
+  const handleAddMedia = (
+    subsectionId: string,
+    type: 'image' | 'video' | 'youtube' | 'link'
+  ) => {
     if (onOpenMediaUploader) {
       onOpenMediaUploader(type, subsectionId);
     }
@@ -96,8 +150,10 @@ const SubsectionList: React.FC<SubsectionListProps> = ({
   return (
     <>
       {/* Subsections */}
-      {subsections.map((subsection) => {
-        const isEmpty = (!subsection.content || !subsection.content.trim()) && (!subsection.lists || subsection.lists.length === 0);
+      {subsections.map(subsection => {
+        const isEmpty =
+          (!subsection.content || !subsection.content.trim()) &&
+          (!subsection.lists || subsection.lists.length === 0);
         return (
           // Only render the title div if readOnly and empty, otherwise render everything
           readOnly && isEmpty ? (
@@ -109,13 +165,20 @@ const SubsectionList: React.FC<SubsectionListProps> = ({
                 <div className="flex items-center gap-2 flex-1">
                   <EditableText
                     value={subsection.title}
-                    onChange={title => onUpdateSubsection && onUpdateSubsection(subsection.id, { title })}
-                    className="font-semibold text-gray-700 break-words w-full"
+                    onChange={title =>
+                      onUpdateSubsection &&
+                      onUpdateSubsection(subsection.id, { title })
+                    }
+                    className="font-semibold text-black break-words w-full"
                     fontSize={subsection.titleFontSize || 'text-lg'}
                     placeholder="عنوان القسم الفرعي..."
                     isTitle={true}
                     readOnly={readOnly}
-                    style={subsection.titleColor ? { color: subsection.titleColor } : undefined}
+                    style={
+                      subsection.titleColor
+                        ? { color: subsection.titleColor }
+                        : undefined
+                    }
                   />
                 </div>
               </div>
@@ -123,32 +186,49 @@ const SubsectionList: React.FC<SubsectionListProps> = ({
           ) : (
             <div
               key={subsection.id}
-              className={`pr-2 sm:pr-4 border-r-2 border-gray-300 min-h-[2rem] w-full ${isEmpty ? 'mb-1' : 'mb-4'}`}
+              className={`pr-2 sm:pr-4 border-r-2 border-gray-300 min-h-[2rem] w-full ${
+                isEmpty ? 'mb-1' : 'mb-4'
+              }`}
             >
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2 flex-1">
                   <EditableText
                     value={subsection.title}
-                    onChange={title => onUpdateSubsection && onUpdateSubsection(subsection.id, { title })}
-                    className="font-semibold text-gray-700 break-words w-full"
+                    onChange={title =>
+                      onUpdateSubsection &&
+                      onUpdateSubsection(subsection.id, { title })
+                    }
+                    className="font-semibold text-black break-words w-full"
                     fontSize={subsection.titleFontSize || 'text-lg'}
                     placeholder="عنوان القسم الفرعي..."
                     isTitle={true}
                     readOnly={readOnly}
-                    style={subsection.titleColor ? { color: subsection.titleColor } : undefined}
+                    style={
+                      subsection.titleColor
+                        ? { color: subsection.titleColor }
+                        : undefined
+                    }
                   />
                   {!readOnly && (
                     <>
                       <TextSizeSelector
                         currentSize={subsection.titleFontSize || 'text-lg'}
-                        onSizeChange={(size) => onUpdateSubsection && onUpdateSubsection(subsection.id, { titleFontSize: size })}
+                        onSizeChange={size =>
+                          onUpdateSubsection &&
+                          onUpdateSubsection(subsection.id, {
+                            titleFontSize: size,
+                          })
+                        }
                         label="حجم عنوان القسم الفرعي"
                       />
                       <Popover>
                         <PopoverTrigger asChild>
                           <button
                             className="w-6 h-6 rounded-full border ml-1 flex items-center justify-center"
-                            style={{ backgroundColor: subsection.titleColor || '#6366F1' }}
+                            style={{
+                              backgroundColor:
+                                subsection.titleColor || '#000000',
+                            }}
                             title="تغيير لون العنوان"
                             type="button"
                           >
@@ -156,12 +236,31 @@ const SubsectionList: React.FC<SubsectionListProps> = ({
                           </button>
                         </PopoverTrigger>
                         <PopoverContent className="flex gap-2 p-2 w-auto min-w-0">
-                          {["#EC4899", "#10B981", "#6366F1", "#06B6D4", "#A78BFA", "#EF4444", "#EAB308", "#F59E42"].map(color => (
+                          {[
+                            '#000000',
+                            '#EC4899',
+                            '#10B981',
+                            '#6366F1',
+                            '#06B6D4',
+                            '#A78BFA',
+                            '#EF4444',
+                            '#EAB308',
+                            '#F59E42',
+                          ].map(color => (
                             <button
                               key={color}
-                              className={`w-5 h-5 rounded-full border-2 ${subsection.titleColor === color ? 'border-logo-blue ring-2 ring-logo-blue' : 'border-gray-200'}`}
+                              className={`w-5 h-5 rounded-full border-2 ${
+                                subsection.titleColor === color
+                                  ? 'border-logo-blue ring-2 ring-logo-blue'
+                                  : 'border-gray-200'
+                              }`}
                               style={{ backgroundColor: color }}
-                              onClick={() => onUpdateSubsection && onUpdateSubsection(subsection.id, { titleColor: color })}
+                              onClick={() =>
+                                onUpdateSubsection &&
+                                onUpdateSubsection(subsection.id, {
+                                  titleColor: color,
+                                })
+                              }
                               type="button"
                             />
                           ))}
@@ -227,7 +326,9 @@ const SubsectionList: React.FC<SubsectionListProps> = ({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => onDeleteSubsection && onDeleteSubsection(subsection.id)}
+                      onClick={() =>
+                        onDeleteSubsection && onDeleteSubsection(subsection.id)
+                      }
                       className="text-red-500 hover:text-red-600"
                       title="حذف القسم الفرعي"
                     >
@@ -236,26 +337,41 @@ const SubsectionList: React.FC<SubsectionListProps> = ({
                   </div>
                 )}
               </div>
-              <div className={`${subsection.content && subsection.content.trim() ? 'min-h-[2rem]' : 'min-h-[1rem]'}`}> 
+              <div
+                className={`${
+                  subsection.content && subsection.content.trim()
+                    ? 'min-h-[2rem]'
+                    : 'min-h-[1rem]'
+                }`}
+              >
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
                     <EditableText
                       value={subsection.content}
-                      onChange={content => onUpdateSubsection && onUpdateSubsection(subsection.id, { content })}
-                      className="text-gray-600 break-words w-full"
+                      onChange={content =>
+                        onUpdateSubsection &&
+                        onUpdateSubsection(subsection.id, { content })
+                      }
+                      className="text-black break-words w-full"
                       fontSize={subsection.contentFontSize || 'text-base'}
                       placeholder="محتوى القسم الفرعي..."
                       multiline
                       isTitle={false}
                       readOnly={readOnly}
-                      showPlaceholder={!!(subsection.content && subsection.content.trim())}
-                      renderStyledContent={(content) => renderStyledContent(content, subsection.contentFontSize || 'text-base', subsection.titleColor || '#4F46E5')}
+                      showPlaceholder={
+                        !!(subsection.content && subsection.content.trim())
+                      }
                     />
                   </div>
                   {!readOnly && (
                     <TextSizeSelector
                       currentSize={subsection.contentFontSize || 'text-base'}
-                      onSizeChange={(size) => onUpdateSubsection && onUpdateSubsection(subsection.id, { contentFontSize: size })}
+                      onSizeChange={size =>
+                        onUpdateSubsection &&
+                        onUpdateSubsection(subsection.id, {
+                          contentFontSize: size,
+                        })
+                      }
                       label="حجم محتوى القسم الفرعي"
                       className="ml-2"
                     />
@@ -269,24 +385,45 @@ const SubsectionList: React.FC<SubsectionListProps> = ({
                   <div className="mb-4">
                     <ListEditor
                       lists={subsection.lists || []}
-                      onUpdate={lists => onUpdateSubsection && onUpdateSubsection(subsection.id, { lists })}
+                      onUpdate={lists =>
+                        onUpdateSubsection &&
+                        onUpdateSubsection(subsection.id, { lists })
+                      }
                     />
                   </div>
                   <div className="flex items-start justify-between mt-2">
                     <div className="flex-1">
                       <EditableText
                         value={subsection.afterListContent || ''}
-                        onChange={val => onUpdateSubsection && onUpdateSubsection(subsection.id, { afterListContent: val })}
-                        className="text-gray-600"
-                        fontSize={subsection.afterListContentFontSize || subsection.contentFontSize || 'text-base'}
+                        onChange={val =>
+                          onUpdateSubsection &&
+                          onUpdateSubsection(subsection.id, {
+                            afterListContent: val,
+                          })
+                        }
+                        className="text-black"
+                        fontSize={
+                          subsection.afterListContentFontSize ||
+                          subsection.contentFontSize ||
+                          'text-base'
+                        }
                         placeholder="أضف محتوى بعد القائمة..."
                         multiline
                         isTitle={false}
                       />
                     </div>
                     <TextSizeSelector
-                      currentSize={subsection.afterListContentFontSize || subsection.contentFontSize || 'text-base'}
-                      onSizeChange={size => onUpdateSubsection && onUpdateSubsection(subsection.id, { afterListContentFontSize: size })}
+                      currentSize={
+                        subsection.afterListContentFontSize ||
+                        subsection.contentFontSize ||
+                        'text-base'
+                      }
+                      onSizeChange={size =>
+                        onUpdateSubsection &&
+                        onUpdateSubsection(subsection.id, {
+                          afterListContentFontSize: size,
+                        })
+                      }
                       label="حجم الخط بعد القائمة"
                       className="ml-2"
                     />
@@ -298,18 +435,32 @@ const SubsectionList: React.FC<SubsectionListProps> = ({
                     <ListDisplay lists={subsection.lists || []} />
                   </div>
                   {subsection.afterListContent && (
-                    <div className={`text-gray-600 mt-2 ${subsection.afterListContentFontSize || subsection.contentFontSize || 'text-base'}`}>{subsection.afterListContent}</div>
+                    <div
+                      className={`text-black mt-2 ${
+                        subsection.afterListContentFontSize ||
+                        subsection.contentFontSize ||
+                        'text-base'
+                      }`}
+                    >
+                      {subsection.afterListContent}
+                    </div>
                   )}
                 </>
               )}
-              
+
               {/* Subsection Media Items */}
               {subsection.mediaItems && subsection.mediaItems.length > 0 && (
                 <div className="mt-4">
                   <MediaDisplay
                     items={subsection.mediaItems}
-                    onRemove={(mediaId) => onRemoveSubsectionMedia && onRemoveSubsectionMedia(subsection.id, mediaId)}
-                    onUpdate={(mediaId, updates) => onUpdateSubsectionMedia && onUpdateSubsectionMedia(subsection.id, mediaId, updates)}
+                    onRemove={mediaId =>
+                      onRemoveSubsectionMedia &&
+                      onRemoveSubsectionMedia(subsection.id, mediaId)
+                    }
+                    onUpdate={(mediaId, updates) =>
+                      onUpdateSubsectionMedia &&
+                      onUpdateSubsectionMedia(subsection.id, mediaId, updates)
+                    }
                     readOnly={readOnly}
                   />
                 </div>
@@ -334,4 +485,4 @@ const SubsectionList: React.FC<SubsectionListProps> = ({
   );
 };
 
-export default SubsectionList; 
+export default SubsectionList;

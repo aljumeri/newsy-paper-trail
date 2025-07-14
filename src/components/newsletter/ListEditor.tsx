@@ -1,9 +1,14 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
-import { List, ListOrdered, Plus, Trash2 } from "lucide-react";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from '@/components/ui/select';
+import { List, ListOrdered, Plus, Trash2 } from 'lucide-react';
 import React, { useState } from 'react';
-import TextSizeSelector from "./TextSizeSelector";
+import TextSizeSelector from './TextSizeSelector';
 
 interface ListItem {
   id: string;
@@ -25,6 +30,7 @@ interface ListEditorProps {
 }
 
 const colorOptions = [
+  { name: 'أسود', value: '#000000' },
   { name: 'أزرق', value: '#4F46E5' },
   { name: 'بنفسجي', value: '#8B5CF6' },
   { name: 'أخضر', value: '#10B981' },
@@ -36,22 +42,26 @@ const colorOptions = [
 ];
 
 // Remove the old fontSizeOptions and define only working sizes for per-item selector
-const fontSizeOptions = [
-  { name: 'صغير جداً', value: 'text-xs' }, // 12px
-  { name: 'صغير', value: 'text-sm' }, // 14px
-  { name: 'متوسط', value: 'text-base' }, // 16px
-  { name: 'كبير', value: 'text-lg' }, // 18px
-  { name: 'أكبر', value: 'text-xl' }, // 20px
-];
 
 function fontSizeToRem(fontSize: string) {
   switch (fontSize) {
-    case 'text-xs': return '0.75rem'; // 12px
-    case 'text-sm': return '0.875rem'; // 14px
-    case 'text-base': return '1rem'; // 16px
-    case 'text-lg': return '1.125rem'; // 18px
-    case 'text-xl': return '1.25rem'; // 20px
-    default: return '1.125rem';
+    case 'text-xs':
+      return '0.75rem'; // 12px
+    case 'text-sm':
+      return '0.875rem'; // 14px
+    case 'text-base':
+      return '1rem'; // 16px
+    case 'text-lg':
+      return '1.125rem'; // 18px
+    case 'text-xl':
+      return '1.25rem'; // 20px
+    case 'text-2xl':
+      return '1.5rem'; // 24px
+    case 'text-3xl':
+      return '1.875rem'; // 30px
+    case 'text-4xl':
+      return '2.25rem'; // 36px
+    case 'text-5xl':
   }
 }
 
@@ -66,8 +76,8 @@ const ListEditor: React.FC<ListEditorProps> = ({ lists, onUpdate }) => {
         {
           id: `${Date.now()}-1`,
           text: 'عنصر القائمة الأول',
-          color: '#4F46E5'
-        }
+          color: '#000000',
+        },
       ],
       fontSize: 'text-lg',
     };
@@ -80,8 +90,8 @@ const ListEditor: React.FC<ListEditorProps> = ({ lists, onUpdate }) => {
         const newItem: ListItem = {
           id: `${Date.now()}-${list.items.length + 1}`,
           text: 'عنصر جديد',
-          color: '#4F46E5',
-          fontSize: 'text-lg'
+          color: '#000000',
+          fontSize: 'text-lg',
         };
         return { ...list, items: [...list.items, newItem] };
       }
@@ -90,14 +100,18 @@ const ListEditor: React.FC<ListEditorProps> = ({ lists, onUpdate }) => {
     onUpdate(updatedLists);
   };
 
-  const updateListItem = (listId: string, itemId: string, updates: Partial<ListItem>) => {
+  const updateListItem = (
+    listId: string,
+    itemId: string,
+    updates: Partial<ListItem>
+  ) => {
     const updatedLists = lists.map(list => {
       if (list.id === listId) {
         return {
           ...list,
           items: list.items.map(item =>
             item.id === itemId ? { ...item, ...updates } : item
-          )
+          ),
         };
       }
       return list;
@@ -106,12 +120,17 @@ const ListEditor: React.FC<ListEditorProps> = ({ lists, onUpdate }) => {
   };
 
   const removeListItem = (listId: string, itemId: string) => {
-    const updatedLists = lists.map(list => {
-      if (list.id === listId) {
-        return { ...list, items: list.items.filter(item => item.id !== itemId) };
-      }
-      return list;
-    }).filter(list => list.items.length > 0);
+    const updatedLists = lists
+      .map(list => {
+        if (list.id === listId) {
+          return {
+            ...list,
+            items: list.items.filter(item => item.id !== itemId),
+          };
+        }
+        return list;
+      })
+      .filter(list => list.items.length > 0);
     onUpdate(updatedLists);
   };
 
@@ -123,11 +142,7 @@ const ListEditor: React.FC<ListEditorProps> = ({ lists, onUpdate }) => {
     return (
       <div className="space-y-2">
         <div className="flex gap-2">
-          <Button
-            onClick={() => addList('bullet')}
-            variant="outline"
-            size="sm"
-          >
+          <Button onClick={() => addList('bullet')} variant="outline" size="sm">
             <List className="ml-1 h-4 w-4" />
             قائمة نقطية
           </Button>
@@ -148,7 +163,7 @@ const ListEditor: React.FC<ListEditorProps> = ({ lists, onUpdate }) => {
     <div className="space-y-4">
       {lists.map((list, listIndex) => (
         <div key={list.id} className="border rounded-lg p-4 bg-white/50">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between">
             <h4 className="font-medium">
               {list.type === 'bullet' ? 'قائمة نقطية' : 'قائمة مرقمة'}
             </h4>
@@ -173,19 +188,32 @@ const ListEditor: React.FC<ListEditorProps> = ({ lists, onUpdate }) => {
             </div>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-1">
             {list.items.map((item, itemIndex) => (
-              <div key={item.id} className={`flex items-start gap-1 ${itemIndex === 0 ? 'mt-3' : ''}`}>
+              <div
+                key={item.id}
+                className={`flex items-center gap-2 ${
+                  itemIndex === 0 ? 'mt-3' : ''
+                }`}
+              >
                 {/* Bullet or Number */}
-                <div className="flex-shrink-0 mt-1">
+                <div className="flex-shrink-0">
                   {list.type === 'bullet' ? (
                     <div
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: item.color }}
+                      className={`rounded-full`}
+                      style={{
+                        backgroundColor: item.color,
+                        width: `calc(${fontSizeToRem(
+                          item.fontSize || 'text-lg'
+                        )} - 6px)`,
+                        height: `calc(${fontSizeToRem(
+                          item.fontSize || 'text-lg'
+                        )} - 6px)`,
+                      }}
                     />
                   ) : (
                     <span
-                      className="font-bold text-lg"
+                      className={`font-bold ${item.fontSize || 'text-lg'}`}
                       style={{ color: item.color }}
                     >
                       {String(itemIndex + 1).padStart(2, '0')}
@@ -197,14 +225,20 @@ const ListEditor: React.FC<ListEditorProps> = ({ lists, onUpdate }) => {
                 <div className="flex-1 flex items-center gap-2">
                   <Input
                     value={item.text}
-                    onChange={(e) => updateListItem(list.id, item.id, { text: e.target.value })}
-                    className="text-gray-700 border-none bg-transparent p-0 focus:ring-0 whitespace-pre-line"
-                    style={{ fontSize: fontSizeToRem(item.fontSize || list.fontSize || 'text-lg') }}
+                    onChange={e =>
+                      updateListItem(list.id, item.id, { text: e.target.value })
+                    }
+                    className="text-black border-none bg-transparent p-0 focus:ring-0 whitespace-pre-line"
+                    style={{
+                      fontSize: fontSizeToRem(item.fontSize || 'text-lg'),
+                    }}
                     dir="rtl"
                   />
                   <TextSizeSelector
-                    currentSize={item.fontSize || list.fontSize || 'text-lg'}
-                    onSizeChange={(size) => updateListItem(list.id, item.id, { fontSize: size })}
+                    currentSize={item.fontSize || 'text-lg'}
+                    onSizeChange={size =>
+                      updateListItem(list.id, item.id, { fontSize: size })
+                    }
                     label="حجم العنصر"
                   />
                 </div>
@@ -213,7 +247,9 @@ const ListEditor: React.FC<ListEditorProps> = ({ lists, onUpdate }) => {
                 <div className="flex items-center gap-2">
                   <Select
                     value={item.color}
-                    onValueChange={(color) => updateListItem(list.id, item.id, { color })}
+                    onValueChange={color =>
+                      updateListItem(list.id, item.id, { color })
+                    }
                   >
                     <SelectTrigger className="w-24 h-8">
                       <div className="flex items-center gap-2">
@@ -224,8 +260,11 @@ const ListEditor: React.FC<ListEditorProps> = ({ lists, onUpdate }) => {
                       </div>
                     </SelectTrigger>
                     <SelectContent>
-                      {colorOptions.map((colorOption) => (
-                        <SelectItem key={colorOption.value} value={colorOption.value}>
+                      {colorOptions.map(colorOption => (
+                        <SelectItem
+                          key={colorOption.value}
+                          value={colorOption.value}
+                        >
                           <div className="flex items-center gap-2">
                             <div
                               className="w-4 h-4 rounded-full border"
@@ -253,19 +292,11 @@ const ListEditor: React.FC<ListEditorProps> = ({ lists, onUpdate }) => {
       ))}
 
       <div className="flex gap-2">
-        <Button
-          onClick={() => addList('bullet')}
-          variant="outline"
-          size="sm"
-        >
+        <Button onClick={() => addList('bullet')} variant="outline" size="sm">
           <List className="ml-1 h-4 w-4" />
           قائمة نقطية جديدة
         </Button>
-        <Button
-          onClick={() => addList('numbered')}
-          variant="outline"
-          size="sm"
-        >
+        <Button onClick={() => addList('numbered')} variant="outline" size="sm">
           <ListOrdered className="ml-1 h-4 w-4" />
           قائمة مرقمة جديدة
         </Button>
@@ -274,4 +305,4 @@ const ListEditor: React.FC<ListEditorProps> = ({ lists, onUpdate }) => {
   );
 };
 
-export default ListEditor; 
+export default ListEditor;

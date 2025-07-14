@@ -48,6 +48,7 @@ export interface Section {
   titleFontSize?: string;
   contentFontSize?: string;
   titleColor?: string;
+  contentColor?: string;
   afterListContent?: string;
   afterListContentFontSize?: string;
-} 
+}

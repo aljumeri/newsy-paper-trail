@@ -1,6 +1,12 @@
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Settings, Trash2 } from "lucide-react";
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Settings, Trash2 } from 'lucide-react';
 import React, { useState } from 'react';
 import EditableText from './EditableText';
 import TextSizeSelector from './TextSizeSelector';
@@ -13,7 +19,9 @@ function getYouTubeEmbedUrl(url: string): string {
   if (url.includes('youtube.com/embed/')) return url;
   // Try to extract video ID from various formats
   // Handles: https://www.youtube.com/watch?v=VIDEO_ID, https://youtu.be/VIDEO_ID, https://youtube.com/embed/VIDEO_ID
-  const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{11})/);
+  const match = url.match(
+    /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{11})/
+  );
   const videoId = match ? match[1] : null;
   const embedUrl = videoId ? `https://www.youtube.com/embed/${videoId}` : url;
   console.log('YouTube embed src:', embedUrl, 'from original:', url);
@@ -27,46 +35,69 @@ interface MediaDisplayProps {
   readOnly?: boolean;
 }
 
-const MediaDisplay: React.FC<MediaDisplayProps> = ({ items, onRemove, onUpdate, readOnly = false }) => {
+const MediaDisplay: React.FC<MediaDisplayProps> = ({
+  items,
+  onRemove,
+  onUpdate,
+  readOnly = false,
+}) => {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   if (items.length === 0) return null;
 
   const getSizeClass = (size: string = 'medium') => {
     switch (size) {
-      case 'small': return 'max-w-xs';
-      case 'medium': return 'max-w-md';
-      case 'large': return 'max-w-lg';
-      case 'full': return 'w-full max-w-full';
-      default: return 'max-w-md';
+      case 'small':
+        return 'w-1/4';
+      case 'medium':
+        return 'w-1/2';
+      case 'large':
+        return 'w-3/4';
+      case 'full':
+        return 'w-full';
+      default:
+        return 'w-1/2';
     }
   };
 
   const getIframeContainerClass = (size: string = 'medium') => {
     switch (size) {
-      case 'small': return 'max-w-xs';
-      case 'medium': return 'max-w-md';
-      case 'large': return 'max-w-lg';
-      case 'full': return 'w-full max-w-full';
-      default: return 'max-w-md';
+      case 'small':
+        return 'w-1/4';
+      case 'medium':
+        return 'w-1/2';
+      case 'large':
+        return 'w-3/4';
+      case 'full':
+        return 'w-full';
+      default:
+        return 'w-1/2';
     }
   };
 
   const getAlignmentClass = (alignment: string = 'center') => {
     switch (alignment) {
-      case 'left': return 'mr-auto';
-      case 'right': return 'ml-auto';
-      case 'center': return 'mx-auto';
-      default: return 'mx-auto';
+      case 'left':
+        return 'mr-auto';
+      case 'right':
+        return 'ml-auto';
+      case 'center':
+        return 'mx-auto';
+      default:
+        return 'mx-auto';
     }
   };
 
   const getContainerAlignmentClass = (alignment: string = 'center') => {
     switch (alignment) {
-      case 'left': return 'text-left';
-      case 'right': return 'text-right';
-      case 'center': return 'text-center';
-      default: return 'text-center';
+      case 'left':
+        return 'text-left';
+      case 'right':
+        return 'text-right';
+      case 'center':
+        return 'text-center';
+      default:
+        return 'text-center';
     }
   };
 
@@ -78,7 +109,7 @@ const MediaDisplay: React.FC<MediaDisplayProps> = ({ items, onRemove, onUpdate, 
 
   return (
     <div className="space-y-4">
-      {items.map((item) => (
+      {items.map(item => (
         <div key={item.id}>
           <div className="border rounded-lg p-4 bg-white/50">
             {!readOnly && (
@@ -87,7 +118,9 @@ const MediaDisplay: React.FC<MediaDisplayProps> = ({ items, onRemove, onUpdate, 
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setEditingId(editingId === item.id ? null : item.id)}
+                    onClick={() =>
+                      setEditingId(editingId === item.id ? null : item.id)
+                    }
                     className="text-gray-600 hover:text-gray-800"
                   >
                     <Settings className="h-4 w-4" />
@@ -98,7 +131,9 @@ const MediaDisplay: React.FC<MediaDisplayProps> = ({ items, onRemove, onUpdate, 
                       {item.type !== 'link' && (
                         <Select
                           value={item.size || 'medium'}
-                          onValueChange={(value) => updateMediaItem(item.id, 'size', value)}
+                          onValueChange={value =>
+                            updateMediaItem(item.id, 'size', value)
+                          }
                         >
                           <SelectTrigger className="w-24 h-8 text-xs">
                             <SelectValue />
@@ -113,7 +148,9 @@ const MediaDisplay: React.FC<MediaDisplayProps> = ({ items, onRemove, onUpdate, 
                       )}
                       <Select
                         value={item.alignment || 'center'}
-                        onValueChange={(value) => updateMediaItem(item.id, 'alignment', value)}
+                        onValueChange={value =>
+                          updateMediaItem(item.id, 'alignment', value)
+                        }
                       >
                         <SelectTrigger className="w-24 h-8 text-xs">
                           <SelectValue />
@@ -140,30 +177,49 @@ const MediaDisplay: React.FC<MediaDisplayProps> = ({ items, onRemove, onUpdate, 
               </div>
             )}
 
-            <div className={`flex-1 ${getContainerAlignmentClass(item.alignment)}`}>
+            <div
+              className={`flex-1 ${getContainerAlignmentClass(item.alignment)}`}
+            >
               {item.type === 'image' && (
                 <div className="w-full">
-                  <img 
-                    src={item.url} 
-                    alt="Uploaded content" 
-                    className={`${getSizeClass(item.size)} ${item.size === 'full' ? 'w-full' : getAlignmentClass(item.alignment)} object-cover rounded`}
+                  <img
+                    src={item.url}
+                    alt="Uploaded content"
+                    className={`${getSizeClass(item.size)} ${
+                      item.size === 'full'
+                        ? 'w-full'
+                        : getAlignmentClass(item.alignment)
+                    } object-cover rounded`}
                   />
                 </div>
               )}
-              
+
               {item.type === 'video' && (
                 <div className="w-full">
-                  <video 
-                    src={item.url} 
-                    controls 
-                    className={`${getSizeClass(item.size)} ${item.size === 'full' ? 'w-full' : getAlignmentClass(item.alignment)} rounded`}
+                  <video
+                    src={item.url}
+                    controls
+                    className={`${getSizeClass(item.size)} ${
+                      item.size === 'full'
+                        ? 'w-full'
+                        : getAlignmentClass(item.alignment)
+                    } rounded`}
                   />
                 </div>
               )}
-              
+
               {item.type === 'youtube' && (
-                <div className={`${getIframeContainerClass(item.size)} ${item.size === 'full' ? 'w-full' : getAlignmentClass(item.alignment)}`}>
-                  <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                <div
+                  className={`${getIframeContainerClass(item.size)} ${
+                    item.size === 'full'
+                      ? 'w-full'
+                      : getAlignmentClass(item.alignment)
+                  }`}
+                >
+                  <div
+                    className="relative w-full"
+                    style={{ paddingBottom: '56.25%' }}
+                  >
                     <iframe
                       src={getYouTubeEmbedUrl(item.url)}
                       className="absolute top-0 left-0 w-full h-full rounded"
@@ -174,13 +230,15 @@ const MediaDisplay: React.FC<MediaDisplayProps> = ({ items, onRemove, onUpdate, 
                   </div>
                 </div>
               )}
-              
+
               {item.type === 'link' && (
-                <a 
-                  href={item.url} 
-                  target="_blank" 
+                <a
+                  href={item.url}
+                  target="_blank"
                   rel="noopener noreferrer"
-                  className={`text-blue-600 hover:text-blue-800 hover:underline ${getAlignmentClass(item.alignment)} ${getSizeClass(item.size)} block`}
+                  className={`text-blue-600 hover:text-blue-800 hover:underline ${getAlignmentClass(
+                    item.alignment
+                  )} ${getSizeClass(item.size)} block`}
                 >
                   {item.title || item.url}
                 </a>
@@ -194,8 +252,10 @@ const MediaDisplay: React.FC<MediaDisplayProps> = ({ items, onRemove, onUpdate, 
               <div className="flex-1">
                 <EditableText
                   value={item.textContent || ''}
-                  onChange={(text) => updateMediaItem(item.id, 'textContent', text)}
-                  className="text-gray-700 leading-relaxed"
+                  onChange={text =>
+                    updateMediaItem(item.id, 'textContent', text)
+                  }
+                  className="text-black leading-relaxed"
                   fontSize={item.textFontSize || 'text-base'}
                   placeholder="أضف النص هنا..."
                   multiline
@@ -208,7 +268,9 @@ const MediaDisplay: React.FC<MediaDisplayProps> = ({ items, onRemove, onUpdate, 
               {!readOnly && (
                 <TextSizeSelector
                   currentSize={item.textFontSize || 'text-base'}
-                  onSizeChange={(size) => updateMediaItem(item.id, 'textFontSize', size)}
+                  onSizeChange={size =>
+                    updateMediaItem(item.id, 'textFontSize', size)
+                  }
                   label="حجم النص"
                   className="ml-2"
                 />
@@ -221,4 +283,4 @@ const MediaDisplay: React.FC<MediaDisplayProps> = ({ items, onRemove, onUpdate, 
   );
 };
 
-export default MediaDisplay; 
+export default MediaDisplay;

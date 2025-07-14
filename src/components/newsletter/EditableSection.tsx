@@ -31,8 +31,12 @@ const EditableSection: React.FC<EditableSectionProps> = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isMediaUploaderOpen, setIsMediaUploaderOpen] = useState(false);
-  const [selectedMediaType, setSelectedMediaType] = useState<'image' | 'video' | 'youtube' | 'link'>('image');
-  const [selectedSubsectionId, setSelectedSubsectionId] = useState<string | null>(null);
+  const [selectedMediaType, setSelectedMediaType] = useState<
+    'image' | 'video' | 'youtube' | 'link'
+  >('image');
+  const [selectedSubsectionId, setSelectedSubsectionId] = useState<
+    string | null
+  >(null);
 
   const addSubsection = () => {
     const newSubsection: Subsection = {
@@ -72,7 +76,7 @@ const EditableSection: React.FC<EditableSectionProps> = ({
       size: 'medium',
       alignment: 'center',
     };
-    
+
     if (selectedSubsectionId) {
       // Add to subsection
       addSubsectionMediaItem(selectedSubsectionId, mediaData);
@@ -89,11 +93,14 @@ const EditableSection: React.FC<EditableSectionProps> = ({
   const removeMediaItem = (mediaId: string) => {
     const currentMedia = section.mediaItems || [];
     const mediaToRemove = currentMedia.find(item => item.id === mediaId);
-    
+
     // If the media item has text content, preserve it by adding it to the section's text content
     if (mediaToRemove?.textContent) {
       const currentContent = section.content || '';
-      const newContent = currentContent + (currentContent ? '\n\n' : '') + mediaToRemove.textContent;
+      const newContent =
+        currentContent +
+        (currentContent ? '\n\n' : '') +
+        mediaToRemove.textContent;
       onUpdate({
         content: newContent,
         mediaItems: currentMedia.filter(item => item.id !== mediaId),
@@ -108,7 +115,7 @@ const EditableSection: React.FC<EditableSectionProps> = ({
   const updateMediaItem = (mediaId: string, updates: Partial<MediaItem>) => {
     const currentMedia = section.mediaItems || [];
     const itemToUpdate = currentMedia.find(item => item.id === mediaId);
-    
+
     // If this is a link, prevent size changes
     if (itemToUpdate?.type === 'link' && updates.size !== undefined) {
       // Remove size from updates for links
@@ -131,20 +138,23 @@ const EditableSection: React.FC<EditableSectionProps> = ({
     onUpdate({ lists });
   };
 
-  const addSubsectionMediaItem = (subsectionId: string, mediaData: Omit<MediaItem, 'id'>) => {
+  const addSubsectionMediaItem = (
+    subsectionId: string,
+    mediaData: Omit<MediaItem, 'id'>
+  ) => {
     const newMediaItem: MediaItem = {
       ...mediaData,
       id: Date.now().toString(),
       size: 'medium',
       alignment: 'center',
     };
-    
+
     onUpdate({
       subsections: section.subsections.map(sub =>
-        sub.id === subsectionId 
-          ? { 
-              ...sub, 
-              mediaItems: [...(sub.mediaItems || []), newMediaItem] 
+        sub.id === subsectionId
+          ? {
+              ...sub,
+              mediaItems: [...(sub.mediaItems || []), newMediaItem],
             }
           : sub
       ),
@@ -154,22 +164,25 @@ const EditableSection: React.FC<EditableSectionProps> = ({
   const removeSubsectionMediaItem = (subsectionId: string, mediaId: string) => {
     const subsection = section.subsections.find(sub => sub.id === subsectionId);
     if (!subsection) return;
-    
+
     const currentMedia = subsection.mediaItems || [];
     const mediaToRemove = currentMedia.find(item => item.id === mediaId);
-    
+
     // If the media item has text content, preserve it by adding it to the subsection's content
     if (mediaToRemove?.textContent) {
       const currentContent = subsection.content || '';
-      const newContent = currentContent + (currentContent ? '\n\n' : '') + mediaToRemove.textContent;
-      
+      const newContent =
+        currentContent +
+        (currentContent ? '\n\n' : '') +
+        mediaToRemove.textContent;
+
       onUpdate({
         subsections: section.subsections.map(sub =>
-          sub.id === subsectionId 
-            ? { 
-                ...sub, 
+          sub.id === subsectionId
+            ? {
+                ...sub,
                 content: newContent,
-                mediaItems: currentMedia.filter(item => item.id !== mediaId) 
+                mediaItems: currentMedia.filter(item => item.id !== mediaId),
               }
             : sub
         ),
@@ -177,10 +190,10 @@ const EditableSection: React.FC<EditableSectionProps> = ({
     } else {
       onUpdate({
         subsections: section.subsections.map(sub =>
-          sub.id === subsectionId 
-            ? { 
-                ...sub, 
-                mediaItems: currentMedia.filter(item => item.id !== mediaId) 
+          sub.id === subsectionId
+            ? {
+                ...sub,
+                mediaItems: currentMedia.filter(item => item.id !== mediaId),
               }
             : sub
         ),
@@ -188,12 +201,16 @@ const EditableSection: React.FC<EditableSectionProps> = ({
     }
   };
 
-  const updateSubsectionMediaItem = (subsectionId: string, mediaId: string, updates: Partial<MediaItem>) => {
+  const updateSubsectionMediaItem = (
+    subsectionId: string,
+    mediaId: string,
+    updates: Partial<MediaItem>
+  ) => {
     onUpdate({
       subsections: section.subsections.map(sub =>
-        sub.id === subsectionId 
-          ? { 
-              ...sub, 
+        sub.id === subsectionId
+          ? {
+              ...sub,
               mediaItems: (sub.mediaItems || []).map(item => {
                 if (item.id === mediaId) {
                   // If this is a link, prevent size changes
@@ -206,14 +223,17 @@ const EditableSection: React.FC<EditableSectionProps> = ({
                   }
                 }
                 return item;
-              })
+              }),
             }
           : sub
       ),
     });
   };
 
-  const handleOpenMediaUploader = (type: 'image' | 'video' | 'youtube' | 'link', subsectionId?: string) => {
+  const handleOpenMediaUploader = (
+    type: 'image' | 'video' | 'youtube' | 'link',
+    subsectionId?: string
+  ) => {
     setSelectedMediaType(type);
     setSelectedSubsectionId(subsectionId || null);
     setIsMediaUploaderOpen(true);
@@ -224,9 +244,21 @@ const EditableSection: React.FC<EditableSectionProps> = ({
       <Card
         className={`${section.backgroundColor} relative overflow-hidden shadow-lg`}
       >
-        <div className="flex items-center gap-2 mb-2 p-2">
-          <button onClick={moveUp} disabled={disableUp} className="px-2 py-1 rounded border bg-gray-100 disabled:opacity-50">↑</button>
-          <button onClick={moveDown} disabled={disableDown} className="px-2 py-1 rounded border bg-gray-100 disabled:opacity-50">↓</button>
+        <div className="flex items-center gap-2 mb-2 mx-2 p-2">
+          <button
+            onClick={moveUp}
+            disabled={disableUp}
+            className="px-2 py-1 rounded border bg-gray-100 disabled:opacity-50"
+          >
+            ↑
+          </button>
+          <button
+            onClick={moveDown}
+            disabled={disableDown}
+            className="px-2 py-1 rounded border bg-gray-100 disabled:opacity-50"
+          >
+            ↓
+          </button>
         </div>
         {/* Decorative side line - right side only for RTL layout */}
         <div
@@ -254,12 +286,14 @@ const EditableSection: React.FC<EditableSectionProps> = ({
               fontSize={section.titleFontSize || 'text-2xl'}
               placeholder="عنوان القسم..."
               isTitle={true}
-              style={section.titleColor ? { color: section.titleColor } : undefined}
+              style={
+                section.titleColor ? { color: section.titleColor } : undefined
+              }
             />
             {isEditing && (
               <TextSizeSelector
                 currentSize={section.titleFontSize || 'text-2xl'}
-                onSizeChange={(size) => onUpdate({ titleFontSize: size })}
+                onSizeChange={size => onUpdate({ titleFontSize: size })}
                 label="حجم عنوان القسم"
               />
             )}
@@ -276,12 +310,17 @@ const EditableSection: React.FC<EditableSectionProps> = ({
                 placeholder="محتوى القسم..."
                 multiline
                 isTitle={false}
+                style={
+                  section.contentColor
+                    ? { color: section.contentColor }
+                    : undefined
+                }
               />
             </div>
             {isEditing && (
               <TextSizeSelector
                 currentSize={section.contentFontSize || 'text-lg'}
-                onSizeChange={(size) => onUpdate({ contentFontSize: size })}
+                onSizeChange={size => onUpdate({ contentFontSize: size })}
                 label="حجم محتوى القسم"
                 className="ml-2"
               />
@@ -299,7 +338,10 @@ const EditableSection: React.FC<EditableSectionProps> = ({
           {isEditing ? (
             <>
               <div className="mb-6">
-                <ListEditor lists={section.lists || []} onUpdate={updateLists} />
+                <ListEditor
+                  lists={section.lists || []}
+                  onUpdate={updateLists}
+                />
               </div>
               <div className="flex items-start justify-between mt-2">
                 <div className="flex-1">
@@ -307,15 +349,30 @@ const EditableSection: React.FC<EditableSectionProps> = ({
                     value={section.afterListContent || ''}
                     onChange={val => onUpdate({ afterListContent: val })}
                     className="text-gray-700 leading-relaxed"
-                    fontSize={section.afterListContentFontSize || section.contentFontSize || 'text-lg'}
+                    fontSize={
+                      section.afterListContentFontSize ||
+                      section.contentFontSize ||
+                      'text-lg'
+                    }
                     placeholder="أضف محتوى بعد القائمة..."
                     multiline
                     isTitle={false}
+                    style={
+                      section.contentColor
+                        ? { color: section.contentColor }
+                        : undefined
+                    }
                   />
                 </div>
                 <TextSizeSelector
-                  currentSize={section.afterListContentFontSize || section.contentFontSize || 'text-lg'}
-                  onSizeChange={size => onUpdate({ afterListContentFontSize: size })}
+                  currentSize={
+                    section.afterListContentFontSize ||
+                    section.contentFontSize ||
+                    'text-lg'
+                  }
+                  onSizeChange={size =>
+                    onUpdate({ afterListContentFontSize: size })
+                  }
                   label="حجم الخط بعد القائمة"
                   className="ml-2"
                 />
@@ -327,7 +384,20 @@ const EditableSection: React.FC<EditableSectionProps> = ({
                 <ListDisplay lists={section.lists || []} />
               </div>
               {section.afterListContent && (
-                <div className={`text-gray-700 leading-relaxed mt-2 ${section.afterListContentFontSize || section.contentFontSize || 'text-lg'}`}>{section.afterListContent}</div>
+                <div
+                  className={`text-gray-700 leading-relaxed mt-2 ${
+                    section.afterListContentFontSize ||
+                    section.contentFontSize ||
+                    'text-lg'
+                  }`}
+                  style={
+                    section.contentColor
+                      ? { color: section.contentColor }
+                      : undefined
+                  }
+                >
+                  {section.afterListContent}
+                </div>
               )}
             </>
           )}

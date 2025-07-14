@@ -29,7 +29,7 @@ export const defaultSections: Section[] = [
     backgroundColor: 'bg-gradient-to-r from-blue-50 to-indigo-50',
     sideLineColor: '#4F46E5',
     titleFontSize: 'text-2xl',
-    contentFontSize: 'text-lg',
+    contentFontSize: 'text-base',
     contentColor: '#000000',
     subsections: [
       {
@@ -51,7 +51,7 @@ export const defaultSections: Section[] = [
     backgroundColor: 'bg-gradient-to-r from-pink-50 to-rose-50',
     sideLineColor: '#EC4899',
     titleFontSize: 'text-2xl',
-    contentFontSize: 'text-lg',
+    contentFontSize: 'text-base',
     contentColor: '#000000',
     subsections: [],
     mediaItems: [],
@@ -86,7 +86,7 @@ const Newsletter: React.FC<NewsletterProps> = ({
       backgroundColor: 'bg-gradient-to-r from-cyan-50 to-blue-50',
       sideLineColor: '#06B6D4',
       titleFontSize: 'text-2xl',
-      contentFontSize: 'text-lg',
+      contentFontSize: 'text-base',
       contentColor: '#000000',
       subsections: [],
       mediaItems: [],

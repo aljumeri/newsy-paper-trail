@@ -344,7 +344,7 @@ const SubsectionList: React.FC<SubsectionListProps> = ({
                     : 'min-h-[1rem]'
                 }`}
               >
-                <div className="flex items-start justify-between mb-2">
+                <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <EditableText
                       value={subsection.content}
@@ -352,7 +352,7 @@ const SubsectionList: React.FC<SubsectionListProps> = ({
                         onUpdateSubsection &&
                         onUpdateSubsection(subsection.id, { content })
                       }
-                      className="text-black break-words w-full"
+                      className="text-black text-justify break-words w-full"
                       fontSize={subsection.contentFontSize || 'text-base'}
                       placeholder="محتوى القسم الفرعي..."
                       multiline
@@ -436,7 +436,7 @@ const SubsectionList: React.FC<SubsectionListProps> = ({
                   </div>
                   {subsection.afterListContent && (
                     <div
-                      className={`text-black mt-2 ${
+                      className={`text-black px-2 text-justify ${
                         subsection.afterListContentFontSize ||
                         subsection.contentFontSize ||
                         'text-base'

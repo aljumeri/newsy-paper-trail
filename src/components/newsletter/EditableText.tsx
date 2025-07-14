@@ -353,8 +353,8 @@ const EditableText: React.FC<EditableTextProps> = ({
     return (
       <div
         className={`${className} ${
-          fontSize || ''
-        } rounded px-2 py-1 min-h-[1.5rem] select-text whitespace-pre-line`}
+          fontSize || 'text-base'
+        } rounded px-2 text-justify min-h-[1.5rem] select-text whitespace-pre-line`}
         dir="rtl"
         data-text-id={uniqueId}
         style={style}
@@ -424,8 +424,8 @@ const EditableText: React.FC<EditableTextProps> = ({
       <div
         onDoubleClick={handleDoubleClick}
         className={`${className} ${
-          fontSize || ''
-        } rounded px-2 py-1 transition-colors min-h-[1.5rem] select-text whitespace-pre-line ${
+          fontSize || 'text-base'
+        } rounded px-2  transition-colors min-h-[1.5rem] select-text whitespace-pre-line ${
           !value || value.trim() === '' ? 'text-black italic' : ''
         }`}
         dir="rtl"

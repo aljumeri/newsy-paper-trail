@@ -18,14 +18,25 @@ interface ListDisplayProps {
   lists: ListData[];
 }
 
-function bulletSizeClass(fontSize) {
+function fontSizeToRem(fontSize: string) {
   switch (fontSize) {
-    case 'text-xs': return 'w-2 h-2';
-    case 'text-sm': return 'w-2.5 h-2.5';
-    case 'text-base': return 'w-3 h-3';
-    case 'text-lg': return 'w-3.5 h-3.5';
-    case 'text-xl': return 'w-4 h-4';
-    default: return 'w-3 h-3';
+    case 'text-xs':
+      return '0.75rem'; // 12px
+    case 'text-sm':
+      return '0.875rem'; // 14px
+    case 'text-base':
+      return '1rem'; // 16px
+    case 'text-lg':
+      return '1.125rem'; // 18px
+    case 'text-xl':
+      return '1.25rem'; // 20px
+    case 'text-2xl':
+      return '1.5rem'; // 24px
+    case 'text-3xl':
+      return '1.875rem'; // 30px
+    case 'text-4xl':
+      return '2.25rem'; // 36px
+    case 'text-5xl':
   }
 }
 
@@ -33,22 +44,39 @@ const ListDisplay: React.FC<ListDisplayProps> = ({ lists }) => {
   if (lists.length === 0) return null;
 
   return (
-    <div className="space-y-6">
-      {lists.map((list) => (
-        <div key={list.id} className="space-y-3">
+    <div className="space-y-4">
+      {lists.map(list => (
+        <div key={list.id} className="space-y-1">
           {list.items.map((item, itemIndex) => (
-            <div key={item.id} className={`flex items-start gap-1 text-right w-full ${itemIndex === 0 ? 'mt-3' : ''}`} dir="rtl">
+            <div
+              key={item.id}
+              className={`flex items-center gap-2 text-right w-full ${
+                itemIndex === 0 ? 'mt-3' : ''
+              }`}
+              dir="rtl"
+            >
               {/* Bullet or Number */}
-              <div className="flex-shrink-0 mt-1">
+              <div className="flex-shrink-0">
                 {list.type === 'bullet' ? (
                   <div
-                    className={`rounded-full shadow-sm ${bulletSizeClass(item.fontSize || list.fontSize || 'text-lg')}`}
-                    style={{ backgroundColor: item.color }}
+                    className={`rounded-full shadow-sm`}
+                    style={{
+                      backgroundColor: item.color,
+                      width: `calc(${fontSizeToRem(
+                        item.fontSize || 'text-lg'
+                      )} - 6px)`,
+                      height: `calc(${fontSizeToRem(
+                        item.fontSize || 'text-lg'
+                      )} - 6px)`,
+                    }}
                   />
                 ) : (
                   <span
-                    className="font-bold text-xl leading-none"
-                    style={{ color: item.color }}
+                    className="font-bold leading-none"
+                    style={{
+                      color: item.color,
+                      fontSize: fontSizeToRem(item.fontSize || 'text-lg'),
+                    }}
                   >
                     {String(itemIndex + 1).padStart(2, '0')}
                   </span>
@@ -57,7 +85,11 @@ const ListDisplay: React.FC<ListDisplayProps> = ({ lists }) => {
 
               {/* Text Content */}
               <div className="flex-1 w-full">
-                <p className={`text-gray-700 leading-relaxed whitespace-pre-line break-words w-full ${item.fontSize || list.fontSize || 'text-lg'}`}>
+                <p
+                  className={`text-black leading-relaxed whitespace-pre-line break-words w-full ${
+                    item.fontSize || 'text-lg'
+                  }`}
+                >
                   {item.text}
                 </p>
               </div>
@@ -69,4 +101,4 @@ const ListDisplay: React.FC<ListDisplayProps> = ({ lists }) => {
   );
 };
 
-export default ListDisplay; 
+export default ListDisplay;

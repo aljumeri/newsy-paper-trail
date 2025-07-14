@@ -95,6 +95,28 @@ const SectionDisplay: React.FC<SectionDisplayProps> = ({ section }) => {
     return parts.length > 0 ? parts : text;
   };
 
+  function fontSizeToRem(fontSize: string) {
+    switch (fontSize) {
+      case 'text-xs':
+        return '0.75rem'; // 12px
+      case 'text-sm':
+        return '0.875rem'; // 14px
+      case 'text-base':
+        return '1rem'; // 16px
+      case 'text-lg':
+        return '1.125rem'; // 18px
+      case 'text-xl':
+        return '1.25rem'; // 20px
+      case 'text-2xl':
+        return '1.5rem'; // 24px
+      case 'text-3xl':
+        return '1.875rem'; // 30px
+      case 'text-4xl':
+        return '2.25rem'; // 36px
+      case 'text-5xl':
+    }
+  }
+
   // Helper function to render styled bullet/numbered lists inside content
   const renderStyledContent = (
     content: string,
@@ -119,20 +141,28 @@ const SectionDisplay: React.FC<SectionDisplayProps> = ({ section }) => {
             {listItems.map((item, idx) => (
               <li
                 key={idx}
-                className={`flex items-start gap-2 ${fontSize || 'text-lg'}`}
+                className={`flex items-center gap-2 ${fontSize || 'text-base'}`}
               >
                 {listType === 'bullet' ? (
                   <span
-                    className="inline-block mt-2 w-3 h-3 rounded-full"
+                    className="inline-block  w-3 h-3 rounded-full"
                     style={{
                       backgroundColor: bulletColor,
-                      minWidth: '0.75rem',
+                      width: `calc(${fontSizeToRem(
+                        fontSize || 'text-base'
+                      )} - 6px)`,
+                      height: `calc(${fontSizeToRem(
+                        fontSize || 'text-base'
+                      )} - 6px)`,
                     }}
                   />
                 ) : (
                   <span
-                    className="inline-block font-bold mr-1"
-                    style={{ color: bulletColor }}
+                    className="inline-block font-bold"
+                    style={{
+                      color: bulletColor,
+                      fontSize: fontSizeToRem(fontSize || 'text-base'),
+                    }}
                   >
                     {idx + 1}.
                   </span>
@@ -168,7 +198,9 @@ const SectionDisplay: React.FC<SectionDisplayProps> = ({ section }) => {
         elements.push(
           <div
             key={elements.length}
-            className={`mb-2 ${fontSize || 'text-lg'} break-words`}
+            className={`mb-2 ${
+              fontSize || 'text-base'
+            } break-words text-justify`}
             style={contentColor ? { color: contentColor } : undefined}
           >
             {line}
@@ -192,7 +224,7 @@ const SectionDisplay: React.FC<SectionDisplayProps> = ({ section }) => {
       <div className="p-3 sm:p-6 pr-4 sm:pr-8 pl-3 sm:pl-6">
         {/* Section Title */}
         <h2
-          className={`font-bold mb-3 sm:mb-4 break-words w-full ${
+          className={`font-bold mb-3 sm:mb-4 break-words w-full text-justify ${
             section.titleFontSize || 'text-2xl'
           }`}
           style={section.titleColor ? { color: section.titleColor } : undefined}
@@ -201,11 +233,11 @@ const SectionDisplay: React.FC<SectionDisplayProps> = ({ section }) => {
         </h2>
         {/* Section Content */}
         <div
-          className={`text-gray-700 mb-4 sm:mb-6 leading-relaxed break-words w-full`}
+          className={`text-black mb-4 sm:mb-6 leading-relaxed break-words w-full`}
         >
           {renderStyledContent(
             section.content,
-            section.contentFontSize || 'text-lg',
+            section.contentFontSize || 'text-base',
             section.sideLineColor || '#4F46E5',
             section.contentColor
           )}
@@ -222,10 +254,10 @@ const SectionDisplay: React.FC<SectionDisplayProps> = ({ section }) => {
         </div>
         {section.afterListContent && (
           <div
-            className={`text-gray-700 leading-relaxed mt-2 ${
+            className={`text-black leading-relaxed ${
               section.afterListContentFontSize ||
               section.contentFontSize ||
-              'text-lg'
+              'text-base'
             }`}
             style={
               section.contentColor ? { color: section.contentColor } : undefined

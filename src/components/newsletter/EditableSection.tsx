@@ -282,7 +282,7 @@ const EditableSection: React.FC<EditableSectionProps> = ({
             <EditableText
               value={section.title}
               onChange={title => onUpdate({ title })}
-              className="font-bold text-gray-800"
+              className="font-bold text-black"
               fontSize={section.titleFontSize || 'text-2xl'}
               placeholder="عنوان القسم..."
               isTitle={true}
@@ -305,8 +305,8 @@ const EditableSection: React.FC<EditableSectionProps> = ({
               <EditableText
                 value={section.content}
                 onChange={content => onUpdate({ content })}
-                className="text-gray-700 leading-relaxed"
-                fontSize={section.contentFontSize || 'text-lg'}
+                className="text-black leading-relaxed"
+                fontSize={section.contentFontSize || 'text-base'}
                 placeholder="محتوى القسم..."
                 multiline
                 isTitle={false}
@@ -319,7 +319,7 @@ const EditableSection: React.FC<EditableSectionProps> = ({
             </div>
             {isEditing && (
               <TextSizeSelector
-                currentSize={section.contentFontSize || 'text-lg'}
+                currentSize={section.contentFontSize || 'text-base'}
                 onSizeChange={size => onUpdate({ contentFontSize: size })}
                 label="حجم محتوى القسم"
                 className="ml-2"
@@ -348,11 +348,11 @@ const EditableSection: React.FC<EditableSectionProps> = ({
                   <EditableText
                     value={section.afterListContent || ''}
                     onChange={val => onUpdate({ afterListContent: val })}
-                    className="text-gray-700 leading-relaxed"
+                    className="text-black leading-relaxed"
                     fontSize={
                       section.afterListContentFontSize ||
                       section.contentFontSize ||
-                      'text-lg'
+                      'text-base'
                     }
                     placeholder="أضف محتوى بعد القائمة..."
                     multiline
@@ -368,7 +368,7 @@ const EditableSection: React.FC<EditableSectionProps> = ({
                   currentSize={
                     section.afterListContentFontSize ||
                     section.contentFontSize ||
-                    'text-lg'
+                    'text-base'
                   }
                   onSizeChange={size =>
                     onUpdate({ afterListContentFontSize: size })
@@ -385,10 +385,10 @@ const EditableSection: React.FC<EditableSectionProps> = ({
               </div>
               {section.afterListContent && (
                 <div
-                  className={`text-gray-700 leading-relaxed mt-2 ${
+                  className={`text-black leading-relaxed mt-2 ${
                     section.afterListContentFontSize ||
                     section.contentFontSize ||
-                    'text-lg'
+                    'text-base'
                   }`}
                   style={
                     section.contentColor

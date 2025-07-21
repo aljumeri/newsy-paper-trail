@@ -173,7 +173,53 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    console.log("Edge Function: Subscriber added successfully:", {
+    // Add to Sendy list
+    const sendyUrl = Deno.env.get('SENDY_URL');
+    const sendyApiKey = Deno.env.get('SENDY_API_KEY');
+    const sendyListId = Deno.env.get('SENDY_LIST_ID');
+    if (!sendyUrl || !sendyApiKey || !sendyListId) {
+      console.error('Sendy configuration missing');
+      // Rollback Supabase insert
+      await supabase.from('subscribers').delete().eq('email', email.trim());
+      return new Response(JSON.stringify({
+        success: false,
+        message: 'خطأ في إعدادات الخادم (Sendy)'
+      }), {
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json"
+        },
+        status: 500
+      });
+    }
+    const sendyForm = new URLSearchParams();
+    sendyForm.append('api_key', sendyApiKey);
+    sendyForm.append('list', sendyListId);
+    sendyForm.append('email', email.trim());
+    // Optionally add name, custom fields, etc.
+    sendyForm.append('UnsubscribeToken', unsubscribeToken);
+    const sendyResp = await fetch(`${sendyUrl}/subscribe`, {
+      method: 'POST',
+      body: sendyForm,
+    });
+    const sendyText = await sendyResp.text();
+    if (!sendyResp.ok || !/1|already subscribed/i.test(sendyText)) {
+      console.error('Sendy subscribe failed:', sendyText);
+      // Rollback Supabase insert
+      await supabase.from('subscribers').delete().eq('email', email.trim());
+      return new Response(JSON.stringify({
+        success: false,
+        message: 'فشل الاشتراك في القائمة البريدية. يرجى المحاولة لاحقًا.'
+      }), {
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json"
+        },
+        status: 500
+      });
+    }
+
+    console.log("Edge Function: Subscriber added successfully to Supabase and Sendy:", {
       ...data[0],
       unsubscribe_token: data[0]?.unsubscribe_token ? data[0].unsubscribe_token.substring(0, 8) + "..." : "NULL"
     });

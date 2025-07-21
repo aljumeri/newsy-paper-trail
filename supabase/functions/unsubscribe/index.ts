@@ -55,6 +55,26 @@ serve(async (req: Request) => {
       throw new Error("Failed to unsubscribe");
     }
 
+    // Remove from Sendy list
+    const sendyUrl = Deno.env.get('SENDY_URL');
+    const sendyApiKey = Deno.env.get('SENDY_API_KEY');
+    const sendyListId = Deno.env.get('SENDY_LIST_ID');
+    if (!sendyUrl || !sendyApiKey || !sendyListId) {
+      throw new Error('Sendy configuration missing');
+    }
+    const sendyForm = new URLSearchParams();
+    sendyForm.append('api_key', sendyApiKey);
+    sendyForm.append('list_id', sendyListId);
+    sendyForm.append('email', email);
+    const sendyResp = await fetch(`${sendyUrl}/unsubscribe`, {
+      method: 'POST',
+      body: sendyForm,
+    });
+    const sendyText = await sendyResp.text();
+    if (!sendyResp.ok || !/1|successfully unsubscribed|not subscribed/i.test(sendyText)) {
+      throw new Error('Sendy unsubscribe failed: ' + sendyText);
+    }
+
     return new Response(
       JSON.stringify({ 
         message: "Successfully unsubscribed",

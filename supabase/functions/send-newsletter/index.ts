@@ -19,6 +19,51 @@ interface SubscriberData {
   unsubscribe_token: string;
 }
 
+// Sendy campaign creation function
+async function sendEmailWithSendy({
+  subject,
+  html,
+  listId,
+  fromName,
+  fromEmail,
+  replyTo,
+}: {
+  subject: string;
+  html: string;
+  listId: string;
+  fromName: string;
+  fromEmail: string;
+  replyTo: string;
+}) {
+  const sendyUrl = Deno.env.get('SENDY_URL');
+  const sendyApiKey = Deno.env.get('SENDY_API_KEY');
+  if (!sendyUrl || !sendyApiKey) {
+    throw new Error('SENDY_URL or SENDY_API_KEY is not set');
+  }
+
+  const formData = new URLSearchParams();
+  formData.append('api_key', sendyApiKey);
+  formData.append('from_name', fromName);
+  formData.append('from_email', fromEmail);
+  formData.append('reply_to', replyTo);
+  formData.append('subject', subject);
+  formData.append('html_text', html);
+  formData.append('list_ids', listId);
+  formData.append('send_campaign', '1');
+
+  const response = await fetch(`${sendyUrl}/api/campaigns/create.php`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  const result = await response.text();
+  if (!response.ok) {
+    throw new Error(`Sendy API error: Status ${response.status}, Response: ${result}`);
+  }
+  return { success: true, message: 'Campaign created in Sendy', result };
+}
+
+// Restore Brevo sendEmail function for single email mode
 async function sendEmail(
   to: string,
   from: string,
@@ -789,66 +834,56 @@ serve(async (req: Request) => {
     // Send emails to all subscribers with rate limiting
     console.log('Edge Function: Sending emails to subscribers');
     const fromEmail = 'info@solo4ai.com';
+    const fromName = 'Solo4AI Newsletter';
+    const replyTo = 'info@solo4ai.com';
     let successfulSends = 0;
     let failedSends = 0;
     const errors: string[] = [];
 
-    // Process emails in smaller batches to avoid overwhelming the service
-    const batchSize = 10;
-    const batches = [];
-    for (let i = 0; i < recipients.length; i += batchSize) {
-      batches.push(recipients.slice(i, i + batchSize));
-    }
-
-    for (const batch of batches) {
-      const emailPromises = batch.map(async subscriber => {
-        try {
-          console.log(`Attempting to send email to: ${subscriber.email}`);
-          // Render HTML for email
-          const unsubscribeLink = `${
-            Deno.env.get('SITE_URL') || 'https://solo4ai.com'
-          }/unsubscribe?email=${encodeURIComponent(subscriber.email)}&token=${
-            subscriber.unsubscribe_token
-          }`;
-          const htmlBody = await renderNewsletterHtml(
-            newsletter,
-            unsubscribeLink,
-            supabase
-          );
-          await sendEmail(
-            subscriber.email,
-            fromEmail,
-            newsletter.main_title,
-            htmlBody,
-            subscriber.unsubscribe_token
-          );
-          console.log(`Successfully sent email to ${subscriber.email}`);
-          successfulSends++;
-          return { success: true, email: subscriber.email };
-        } catch (error) {
-          const errorMsg = `Failed to send email to ${subscriber.email}: ${error.message}`;
-          console.error(errorMsg);
-          errors.push(errorMsg);
-          failedSends++;
-          return {
-            success: false,
-            email: subscriber.email,
-            error: error.message,
-          };
-        }
-      });
-
-      // Wait for current batch to complete before starting next batch
-      const batchResults = await Promise.allSettled(emailPromises);
-      console.log(
-        `Batch completed. Successful: ${
-          batchResults.filter(r => r.status === 'fulfilled').length
-        }, Failed: ${batchResults.filter(r => r.status === 'rejected').length}`
-      );
-
-      // Add a small delay between batches to avoid rate limiting
-      if (batches.indexOf(batch) < batches.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+    // Use Sendy for sending newsletter to all subscribers
+    if (sendMode === 'all') {
+      try {
+        // Render HTML for email
+        // Use Sendy custom fields for personalized unsubscribe link
+        const unsubscribeLink = `${Deno.env.get('SITE_URL') || 'https://solo4ai.com'}/unsubscribe?email=[Email]&token=[UnsubscribeToken]`;
+        const htmlBody = await renderNewsletterHtml(newsletter, unsubscribeLink, supabase);
+        const sendyListId = Deno.env.get('SENDY_LIST_ID');
+        if (!sendyListId) throw new Error('SENDY_LIST_ID is not set');
+        await sendEmailWithSendy({
+          subject: newsletter.main_title,
+          html: htmlBody,
+          listId: sendyListId,
+          fromName,
+          fromEmail,
+          replyTo,
+        });
+        successfulSends = recipients.length;
+      } catch (error) {
+        const errorMsg = `Failed to create Sendy campaign: ${error.message}`;
+        console.error(errorMsg);
+        errors.push(errorMsg);
+        failedSends = recipients.length;
+      }
+    } else if (sendMode === 'single') {
+      // Use Brevo for single email send
+      try {
+        const recipient = recipients[0];
+        // Render HTML for email with personalized unsubscribe link
+        const unsubscribeLink = `${Deno.env.get('SITE_URL') || 'https://solo4ai.com'}/unsubscribe?email=${encodeURIComponent(recipient.email)}&token=${recipient.unsubscribe_token}`;
+        const htmlBody = await renderNewsletterHtml(newsletter, unsubscribeLink, supabase);
+        await sendEmail(
+          recipient.email,
+          fromEmail,
+          newsletter.main_title,
+          htmlBody,
+          recipient.unsubscribe_token
+        );
+        successfulSends = 1;
+      } catch (error) {
+        const errorMsg = `Failed to send single email via Brevo: ${error.message}`;
+        console.error(errorMsg);
+        errors.push(errorMsg);
+        failedSends = 1;
       }
     }
 

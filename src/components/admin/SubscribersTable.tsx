@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { subscriptionService } from '@/utils/subscriptionService';
 import { Plus, RefreshCw, Trash2 } from 'lucide-react';
 import React, { useState } from 'react';
 
@@ -51,18 +52,12 @@ const SubscribersTable: React.FC<SubscribersTableProps> = ({
 
     setIsAdding(true);
     try {
-      const { error } = await supabase.from('subscribers').insert([
-        {
-          email: newEmail.trim(),
-          created_at: new Date().toISOString(),
-        },
-      ]);
-
-      if (error) throw error;
+      const result = await subscriptionService.subscribe(newEmail.trim());
+      if (!result.success) throw new Error(result.message);
 
       toast({
         title: 'تمت الإضافة',
-        description: 'تم إضافة المشترك بنجاح',
+        description: result.message || 'تم إضافة المشترك بنجاح',
       });
       setNewEmail('');
       if (onRefresh) await onRefresh();

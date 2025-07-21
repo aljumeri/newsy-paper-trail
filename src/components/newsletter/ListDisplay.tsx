@@ -44,7 +44,7 @@ const ListDisplay: React.FC<ListDisplayProps> = ({ lists }) => {
   if (lists.length === 0) return null;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       {lists.map(list => (
         <div key={list.id} className="space-y-1">
           {list.items.map((item, itemIndex) => (

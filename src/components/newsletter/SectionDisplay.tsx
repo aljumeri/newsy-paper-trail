@@ -168,7 +168,7 @@ const SectionDisplay: React.FC<SectionDisplayProps> = ({ section }) => {
                   </span>
                 )}
                 <span
-                  className="break-words"
+                  className="break-words flex-1 text-justify"
                   style={contentColor ? { color: contentColor } : undefined}
                 >
                   {renderTextWithLinks(item.replace(/^([•\d]+\.\s)/, ''))}

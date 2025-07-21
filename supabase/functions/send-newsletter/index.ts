@@ -14,11 +14,6 @@ interface NewsletterRequest {
   email?: string; // Required when mode is 'single'
 }
 
-interface NewsletterData {
-  subject: string;
-  content: string;
-}
-
 interface SubscriberData {
   email: string;
   unsubscribe_token: string;
@@ -115,7 +110,7 @@ function fontSizeToCss(fontSize: string): string {
     case 'text-4xl':
       return '36px';
     default:
-      return '18px';
+      return '16px';
   }
 }
 
@@ -132,8 +127,14 @@ function getBulletSize(fontSize: string): string {
       return '14px';
     case 'text-xl':
       return '16px';
+    case 'text-2xl':
+      return '20px';
+    case 'text-3xl':
+      return '24px';
+    case 'text-4xl':
+      return '32px';
     default:
-      return '12px';
+      return '14px';
   }
 }
 
@@ -176,7 +177,7 @@ async function renderNewsletterHtml(
   let html = '';
   // Header
   html += `<div style="background: linear-gradient(90deg,#3b82f6,#ec4899,#38bdf8); padding: 24px 16px; border-radius: 12px 12px 0 0; text-align: center; color: #fff;">
-    <h1 style="margin: 0; font-size: 2em; font-weight: bold;">${
+    <h1 style="margin: 0; font-size: 24px; font-weight: bold;">${
       newsletter.main_title || ''
     }</h1>
     ${
@@ -212,21 +213,34 @@ async function renderNewsletterHtml(
       ? '#e0f7fa'
       : section.backgroundColor?.includes('purple')
       ? '#f3e8ff'
-      : '#fff'
-  }; border-radius:12px; box-shadow:0 2px 8px #0001; padding:24px; position:relative; background-clip:padding-box;">
+      : '#ffffff'
+  };
+  border-radius:12px;
+  box-shadow:0 2px 8px #0001;
+  padding:24px;
+  position:relative;
+  background-clip:padding-box;
+  border-right-width:8px;
+  border-right-style:solid;
+  border-top-right-radius:8px;
+  border-bottom-right-radius:8px;
+  border-right-color:${section.sideLineColor || '#3b82f6'};
+  ">
     <div style="position:absolute; right:0; top:0; bottom:0; width:8px; border-radius:8px; background:${
       section.sideLineColor || '#3b82f6'
     };"></div>
     <h2 style="color:${
-      section.titleColor || '#3b82f6'
+      section.titleColor || '#000000'
     }; margin-top:0; margin-bottom:16px; font-size:${fontSizeToCss(
           section.titleFontSize || 'text-2xl'
-        )}; font-weight:bold;">${convertMarkdownLinks(section.title || '')}</h2>
+        )}; font-weight:bold; text-align:justify;">${convertMarkdownLinks(
+          section.title || ''
+        )}</h2>
     <div style="margin-bottom:12px; color:${
       section.contentColor || '#000000'
     }; font-size:${fontSizeToCss(
-          section.contentFontSize || 'text-lg'
-        )}; line-height:1.6; white-space:pre-line;">${convertMarkdownLinks(
+          section.contentFontSize || 'text-base'
+        )}; line-height:1.6; white-space:pre-line; text-align:justify;">${convertMarkdownLinks(
           section.content || ''
         )}</div>`;
         // Media Items
@@ -240,19 +254,14 @@ async function renderNewsletterHtml(
 
             // Responsive width calculation
             let width = '100%';
-            let maxWidth = '100%';
             if (size === 'small') {
               width = '25%';
-              maxWidth = '200px';
             } else if (size === 'medium') {
               width = '50%';
-              maxWidth = '400px';
             } else if (size === 'large') {
               width = '75%';
-              maxWidth = '600px';
             } else if (size === 'full') {
               width = '100%';
-              maxWidth = '100%';
             }
 
             // Responsive alignment
@@ -261,26 +270,38 @@ async function renderNewsletterHtml(
             else if (align === 'right') containerAlign = 'right';
 
             if (item.type === 'image') {
-              html += `<div class="media-container" style="text-align:${containerAlign}; margin-bottom:16px;">
-                <img class="media-item" src="${item.url}" alt="" style="display:inline-block; width:${width}; max-width:${maxWidth}; height:auto; object-fit:cover; border-radius:8px;" />
+              html += `<div class="media-container" style="width:100%;text-align:${containerAlign}; margin:16px 0;">
+                <img class="media-item" src="${
+                  item.url
+                }" alt="" style="margin-left:${
+                containerAlign === 'left' ? '0' : 'auto'
+              }; margin-right:${
+                containerAlign === 'right' ? '0' : 'auto'
+              }; display:block; width:${width}; height:auto; object-fit:cover; border-radius:8px;" />
               </div>`;
               if (item.textContent) {
-                html += `<div style="margin-bottom:16px; color:#333; font-size:${fontSizeToCss(
+                html += `<div style="margin-bottom:16px; color:#000000; font-size:${fontSizeToCss(
                   item.textFontSize || 'text-base'
-                )}; line-height:1.6; white-space:pre-line;">${convertMarkdownLinks(
+                )}; line-height:1.6; white-space:pre-line; text-align:justify;">${convertMarkdownLinks(
                   item.textContent
                 )}</div>`;
               }
             } else if (item.type === 'video') {
-              html += `<div class="media-container" style="text-align:${containerAlign}; margin-bottom:16px;">
-                <a href="${item.url}" target="_blank">
-                  <img class="media-item" src="https://vqkdadugmkwnthkfjbla.supabase.co/storage/v1/object/public/newsletter-assets/newsletter_images/video-placeholder/video-placeholder.jpeg" alt="" style="display:inline-block; width:${width}; max-width:${maxWidth}; height:auto; object-fit:cover; border-radius:8px;" />
+              html += `<div class="media-container" style="width:100%;text-align:${containerAlign}; margin:16px 0;">
+                <a href="${
+                  item.url
+                }" target="_blank" style="display:block; width:100%;">
+                  <img class="media-item" src="https://vqkdadugmkwnthkfjbla.supabase.co/storage/v1/object/public/newsletter-assets/newsletter_images/video-placeholder/video-placeholder.jpeg" alt="" style="margin-left:${
+                    containerAlign === 'left' ? '0' : 'auto'
+                  }; margin-right:${
+                containerAlign === 'right' ? '0' : 'auto'
+              }; display:block; width:${width}; height:auto; object-fit:cover; border-radius:8px;" />
                 </a>
               </div>`;
               if (item.textContent) {
-                html += `<div style="margin-bottom:16px; color:#333; font-size:${fontSizeToCss(
+                html += `<div style="margin-bottom:16px; color:#000000; font-size:${fontSizeToCss(
                   item.textFontSize || 'text-base'
-                )}; line-height:1.6; white-space:pre-line;">${convertMarkdownLinks(
+                )}; line-height:1.6; white-space:pre-line; text-align:justify;">${convertMarkdownLinks(
                   item.textContent
                 )}</div>`;
               }
@@ -297,25 +318,31 @@ async function renderNewsletterHtml(
                   item.previewUrl ||
                   `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
               }
-              html += `<div class="media-container" style="text-align:${containerAlign}; margin-bottom:16px; position:relative; display:inline-block;">
-                <a href="${item.url}" target="_blank" style="position:relative; display:inline-block;">
-                  <img class="media-item" src="${ytThumb}" alt="" style="display:inline-block; width:${width}; max-width:${maxWidth}; height:auto; object-fit:cover; border-radius:8px; position:relative; z-index:1;" />
+              html += `<div class="media-container" style="width:100%;text-align:${containerAlign}; margin:16px 0; position:relative; display:block;">
+                <a href="${
+                  item.url
+                }" target="_blank" style="position:relative; display:block; width:100%;">
+                  <img class="media-item" src="${ytThumb}" alt="" style="margin-left:${
+                containerAlign === 'left' ? '0' : 'auto'
+              }; margin-right:${
+                containerAlign === 'right' ? '0' : 'auto'
+              }; display:block; width:${width}; height:auto; object-fit:cover; border-radius:8px; position:relative; z-index:1;" />
                 </a>
               </div>`;
               if (item.textContent) {
-                html += `<div style="margin-bottom:16px; color:#333; font-size:${fontSizeToCss(
+                html += `<div style="margin-bottom:16px; color:#000000; font-size:${fontSizeToCss(
                   item.textFontSize || 'text-base'
-                )}; line-height:1.6; white-space:pre-line;">${convertMarkdownLinks(
+                )}; line-height:1.6; white-space:pre-line; text-align:justify;">${convertMarkdownLinks(
                   item.textContent
                 )}</div>`;
               }
             } else if (item.type === 'link') {
-              html += `<div class="media-container" style="text-align:${containerAlign}; margin-bottom:16px;">
+              html += `<div class="media-container" style="text-align:${containerAlign}; margin:16px 0;">
                 <a href="${
                   item.url
-                }" target="_blank" class="link-container" style="display:inline-block; width:${width}; max-width:${maxWidth};">
-                  <div style="display:flex;align-items:center;gap:8px;padding:12px;background:#e0f2fe;border-radius:8px;border-right:4px solid #3b82f6;width:100%;">
-                    <span style="color:#3b82f6;font-size:18px;">🔗</span><span style="color:#2563eb;font-size:18px;text-decoration:underline;">${
+                }" target="_blank" class="link-container" style="display:inline-block;">
+                  <div style="display:flex;align-items:center;gap:8px;padding:12px;background:#e0f2fe;border-radius:8px;width:100%;">
+                    <span style="color:#3b82f6;font-size:16px;">🔗</span><span style="color:#2563eb;font-size:16px;text-decoration:underline;">${
                       item.title || item.url
                     }</span>
                   </div>
@@ -330,14 +357,13 @@ async function renderNewsletterHtml(
             if (list.type === 'bullet') {
               html += '<div style="margin-bottom:16px;">';
               for (const item of list.items) {
-                const itemFontSize =
-                  item.fontSize || list.fontSize || 'text-lg';
+                const itemFontSize = item.fontSize || 'text-base';
                 const bulletSize = getBulletSize(itemFontSize);
-                html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><span style="display:inline-block;width:${bulletSize};height:${bulletSize};border-radius:50%;background:${
+                html += `<div style="margin-bottom:8px;"><span style="margin-left:8px;display:inline-block;width:${bulletSize};height:${bulletSize};border-radius:50%;background:${
                   item.color
-                };"></span><span style="font-size:${fontSizeToCss(
+                };vertical-align:middle;"></span><span style="font-size:${fontSizeToCss(
                   itemFontSize
-                )};color:#333;">${convertMarkdownLinks(
+                )};color:#000000; text-align:justify;vertical-align:middle;line-height:1.6;">${convertMarkdownLinks(
                   item.text
                 )}</span></div>`;
               }
@@ -345,18 +371,19 @@ async function renderNewsletterHtml(
             } else if (list.type === 'numbered') {
               html += '<div style="margin-bottom:16px;">';
               list.items.forEach((item, idx) => {
-                const itemFontSize =
-                  item.fontSize || list.fontSize || 'text-lg';
-                html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><span style="font-weight:bold;font-size:${fontSizeToCss(
+                const itemFontSize = item.fontSize || 'text-lg';
+                html += `<div style="margin-bottom:8px;"><span style="margin-left:8px;font-weight:bold;font-size:${fontSizeToCss(
                   itemFontSize
                 )};color:${
                   item.color
-                };width:24px;display:inline-block;">${String(idx + 1).padStart(
+                };display:inline-block;vertical-align:middle;">${String(
+                  idx + 1
+                ).padStart(
                   2,
                   '0'
                 )}</span><span style="font-size:${fontSizeToCss(
                   itemFontSize
-                )};color:#333;">${convertMarkdownLinks(
+                )};color:#000000; text-align:justify;vertical-align:middle;line-height:1.6;">${convertMarkdownLinks(
                   item.text
                 )}</span></div>`;
               });
@@ -371,8 +398,8 @@ async function renderNewsletterHtml(
           }; font-size:${fontSizeToCss(
             section.afterListContentFontSize ||
               section.contentFontSize ||
-              'text-lg'
-          )}; line-height:1.6; white-space:pre-line;">${convertMarkdownLinks(
+              'text-base'
+          )}; line-height:1.6; white-space:pre-line; text-align:justify;">${convertMarkdownLinks(
             section.afterListContent
           )}</div>`;
         }
@@ -380,15 +407,15 @@ async function renderNewsletterHtml(
         if (section.subsections && section.subsections.length) {
           html += '<div style="margin-top:18px;">';
           for (const sub of section.subsections) {
-            html += `<div style="margin-bottom:16px;"><div style="font-weight:bold;color:${
-              sub.titleColor || '#3b82f6'
-            }; font-size:${fontSizeToCss(
+            html += `<div style="margin-bottom:16px;">
+              <div style="font-weight:bold;color:${
+                sub.titleColor || '#3b82f6'
+              }; font-size:${fontSizeToCss(
               sub.titleFontSize || 'text-lg'
-            )}; margin-bottom:8px;">${convertMarkdownLinks(
-              sub.title
-            )}</div><div style="color:#333; font-size:${fontSizeToCss(
-              sub.contentFontSize || 'text-base'
-            )}; line-height:1.5; white-space:pre-line;">${convertMarkdownLinks(
+            )}; margin-bottom:8px;">${convertMarkdownLinks(sub.title)}</div>
+              <div style="color:#000000; font-size:${fontSizeToCss(
+                sub.contentFontSize || 'text-base'
+              )}; line-height:1.5; white-space:pre-line;">${convertMarkdownLinks(
               sub.content
             )}</div>`;
 
@@ -403,19 +430,14 @@ async function renderNewsletterHtml(
 
                 // Responsive width calculation
                 let width = '100%';
-                let maxWidth = '100%';
                 if (size === 'small') {
                   width = '25%';
-                  maxWidth = '200px';
                 } else if (size === 'medium') {
                   width = '50%';
-                  maxWidth = '400px';
                 } else if (size === 'large') {
                   width = '75%';
-                  maxWidth = '600px';
                 } else if (size === 'full') {
                   width = '100%';
-                  maxWidth = '100%';
                 }
 
                 // Responsive alignment
@@ -424,26 +446,38 @@ async function renderNewsletterHtml(
                 else if (align === 'right') containerAlign = 'right';
 
                 if (item.type === 'image') {
-                  html += `<div class="media-container" style="text-align:${containerAlign}; margin-bottom:16px;">
-                    <img class="media-item" src="${item.url}" alt="" style="display:inline-block; width:${width}; max-width:${maxWidth}; height:auto; object-fit:cover; border-radius:8px;" />
+                  html += `<div class="media-container" style="display:block;width:100%;text-align:${containerAlign}; margin:16px 0;">
+                    <img class="media-item" src="${
+                      item.url
+                    }" alt="" style="margin-left:${
+                    containerAlign === 'left' ? '0' : 'auto'
+                  }; margin-right:${
+                    containerAlign === 'right' ? '0' : 'auto'
+                  }; display:block; width:${width}; height:auto; object-fit:cover; border-radius:8px;" />
                   </div>`;
                   if (item.textContent) {
-                    html += `<div style="margin-bottom:16px; color:#333; font-size:${fontSizeToCss(
+                    html += `<div style="margin-bottom:16px; color:#000000; font-size:${fontSizeToCss(
                       item.textFontSize || 'text-base'
-                    )}; line-height:1.6; white-space:pre-line;">${convertMarkdownLinks(
+                    )}; line-height:1.6; white-space:pre-line; text-align:justify;">${convertMarkdownLinks(
                       item.textContent
                     )}</div>`;
                   }
                 } else if (item.type === 'video') {
-                  html += `<div class="media-container" style="text-align:${containerAlign}; margin-bottom:16px;">
-                    <a href="${item.url}" target="_blank">
-                      <img class="media-item" src="https://vqkdadugmkwnthkfjbla.supabase.co/storage/v1/object/public/newsletter-assets/newsletter_images/video-placeholder/video-placeholder.jpeg" alt="" style="display:inline-block; width:${width}; max-width:${maxWidth}; height:auto; object-fit:cover; border-radius:8px;" />
+                  html += `<div class="media-container" style="display:block; width:100%; text-align:${containerAlign}; margin:16px 0;">
+                    <a href="${
+                      item.url
+                    }" target="_blank" style="display:block; width:100%;">
+                      <img class="media-item" src="https://vqkdadugmkwnthkfjbla.supabase.co/storage/v1/object/public/newsletter-assets/newsletter_images/video-placeholder/video-placeholder.jpeg" alt="" style="margin-left:${
+                        containerAlign === 'left' ? '0' : 'auto'
+                      }; margin-right:${
+                    containerAlign === 'right' ? '0' : 'auto'
+                  }; display:block; width:${width}; height:auto; object-fit:cover; border-radius:8px;" />
                     </a>
                   </div>`;
                   if (item.textContent) {
-                    html += `<div style="margin-bottom:16px; color:#333; font-size:${fontSizeToCss(
+                    html += `<div style="margin-bottom:16px; color:#000000; font-size:${fontSizeToCss(
                       item.textFontSize || 'text-base'
-                    )}; line-height:1.6; white-space:pre-line;">${convertMarkdownLinks(
+                    )}; line-height:1.6; white-space:pre-line; text-align:justify;">${convertMarkdownLinks(
                       item.textContent
                     )}</div>`;
                   }
@@ -460,24 +494,30 @@ async function renderNewsletterHtml(
                       item.previewUrl ||
                       `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
                   }
-                  html += `<div class="media-container" style="text-align:${containerAlign}; margin-bottom:16px; position:relative; display:inline-block;">
-                    <a href="${item.url}" target="_blank" style="position:relative; display:inline-block;">
-                      <img class="media-item" src="${ytThumb}" alt="" style="display:inline-block; width:${width}; max-width:${maxWidth}; height:auto; object-fit:cover; border-radius:8px; position:relative; z-index:1;" />
+                  html += `<div class="media-container" style="text-align:${containerAlign}; margin:16px 0; position:relative; display:block; width:100%;">
+                    <a href="${
+                      item.url
+                    }" target="_blank" style="position:relative; display:block; width:100%;">
+                      <img class="media-item" src="${ytThumb}" alt="" style="margin-left:${
+                    containerAlign === 'left' ? '0' : 'auto'
+                  }; margin-right:${
+                    containerAlign === 'right' ? '0' : 'auto'
+                  }; display:block; width:${width}; height:auto; object-fit:cover; border-radius:8px; position:relative; z-index:1;" />
                     </a>
                   </div>`;
                   if (item.textContent) {
-                    html += `<div style="margin-bottom:16px; color:#333; font-size:${fontSizeToCss(
+                    html += `<div style="margin-bottom:16px; color:#000000; font-size:${fontSizeToCss(
                       item.textFontSize || 'text-base'
-                    )}; line-height:1.6; white-space:pre-line;">${convertMarkdownLinks(
+                    )}; line-height:1.6; white-space:pre-line; text-align:justify;">${convertMarkdownLinks(
                       item.textContent
                     )}</div>`;
                   }
                 } else if (item.type === 'link') {
-                  html += `<div class="media-container" style="text-align:${containerAlign}; margin-bottom:16px;">
+                  html += `<div class="media-container" style="text-align:${containerAlign}; margin:16px 0;">
                     <a href="${
                       item.url
-                    }" target="_blank" class="link-container" style="display:inline-block; width:${width}; max-width:${maxWidth};">
-                      <div style="display:flex;align-items:center;gap:8px;padding:12px;background:#e0f2fe;border-radius:8px;border-right:4px solid #3b82f6;width:100%;">
+                    }" target="_blank" class="link-container" style="display:inline-block;">
+                      <div style="display:flex;align-items:center;gap:8px;padding:12px;background:#e0f2fe;border-radius:8px;width:100%;">
                         <span style="color:#3b82f6;font-size:18px;">🔗</span><span style="color:#2563eb;font-size:18px;text-decoration:underline;">${
                           item.title || item.url
                         }</span>
@@ -492,37 +532,37 @@ async function renderNewsletterHtml(
             if (sub.lists && sub.lists.length) {
               for (const list of sub.lists) {
                 if (list.type === 'bullet') {
-                  html += '<div style="margin-bottom:16px;">';
+                  html +=
+                    '<div style="margin-bottom:16px; border-right-width: 2px; border-right-color: #D1D5DB; border-right-style: solid;">';
                   for (const item of list.items) {
-                    const itemFontSize =
-                      item.fontSize || list.fontSize || 'text-base';
+                    const itemFontSize = item.fontSize || 'text-base';
                     const bulletSize = getBulletSize(itemFontSize);
-                    html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><span style="display:inline-block;width:${bulletSize};height:${bulletSize};border-radius:50%;background:${
+                    html += `<div style="margin-bottom:8px;padding-right:8px;"><span style="margin-left:8px;display:inline-block;width:${bulletSize};height:${bulletSize};border-radius:50%;background:${
                       item.color
-                    };"></span><span style="font-size:${fontSizeToCss(
+                    };vertical-align:middle;"></span><span style="font-size:${fontSizeToCss(
                       itemFontSize
-                    )};color:#333;">${convertMarkdownLinks(
+                    )};color:#000000; text-align:justify;vertical-align:middle;line-height:1.6;">${convertMarkdownLinks(
                       item.text
                     )}</span></div>`;
                   }
                   html += '</div>';
                 } else if (list.type === 'numbered') {
-                  html += '<div style="margin-bottom:16px;">';
+                  html +=
+                    '<div style="margin-bottom:16px; border-right-width: 2px; border-right-color: #D1D5DB; border-right-style: solid;">';
                   list.items.forEach((item, idx) => {
-                    const itemFontSize =
-                      item.fontSize || list.fontSize || 'text-base';
-                    html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><span style="font-weight:bold;font-size:${fontSizeToCss(
+                    const itemFontSize = item.fontSize || 'text-base';
+                    html += `<div style="margin-bottom:8px;padding-right:8px;"><span style="margin-left:8px;font-weight:bold;font-size:${fontSizeToCss(
                       itemFontSize
                     )};color:${
                       item.color
-                    };width:24px;display:inline-block;">${String(
+                    };display:inline-block;vertical-align:middle;line-height:1.6;">${String(
                       idx + 1
                     ).padStart(
                       2,
                       '0'
                     )}</span><span style="font-size:${fontSizeToCss(
                       itemFontSize
-                    )};color:#333;">${convertMarkdownLinks(
+                    )};color:#000000; text-align:justify;vertical-align:middle;line-height:1.6;">${convertMarkdownLinks(
                       item.text
                     )}</span></div>`;
                   });
@@ -533,11 +573,11 @@ async function renderNewsletterHtml(
 
             // Subsection content after lists
             if (sub.afterListContent) {
-              html += `<div style="margin-bottom:16px; color:#333; font-size:${fontSizeToCss(
+              html += `<div style="margin-bottom:16px; color:#000000; font-size:${fontSizeToCss(
                 sub.afterListContentFontSize ||
                   sub.contentFontSize ||
                   'text-base'
-              )}; line-height:1.6; white-space:pre-line;">${convertMarkdownLinks(
+              )}; line-height:1.6; white-space:pre-line; text-align:justify;">${convertMarkdownLinks(
                 sub.afterListContent
               )}</div>`;
             }
@@ -587,7 +627,7 @@ async function renderNewsletterHtml(
     </div>
   `;
   // Replace {UNSUBSCRIBE_LINK} with the actual link if available
-  return ` ${fontStyle}<div class="newsletter-container" dir="rtl" style="text-align: right; font-family: 'Noto Naskh Arabic', serif; max-width: 100%; width: 100%;">${html}</div>`;
+  return ` ${fontStyle}<div class="newsletter-container" dir="rtl" style="max-width: 800px; width: 100%; margin: 0 auto; text-align: right; font-family: 'Noto Naskh Arabic', serif;">${html}</div>`;
 }
 
 serve(async (req: Request) => {

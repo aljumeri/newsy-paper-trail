@@ -64,61 +64,61 @@ async function sendEmailWithSendy({
 }
 
 // Restore Brevo sendEmail function for single email mode
-async function sendEmail(
-  to: string,
-  from: string,
-  subject: string,
-  html: string,
-  unsubscribeToken: string
-) {
-  const apiKey = Deno.env.get('BREVO_API_KEY');
-  if (!apiKey) {
-    throw new Error('BREVO_API_KEY is not set');
-  }
+// async function sendEmail(
+//   to: string,
+//   from: string,
+//   subject: string,
+//   html: string,
+//   unsubscribeToken: string
+// ) {
+//   const apiKey = Deno.env.get('BREVO_API_KEY');
+//   if (!apiKey) {
+//     throw new Error('BREVO_API_KEY is not set');
+//   }
 
-  // Add unsubscribe link to the email
-  const siteUrl = Deno.env.get('SITE_URL');
-  const unsubscribeLink = `${
-    siteUrl || 'https://solo4ai.com'
-  }/unsubscribe?email=${encodeURIComponent(to)}&token=${unsubscribeToken}`;
+//   // Add unsubscribe link to the email
+//   const siteUrl = Deno.env.get('SITE_URL');
+//   const unsubscribeLink = `${
+//     siteUrl || 'https://solo4ai.com'
+//   }/unsubscribe?email=${encodeURIComponent(to)}&token=${unsubscribeToken}`;
 
-  // Compose the email body (HTML)
-  const emailHtml = html;
+//   // Compose the email body (HTML)
+//   const emailHtml = html;
 
-  // Brevo API endpoint
-  const url = 'https://api.brevo.com/v3/smtp/email';
+//   // Brevo API endpoint
+//   const url = 'https://api.brevo.com/v3/smtp/email';
 
-  // Prepare JSON payload
-  const payload = {
-    sender: {
-      email: from,
-      name: 'Solo4AI Newsletter',
-    },
-    to: [{ email: to }],
-    subject: subject,
-    htmlContent: emailHtml,
-    headers: {
-      'List-Unsubscribe': `<${unsubscribeLink}>`,
-    },
-  };
+//   // Prepare JSON payload
+//   const payload = {
+//     sender: {
+//       email: from,
+//       name: 'Solo4AI Newsletter',
+//     },
+//     to: [{ email: to }],
+//     subject: subject,
+//     htmlContent: emailHtml,
+//     headers: {
+//       'List-Unsubscribe': `<${unsubscribeLink}>`,
+//     },
+//   };
 
-  // Send the email via Brevo
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'api-key': apiKey,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
+//   // Send the email via Brevo
+//   const response = await fetch(url, {
+//     method: 'POST',
+//     headers: {
+//       'api-key': apiKey,
+//       'Content-Type': 'application/json',
+//     },
+//     body: JSON.stringify(payload),
+//   });
 
-  const responseText = await response.text();
-  if (!response.ok) {
-    const errorMessage = `Brevo API error: Status ${response.status}, Response: ${responseText}`;
-    throw new Error(errorMessage);
-  }
-  return { success: true, message: 'Email sent via Brevo' };
-}
+//   const responseText = await response.text();
+//   if (!response.ok) {
+//     const errorMessage = `Brevo API error: Status ${response.status}, Response: ${responseText}`;
+//     throw new Error(errorMessage);
+//   }
+//   return { success: true, message: 'Email sent via Brevo' };
+// }
 
 // Helper: Convert markdown links to HTML links
 function convertMarkdownLinks(text: string): string {
@@ -840,15 +840,18 @@ serve(async (req: Request) => {
     let failedSends = 0;
     const errors: string[] = [];
 
-    // Use Sendy for sending newsletter to all subscribers
-    if (sendMode === 'all') {
+    if (sendMode === 'all' || sendMode === 'single') {
       try {
-        // Render HTML for email
         // Use Sendy custom fields for personalized unsubscribe link
         const unsubscribeLink = `${Deno.env.get('SITE_URL') || 'https://solo4ai.com'}/unsubscribe?email=[Email]&token=[UnsubscribeToken]`;
         const htmlBody = await renderNewsletterHtml(newsletter, unsubscribeLink, supabase);
-        const sendyListId = Deno.env.get('SENDY_LIST_ID');
-        if (!sendyListId) throw new Error('SENDY_LIST_ID is not set');
+        let sendyListId;
+        if (sendMode === 'all') {
+          sendyListId = Deno.env.get('SENDY_LIST_ID');
+        } else if (sendMode === 'single') {
+          sendyListId = Deno.env.get('SENDY_TEST_LIST_ID');
+        }
+        if (!sendyListId) throw new Error('SENDY_LIST_ID (or SENDY_TEST_LIST_ID) is not set');
         await sendEmailWithSendy({
           subject: newsletter.main_title,
           html: htmlBody,
@@ -863,27 +866,6 @@ serve(async (req: Request) => {
         console.error(errorMsg);
         errors.push(errorMsg);
         failedSends = recipients.length;
-      }
-    } else if (sendMode === 'single') {
-      // Use Brevo for single email send
-      try {
-        const recipient = recipients[0];
-        // Render HTML for email with personalized unsubscribe link
-        const unsubscribeLink = `${Deno.env.get('SITE_URL') || 'https://solo4ai.com'}/unsubscribe?email=${encodeURIComponent(recipient.email)}&token=${recipient.unsubscribe_token}`;
-        const htmlBody = await renderNewsletterHtml(newsletter, unsubscribeLink, supabase);
-        await sendEmail(
-          recipient.email,
-          fromEmail,
-          newsletter.main_title,
-          htmlBody,
-          recipient.unsubscribe_token
-        );
-        successfulSends = 1;
-      } catch (error) {
-        const errorMsg = `Failed to send single email via Brevo: ${error.message}`;
-        console.error(errorMsg);
-        errors.push(errorMsg);
-        failedSends = 1;
       }
     }
 

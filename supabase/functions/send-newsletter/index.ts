@@ -753,9 +753,9 @@ serve(async (req: Request) => {
     if (sendMode !== 'single') {
       console.log('Edge Function: Marking newsletter as sent');
       const updateData: any = {
-        sent_at: new Date().toISOString(),
-        recipients_count: recipients.length,
-        status: 'sent',
+          sent_at: new Date().toISOString(),
+          recipients_count: recipients.length,
+          status: 'sent',
       };
       
       // For 'all' mode, set last_sent_to to recipients_count
@@ -803,15 +803,15 @@ serve(async (req: Request) => {
           html: htmlBody,
           listId: sendyListId,
           fromName,
-          fromEmail,
+            fromEmail,
           replyTo,
         });
         
         successfulSends = recipients.length;
-      } catch (error) {
+        } catch (error) {
         const errorMsg = `Failed to create Sendy campaign: ${error.message}`;
-        console.error(errorMsg);
-        errors.push(errorMsg);
+          console.error(errorMsg);
+          errors.push(errorMsg);
         failedSends = recipients.length;
       }
     }

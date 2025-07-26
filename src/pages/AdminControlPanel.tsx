@@ -50,30 +50,27 @@ const AdminControlPanel: React.FC = () => {
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch Sendy data using the new API endpoint
+  // Fetch Sendy data using edge function to avoid CSP issues
   const fetchSendyData = async () => {
     try {
-      const sendyUrl = import.meta.env.VITE_SENDY_URL;
-      const sendyApiKey = import.meta.env.VITE_SENDY_API_KEY;
-      const sendyListId = import.meta.env.VITE_SENDY_LIST_ID;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       
-      if (!sendyUrl || !sendyApiKey || !sendyListId) {
-        console.error('Sendy configuration missing in environment variables');
+      if (!supabaseUrl) {
+        console.error('Supabase URL missing in environment variables');
         return;
       }
 
-      // Use the new active-subscriber-count.php endpoint
-      const formData = new URLSearchParams();
-      formData.append('api_key', sendyApiKey);
-      formData.append('list_id', sendyListId);
-
-      const response = await fetch(`${sendyUrl}/api/subscribers/active-subscriber-count.php`, {
+      // Use edge function to proxy the Sendy API request
+      const response = await fetch(`${supabaseUrl}/functions/v1/get-sendy-data`, {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
       });
 
       if (!response.ok) {
-        throw new Error(`Sendy API error: ${response.status}`);
+        throw new Error(`Edge function error: ${response.status}`);
       }
 
       const data: SendyResponse = await response.json();

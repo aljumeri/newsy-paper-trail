@@ -28,23 +28,23 @@ const EditNewsletter: React.FC = () => {
     if (!id) return;
     const fetchNewsletter = async () => {
       try {
-        const { data, error } = await supabase
-          .from('newsletters')
-          .select('main_title, sub_title, date, content')
-          .eq('id', id)
-          .single();
-        if (error || !data || typeof data !== 'object' || 'code' in data) return;
-        const safeData = data as any;
-        setMainTitle(prev => prev || safeData.main_title || '');
-        setSubTitle(prev => prev || safeData.sub_title || '');
-        setHeaderDate(prev => prev || safeData.date || '');
-        if (safeData.content) {
-          try {
-            const parsed = JSON.parse(safeData.content);
-            if (Array.isArray(parsed)) setSections(parsed);
-          } catch (e) {
-            // fallback: legacy HTML
-          }
+      const { data, error } = await supabase
+        .from('newsletters')
+        .select('main_title, sub_title, date, content')
+        .eq('id', id)
+        .single();
+      if (error || !data || typeof data !== 'object' || 'code' in data) return;
+      const safeData = data as any;
+      setMainTitle(prev => prev || safeData.main_title || '');
+      setSubTitle(prev => prev || safeData.sub_title || '');
+      setHeaderDate(prev => prev || safeData.date || '');
+      if (safeData.content) {
+        try {
+          const parsed = JSON.parse(safeData.content);
+          if (Array.isArray(parsed)) setSections(parsed);
+        } catch (e) {
+          // fallback: legacy HTML
+        }
         }
       } finally {
         setIsLoading(false);

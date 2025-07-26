@@ -117,13 +117,13 @@ const ComposeNewsletter: React.FC = () => {
             >
               {isLoading ? 'جارٍ الحفظ...' : 'حفظ كمسودة'}
             </button>
-            <button
+          <button
               className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
               onClick={() => handleSaveNewsletter('sent')}
-              disabled={isLoading}
-            >
+            disabled={isLoading}
+          >
               {isLoading ? 'جارٍ الحفظ...' : 'حفظ ونشر'}
-            </button>
+          </button>
           </div>
         </CardContent>
       </div>

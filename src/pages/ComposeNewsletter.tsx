@@ -43,7 +43,7 @@ const ComposeNewsletter: React.FC = () => {
     );
   }
 
-  const handleSaveNewsletter = async () => {
+  const handleSaveNewsletter = async (status: 'draft' | 'sent' = 'sent') => {
     if (!sections.length) {
       toast({
         title: 'حقول مطلوبة',
@@ -62,11 +62,12 @@ const ComposeNewsletter: React.FC = () => {
         content: JSON.stringify(sections),
         created_by: userId,
         created_at: new Date().toISOString(),
+        status: status,
       });
       if (error) throw error;
       toast({
         title: 'تم الحفظ بنجاح',
-        description: 'تم حفظ النشرة الإخبارية',
+        description: status === 'draft' ? 'تم حفظ النشرة كمسودة' : 'تم حفظ ونشر النشرة الإخبارية',
       });
       navigate('/admin-control/panel');
     } catch (err: unknown) {
@@ -108,13 +109,22 @@ const ComposeNewsletter: React.FC = () => {
             onMainTitleChange={setMainTitle}
             onSubTitleChange={setSubTitle}
           />
-          <button
-            className="mt-6 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            onClick={handleSaveNewsletter}
-            disabled={isLoading}
-          >
-            {isLoading ? 'جارٍ الحفظ...' : 'حفظ النشرة'}
-          </button>
+          <div className="flex gap-4 mt-6">
+            <button
+              className="px-6 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+              onClick={() => handleSaveNewsletter('draft')}
+              disabled={isLoading}
+            >
+              {isLoading ? 'جارٍ الحفظ...' : 'حفظ كمسودة'}
+            </button>
+            <button
+              className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              onClick={() => handleSaveNewsletter('sent')}
+              disabled={isLoading}
+            >
+              {isLoading ? 'جارٍ الحفظ...' : 'حفظ ونشر'}
+            </button>
+          </div>
         </CardContent>
       </div>
     </div>

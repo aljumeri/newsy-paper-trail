@@ -10,16 +10,14 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { subscriptionService } from '@/utils/subscriptionService';
 import { Plus, RefreshCw, Trash2 } from 'lucide-react';
 import React, { useState } from 'react';
 
 interface Subscriber {
-  id: string;
   email: string;
   name?: string;
-  created_at: string;
+  join_date: string;
 }
 
 export interface SubscribersTableProps {
@@ -37,7 +35,7 @@ const SubscribersTable: React.FC<SubscribersTableProps> = ({
 }) => {
   const [newEmail, setNewEmail] = useState('');
   const [isAdding, setIsAdding] = useState(false);
-  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [deletingEmails, setDeletingEmails] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   const handleAddSubscriber = async () => {
@@ -72,20 +70,22 @@ const SubscribersTable: React.FC<SubscribersTableProps> = ({
     }
   };
 
-  const handleDeleteSubscriber = async (id: string) => {
-    setIsDeleting(id);
-    try {
-      const { error } = await supabase
-        .from('subscribers')
-        .delete()
-        .eq('id', id);
+  const handleDeleteSubscriber = async (email: string) => {
+    if (!confirm(`هل أنت متأكد من حذف المشترك ${email}؟`)) {
+      return;
+    }
 
-      if (error) throw error;
+    setDeletingEmails(prev => new Set(prev).add(email));
+    
+    try {
+      const result = await subscriptionService.unsubscribe(email);
+      if (!result.success) throw new Error(result.message);
 
       toast({
         title: 'تم الحذف',
         description: 'تم حذف المشترك بنجاح',
       });
+      
       if (onRefresh) await onRefresh();
     } catch (error: any) {
       toast({
@@ -94,7 +94,11 @@ const SubscribersTable: React.FC<SubscribersTableProps> = ({
         variant: 'destructive',
       });
     } finally {
-      setIsDeleting(null);
+      setDeletingEmails(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(email);
+        return newSet;
+      });
     }
   };
 
@@ -137,6 +141,7 @@ const SubscribersTable: React.FC<SubscribersTableProps> = ({
           )}
         </div>
       </CardHeader>
+
       <CardContent className="overflow-x-auto">
         <Table>
           <TableHeader>
@@ -150,22 +155,27 @@ const SubscribersTable: React.FC<SubscribersTableProps> = ({
           <TableBody>
             {subscribers.length > 0 ? (
               subscribers.map(subscriber => (
-                <TableRow key={subscriber.id} className="hover:bg-gray-50">
+                <TableRow key={subscriber.email} className="hover:bg-gray-50">
                   <TableCell className="font-medium">
                     {subscriber.email}
                   </TableCell>
                   <TableCell>{subscriber.name || '—'}</TableCell>
-                  <TableCell>{formatDate(subscriber.created_at)}</TableCell>
+                  <TableCell>
+                    {(() => {
+                      console.log('Join date format:', subscriber.join_date, typeof subscriber.join_date);
+                      return formatDate(subscriber.join_date);
+                    })()}
+                  </TableCell>
                   <TableCell>
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
-                      onClick={() => handleDeleteSubscriber(subscriber.id)}
-                      disabled={isDeleting === subscriber.id}
-                      className="text-red-500 hover:text-red-700"
+                      onClick={() => handleDeleteSubscriber(subscriber.email)}
+                      disabled={deletingEmails.has(subscriber.email)}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
                     >
                       <Trash2 className="h-4 w-4 ml-1" />
-                      {isDeleting === subscriber.id ? 'جاري الحذف...' : 'حذف'}
+                      {deletingEmails.has(subscriber.email) ? 'جاري الحذف...' : 'حذف'}
                     </Button>
                   </TableCell>
                 </TableRow>

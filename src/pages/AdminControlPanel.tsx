@@ -11,10 +11,9 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 interface Subscriber {
-  id: string;
   email: string;
   name?: string;
-  created_at: string;
+  join_date: string;
 }
 
 interface Newsletter {
@@ -23,6 +22,17 @@ interface Newsletter {
   sub_title?: string;
   created_at: string;
   sent_at: string | null;
+  status: string;
+}
+
+interface SendyResponse {
+  success: boolean;
+  count: number;
+  subscribers: Array<{
+    email: string;
+    name: string;
+    join_date: string;
+  }>;
 }
 
 const AdminControlPanel: React.FC = () => {
@@ -35,26 +45,75 @@ const AdminControlPanel: React.FC = () => {
   const { isChecking } = useRequireAdminAuth();
 
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
+  const [subscribersCount, setSubscribersCount] = useState<number>(0);
   const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch both subscribers and newsletters
+  // Fetch Sendy data using the new API endpoint
+  const fetchSendyData = async () => {
+    try {
+      const sendyUrl = import.meta.env.VITE_SENDY_URL;
+      const sendyApiKey = import.meta.env.VITE_SENDY_API_KEY;
+      const sendyListId = import.meta.env.VITE_SENDY_LIST_ID;
+      
+      if (!sendyUrl || !sendyApiKey || !sendyListId) {
+        console.error('Sendy configuration missing in environment variables');
+        return;
+      }
+
+      // Use the new active-subscriber-count.php endpoint
+      const formData = new URLSearchParams();
+      formData.append('api_key', sendyApiKey);
+      formData.append('list_id', sendyListId);
+
+      const response = await fetch(`${sendyUrl}/api/subscribers/active-subscriber-count.php`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Sendy API error: ${response.status}`);
+      }
+
+      const data: SendyResponse = await response.json();
+      console.log("Sendy API response:", data);
+
+      if (data.success) {
+        setSubscribersCount(data.count);
+        
+        // Transform Sendy subscribers to match our interface
+        const transformedSubscribers: Subscriber[] = data.subscribers.map(sub => ({
+          email: sub.email,
+          name: sub.name,
+          join_date: sub.join_date
+        }));
+        
+        setSubscribers(transformedSubscribers);
+      } else {
+        throw new Error('Failed to fetch Sendy data');
+      }
+    } catch (sendyError) {
+      console.error('Error fetching Sendy data:', sendyError);
+      // Fallback to 0 if Sendy is not available
+      setSubscribersCount(0);
+      setSubscribers([]);
+    }
+  };
+
+  // Fetch data from Sendy and Supabase
   const fetchData = async () => {
     try {
-      const { data: subs, error: subsErr } = await supabase
-        .from('subscribers')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (subsErr) throw subsErr;
-      setSubscribers(subs || []);
-
+      // Fetch newsletters from Supabase
       const { data: news, error: newsErr } = await supabase
         .from('newsletters')
         .select('*')
         .order('created_at', { ascending: false });
       if (newsErr) throw newsErr;
       setNewsletters(news || []);
+
+      // Fetch Sendy data
+      await fetchSendyData();
     } catch (e: unknown) {
       console.error('Error fetching admin data:', e);
       const msg = e instanceof Error ? e.message : 'Unknown error';
@@ -95,7 +154,7 @@ const AdminControlPanel: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <AdminActionCard
             title="المشتركين"
-            value={subscribers.length}
+            value={subscribersCount}
             description="إجمالي عدد المشتركين في النشرة الإخبارية"
             icon="users"
           />

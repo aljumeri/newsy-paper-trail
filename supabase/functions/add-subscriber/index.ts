@@ -1,5 +1,4 @@
 // @deno-types="../deno.d.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,15 +8,6 @@ const corsHeaders = {
 
 interface SubscriberRequest {
   email: string;
-}
-
-// Function to generate a random unsubscribe token
-function generateUnsubscribeToken(): string {
-  const randomBytes = new Uint8Array(32);
-  crypto.getRandomValues(randomBytes);
-  return Array.from(randomBytes)
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
 }
 
 Deno.serve(async (req: Request) => {
@@ -50,8 +40,8 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // Validate email format - more comprehensive regex
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(email.trim())) {
       console.error("Edge Function: Invalid email format:", email);
       return new Response(JSON.stringify({
@@ -66,121 +56,13 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-    const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-    
-    if (!supabaseUrl || !supabaseServiceRoleKey) {
-      console.error("Edge Function: Missing Supabase configuration");
-      return new Response(JSON.stringify({
-        success: false,
-        message: "خطأ في إعدادات الخادم"
-      }), {
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json"
-        },
-        status: 500
-      });
-    }
-    
-    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
-
-    // Check if email already exists
-    console.log("Edge Function: Checking if email exists:", email.trim());
-    const { data: existingSubscriber, error: checkError } = await supabase
-      .from("subscribers")
-      .select("email")
-      .eq("email", email.trim())
-      .maybeSingle();
-
-    if (checkError) {
-      console.error("Edge Function: Error checking existing subscriber:", checkError);
-      return new Response(JSON.stringify({
-        success: false,
-        message: "حدث خطأ أثناء التحقق من البريد الإلكتروني"
-      }), {
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json"
-        },
-        status: 500
-      });
-    }
-
-    if (existingSubscriber) {
-      console.log("Edge Function: Email already exists:", email.trim());
-      return new Response(JSON.stringify({
-        success: false,
-        message: "البريد الإلكتروني موجود بالفعل في قائمة المشتركين"
-      }), {
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json"
-        },
-        status: 400
-      });
-    }
-
-    // Generate unsubscribe token
-    const unsubscribeToken = generateUnsubscribeToken();
-    console.log("Edge Function: Generated unsubscribe token:", unsubscribeToken.substring(0, 8) + "...");
-
-    // Prepare the data to insert
-    const subscriberData = {
-      email: email.trim(),
-      created_at: new Date().toISOString(),
-      vendor: req.headers.get("origin") || null,
-      unsubscribe_token: unsubscribeToken
-    };
-
-    console.log("Edge Function: Inserting subscriber data:", {
-      ...subscriberData,
-      unsubscribe_token: subscriberData.unsubscribe_token.substring(0, 8) + "..."
-    });
-
-    // Insert new subscriber
-    const { data, error } = await supabase
-      .from("subscribers")
-      .insert([subscriberData])
-      .select();
-
-    if (error) {
-      console.error("Error adding subscriber:", error);
-      
-      // Handle duplicate key error specifically
-      if (error.code === '23505') {
-        return new Response(JSON.stringify({
-          success: false,
-          message: "البريد الإلكتروني موجود بالفعل في قائمة المشتركين"
-        }), {
-          headers: {
-            ...corsHeaders,
-            "Content-Type": "application/json"
-          },
-          status: 400
-        });
-      }
-      
-      return new Response(JSON.stringify({
-        success: false,
-        message: "حدث خطأ أثناء الاشتراك. يرجى المحاولة مرة أخرى لاحقًا."
-      }), {
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json"
-        },
-        status: 500
-      });
-    }
-
     // Add to Sendy list
     const sendyUrl = Deno.env.get('SENDY_URL');
     const sendyApiKey = Deno.env.get('SENDY_API_KEY');
     const sendyListId = Deno.env.get('SENDY_LIST_ID');
+    
     if (!sendyUrl || !sendyApiKey || !sendyListId) {
       console.error('Sendy configuration missing');
-      // Rollback Supabase insert
-      await supabase.from('subscribers').delete().eq('email', email.trim());
       return new Response(JSON.stringify({
         success: false,
         message: 'خطأ في إعدادات الخادم (Sendy)'
@@ -192,21 +74,62 @@ Deno.serve(async (req: Request) => {
         status: 500
       });
     }
+
+    console.log("Edge Function: Adding subscriber to Sendy:", email.trim());
+    console.log("Edge Function: Sendy URL:", sendyUrl);
+    console.log("Edge Function: Sendy List ID:", sendyListId);
+
     const sendyForm = new URLSearchParams();
     sendyForm.append('api_key', sendyApiKey);
     sendyForm.append('list', sendyListId);
     sendyForm.append('email', email.trim());
-    // Optionally add name, custom fields, etc.
-    sendyForm.append('UnsubscribeToken', unsubscribeToken);
+
+    console.log("Edge Function: Sendy form data:", sendyForm.toString());
+
     const sendyResp = await fetch(`${sendyUrl}/subscribe`, {
       method: 'POST',
       body: sendyForm,
     });
+
     const sendyText = await sendyResp.text();
-    if (!sendyResp.ok || !/1|already subscribed/i.test(sendyText)) {
-      console.error('Sendy subscribe failed:', sendyText);
-      // Rollback Supabase insert
-      await supabase.from('subscribers').delete().eq('email', email.trim());
+    console.log("Edge Function: Sendy response:", sendyText);
+    console.log("Edge Function: Sendy response status:", sendyResp.status);
+    console.log("Edge Function: Sendy response ok:", sendyResp.ok);
+
+    // Check if the response is HTML
+    if (sendyText.includes('<!DOCTYPE html>') || sendyText.includes('<html>')) {
+      console.log('Sendy returned HTML response:', sendyText);
+      
+      // Check for success messages in HTML
+      if (sendyText.includes("You're subscribed!") || sendyText.includes('subscribed') || sendyText.includes('success')) {
+        console.log('Sendy subscription successful - detected from HTML');
+        return new Response(JSON.stringify({
+          success: true,
+          message: "تم اشتراكك بنجاح في النشرة الإخبارية."
+        }), {
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json"
+          }
+        });
+      }
+      
+      // Check for already subscribed messages
+      if (sendyText.includes('already subscribed') || sendyText.includes('Already subscribed')) {
+        console.log('Sendy user already subscribed - detected from HTML');
+        return new Response(JSON.stringify({
+          success: true,
+          message: "تم إعادة اشتراك البريد الإلكتروني بنجاح"
+        }), {
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json"
+          }
+        });
+      }
+      
+      // If it's HTML but no success message found, treat as error
+      console.error('Sendy subscribe failed - HTML response with no success message:', sendyText);
       return new Response(JSON.stringify({
         success: false,
         message: 'فشل الاشتراك في القائمة البريدية. يرجى المحاولة لاحقًا.'
@@ -215,19 +138,34 @@ Deno.serve(async (req: Request) => {
           ...corsHeaders,
           "Content-Type": "application/json"
         },
-        status: 500
+        status: 400
       });
     }
 
-    console.log("Edge Function: Subscriber added successfully to Supabase and Sendy:", {
-      ...data[0],
-      unsubscribe_token: data[0]?.unsubscribe_token ? data[0].unsubscribe_token.substring(0, 8) + "..." : "NULL"
-    });
+    // Check for success or already subscribed
+    if (!sendyResp.ok || !/1|already subscribed|success/i.test(sendyText)) {
+      console.error('Sendy subscribe failed:', sendyText);
+      console.error('Sendy response status:', sendyResp.status);
+      console.error('Sendy response ok:', sendyResp.ok);
+      return new Response(JSON.stringify({
+        success: false,
+        message: 'فشل الاشتراك في القائمة البريدية. يرجى المحاولة لاحقًا.'
+      }), {
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json"
+        },
+        status: 400
+      });
+    }
+
+    console.log("Edge Function: Subscriber added successfully to Sendy");
 
     return new Response(JSON.stringify({
       success: true,
-      subscriber: data[0],
-      message: "تم اشتراكك بنجاح في النشرة الإخبارية."
+      message: sendyText.includes('already subscribed') 
+        ? "تم إعادة اشتراك البريد الإلكتروني بنجاح"
+        : "تم اشتراكك بنجاح في النشرة الإخبارية."
     }), {
       headers: {
         ...corsHeaders,

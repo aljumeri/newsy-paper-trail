@@ -12,9 +12,8 @@ const Unsubscribe = () => {
   useEffect(() => {
     const handleUnsubscribe = async () => {
       const email = searchParams.get('email');
-      const token = searchParams.get('token');
 
-      if (!email || !token) {
+      if (!email) {
         setStatus('error');
         setMessage('رابط إلغاء الاشتراك غير صالح');
         return;
@@ -27,7 +26,7 @@ const Unsubscribe = () => {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
           },
-          body: JSON.stringify({ email, token })
+          body: JSON.stringify({ email })
         });
 
         const data = await response.json();

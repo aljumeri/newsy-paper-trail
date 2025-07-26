@@ -32,6 +32,7 @@ interface Newsletter {
   main_title: string;
   created_at: string;
   sent_at: string | null;
+  status: string; // Added status field
 }
 
 interface NewslettersTableProps {
@@ -53,6 +54,7 @@ const NewslettersTable = ({
   );
   const [showTestDialog, setShowTestDialog] = useState<boolean>(false);
   const [selectedNewsletterId, setSelectedNewsletterId] = useState<string>("");
+
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -194,6 +196,8 @@ const NewslettersTable = ({
     }
   };
 
+
+
   return (
     <Card className="border-2 border-blue-500 overflow-hidden">
       <CardHeader className="bg-blue-50">
@@ -253,7 +257,8 @@ const NewslettersTable = ({
                           جديدة
                         </a>
                       </Button>
-                      {!newsletter.sent_at && (
+                      {/* Show send and test buttons for published newsletters (non-draft) */}
+                      {newsletter.status !== 'draft' && (
                         <>
                           <Button
                             variant="outline"
@@ -265,7 +270,7 @@ const NewslettersTable = ({
                             <Send className="w-4 h-4 ml-1" />
                             {sendingId === newsletter.id
                               ? "جاري الإرسال..."
-                              : "إرسال"}
+                              : newsletter.sent_at ? "إعادة إرسال" : "إرسال"}
                           </Button>
                           <Button
                             variant="outline"
@@ -283,6 +288,10 @@ const NewslettersTable = ({
                               : "إرسال تجريبي"}
                           </Button>
                         </>
+                      )}
+
+                      {newsletter.status === 'draft' && (
+                        <span className="text-gray-500 text-sm">مسودة</span>
                       )}
                       <AlertDialog>
                         <AlertDialogTrigger asChild>

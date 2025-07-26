@@ -2,7 +2,6 @@ import Newsletter from '@/components/newsletter/Newsletter';
 import { Card, CardTitle } from '@/components/ui/card';
 import { useAdminAuth, useRequireAdminAuth } from '@/contexts/AdminAuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { useNewsletterEditor } from '@/hooks/useNewsletterEditor';
 import { supabase } from '@/integrations/supabase/client';
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -14,58 +13,49 @@ const EditNewsletter: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
 
-  const {
-    subject,
-    setSubject,
-    content,
-    setContent,
-    isLoading: editorLoading,
-    isSaving,
-    isPreview,
-    isDarkMode,
-    handleUpdateNewsletter,
-    toggleDarkMode,
-    handlePreview,
-  } = useNewsletterEditor();
-
   const [isSending, setIsSending] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [sections, setSections] = useState<any[]>([]);
   const [mainTitle, setMainTitle] = useState('');
   const [subTitle, setSubTitle] = useState('');
   const [headerDate, setHeaderDate] = useState('');
 
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', isDarkMode);
-  }, [isDarkMode]);
+    document.documentElement.classList.toggle('dark', false); // isDarkMode removed
+  }, []);
 
   useEffect(() => {
     if (!id) return;
     const fetchNewsletter = async () => {
-      const { data, error } = await supabase
-        .from('newsletters')
-        .select('main_title, sub_title, date, content')
-        .eq('id', id)
-        .single();
-      if (error || !data || typeof data !== 'object' || 'code' in data) return;
-      const safeData = data as any;
-      setMainTitle(prev => prev || safeData.main_title || '');
-      setSubTitle(prev => prev || safeData.sub_title || '');
-      setHeaderDate(prev => prev || safeData.date || '');
-      if (safeData.content) {
-        try {
-          const parsed = JSON.parse(safeData.content);
-          if (Array.isArray(parsed)) setSections(parsed);
-        } catch (e) {
-          // fallback: legacy HTML
+      try {
+        const { data, error } = await supabase
+          .from('newsletters')
+          .select('main_title, sub_title, date, content')
+          .eq('id', id)
+          .single();
+        if (error || !data || typeof data !== 'object' || 'code' in data) return;
+        const safeData = data as any;
+        setMainTitle(prev => prev || safeData.main_title || '');
+        setSubTitle(prev => prev || safeData.sub_title || '');
+        setHeaderDate(prev => prev || safeData.date || '');
+        if (safeData.content) {
+          try {
+            const parsed = JSON.parse(safeData.content);
+            if (Array.isArray(parsed)) setSections(parsed);
+          } catch (e) {
+            // fallback: legacy HTML
+          }
         }
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchNewsletter();
   }, [id]);
 
-  if (isChecking || editorLoading) {
+  if (isChecking || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <p className="text-lg">جارٍ التحميل...</p>
         </div>
@@ -108,7 +98,7 @@ const EditNewsletter: React.FC = () => {
     }
   };
 
-  const handleSaveNewsletter = async () => {
+  const handleSaveNewsletter = async (status: 'draft' | 'sent' = 'sent') => {
     if (!sections.length) {
       toast({
         title: 'حقول مطلوبة',
@@ -129,12 +119,13 @@ const EditNewsletter: React.FC = () => {
           content: JSON.stringify(sections),
           updated_by: userId,
           updated_at: new Date().toISOString(),
+          status: status,
         })
         .eq('id', id);
       if (error) throw error;
       toast({
         title: 'تم الحفظ بنجاح',
-        description: 'تم حفظ النشرة الإخبارية',
+        description: status === 'draft' ? 'تم حفظ النشرة كمسودة' : 'تم حفظ ونشر النشرة الإخبارية',
       });
       navigate('/admin-control/panel');
     } catch (err: unknown) {
@@ -155,7 +146,7 @@ const EditNewsletter: React.FC = () => {
   return (
     <div
       className={`min-h-screen  dark:bg-gray-900 pb-8 ${
-        isDarkMode ? 'dark' : ''
+        false ? 'dark' : '' // isDarkMode removed
       }`}
     >
       <div className="container max-w-5xl m-auto">
@@ -175,13 +166,20 @@ const EditNewsletter: React.FC = () => {
             onSubTitleChange={setSubTitle}
             onDateChange={setHeaderDate}
           />
-          <div className="mt-6 flex justify-end">
+          <div className="flex gap-4 mt-6">
             <button
-              className="px-6 py-2 ml-auto bg-blue-600 text-white rounded hover:bg-blue-700"
-              onClick={handleSaveNewsletter}
-              disabled={isSaving}
+              className="px-6 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+              onClick={() => handleSaveNewsletter('draft')}
+              disabled={isSending}
             >
-              {isSaving ? 'جارٍ الحفظ...' : 'حفظ النشرة'}
+              {isSending ? 'جارٍ الحفظ...' : 'حفظ كمسودة'}
+            </button>
+            <button
+              className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              onClick={() => handleSaveNewsletter('sent')}
+              disabled={isSending}
+            >
+              {isSending ? 'جارٍ الحفظ...' : 'حفظ ونشر'}
             </button>
           </div>
         </Card>

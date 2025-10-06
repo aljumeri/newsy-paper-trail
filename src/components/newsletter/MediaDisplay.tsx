@@ -18,9 +18,9 @@ function getYouTubeEmbedUrl(url: string): string {
   // If already an embed URL, return as is
   if (url.includes('youtube.com/embed/')) return url;
   // Try to extract video ID from various formats
-  // Handles: https://www.youtube.com/watch?v=VIDEO_ID, https://youtu.be/VIDEO_ID, https://youtube.com/embed/VIDEO_ID
+  // Handles: https://www.youtube.com/watch?v=VIDEO_ID, https://youtu.be/VIDEO_ID, https://youtube.com/embed/VIDEO_ID, https://youtube.com/shorts/VIDEO_ID
   const match = url.match(
-    /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{11})/
+    /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/
   );
   const videoId = match ? match[1] : null;
   const embedUrl = videoId ? `https://www.youtube.com/embed/${videoId}` : url;

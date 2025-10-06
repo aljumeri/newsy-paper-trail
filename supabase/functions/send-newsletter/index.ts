@@ -57,7 +57,9 @@ async function sendEmailWithSendy({
 
   const result = await response.text();
   if (!response.ok) {
-    throw new Error(`Sendy API error: Status ${response.status}, Response: ${result}`);
+    throw new Error(
+      `Sendy API error: Status ${response.status}, Response: ${result}`
+    );
   }
   return { success: true, message: 'Campaign created in Sendy', result };
 }
@@ -297,7 +299,7 @@ async function renderNewsletterHtml(
               let ytThumb =
                 'https://cdn-icons-png.flaticon.com/512/1384/1384060.png';
               const ytMatch = item.url.match(
-                /(?:youtube\.com\/embed\/|youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/
+                /(?:youtube\.com\/(?:embed\/|watch\?v=|shorts\/)|youtu\.be\/)([^&\n?#]+)/
               );
               if (ytMatch && ytMatch[1]) {
                 videoId = ytMatch[1];
@@ -753,11 +755,11 @@ serve(async (req: Request) => {
     if (sendMode !== 'single') {
       console.log('Edge Function: Marking newsletter as sent');
       const updateData: any = {
-          sent_at: new Date().toISOString(),
-          recipients_count: recipients.length,
-          status: 'sent',
+        sent_at: new Date().toISOString(),
+        recipients_count: recipients.length,
+        status: 'sent',
       };
-      
+
       // For 'all' mode, set last_sent_to to recipients_count
       updateData.last_sent_to = recipients.length;
 
@@ -786,32 +788,39 @@ serve(async (req: Request) => {
     if (sendMode === 'all' || sendMode === 'single') {
       try {
         // Use simple email-only unsubscribe link for Sendy
-        const unsubscribeLink = `${Deno.env.get('SITE_URL') || 'https://solo4ai.com'}/unsubscribe?email=[Email]`;
-        const htmlBody = await renderNewsletterHtml(newsletter, unsubscribeLink, supabase);
+        const unsubscribeLink = `${
+          Deno.env.get('SITE_URL') || 'https://solo4ai.com'
+        }/unsubscribe?email=[Email]`;
+        const htmlBody = await renderNewsletterHtml(
+          newsletter,
+          unsubscribeLink,
+          supabase
+        );
         let sendyListId;
-        
+
         if (sendMode === 'all') {
           sendyListId = Deno.env.get('SENDY_LIST_ID');
         } else if (sendMode === 'single') {
           sendyListId = Deno.env.get('SENDY_TEST_LIST_ID');
         }
-        
-        if (!sendyListId) throw new Error('SENDY_LIST_ID (or SENDY_TEST_LIST_ID) is not set');
-        
+
+        if (!sendyListId)
+          throw new Error('SENDY_LIST_ID (or SENDY_TEST_LIST_ID) is not set');
+
         await sendEmailWithSendy({
           subject: newsletter.main_title,
           html: htmlBody,
           listId: sendyListId,
           fromName,
-            fromEmail,
+          fromEmail,
           replyTo,
         });
-        
+
         successfulSends = recipients.length;
-        } catch (error) {
+      } catch (error) {
         const errorMsg = `Failed to create Sendy campaign: ${error.message}`;
-          console.error(errorMsg);
-          errors.push(errorMsg);
+        console.error(errorMsg);
+        errors.push(errorMsg);
         failedSends = recipients.length;
       }
     }

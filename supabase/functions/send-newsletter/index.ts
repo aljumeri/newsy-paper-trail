@@ -713,67 +713,17 @@ serve(async (req: Request) => {
 
       console.log(`Edge Function: Single email mode - sending to: ${email}`);
     } else {
-      // All subscribers mode - fetch from database
-      console.log('Edge Function: Fetching all subscribers');
-      const { data: subscribers, error: subscribersError } = await supabase
-        .from('subscribers')
-        .select('email')
-        .order('created_at', { ascending: false });
-
-      if (subscribersError) {
-        console.error(
-          `Edge Function: Subscribers fetch error: ${subscribersError.message}`
-        );
-        throw new Error(
-          `Failed to fetch subscribers: ${subscribersError.message}`
-        );
-      }
-
-      console.log(
-        `Edge Function: Found ${subscribers?.length || 0} subscribers`
-      );
-
-      if (!subscribers || subscribers.length === 0) {
-        console.log('Edge Function: No subscribers found');
-        return new Response(
-          JSON.stringify({
-            message: 'No subscribers found',
-            success: true,
-            subscribers: 0,
-          }),
-          {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 200,
-          }
-        );
-      }
-
-      recipients = subscribers;
+      // All subscribers mode - Sendy manages the subscriber list
+      // No need to fetch from Supabase since we're using Sendy
+      console.log('Edge Function: Using Sendy list for all subscribers');
+      // Set empty array - Sendy will handle the actual subscriber list
+      recipients = [];
     }
 
-    // Update newsletter as sent (but only for 'all' and 'new' modes, not 'single')
+    // Update newsletter as sent (but only for 'all' mode, not 'single')
+    // Note: recipients_count will be updated after successful Sendy campaign creation
     if (sendMode !== 'single') {
-      console.log('Edge Function: Marking newsletter as sent');
-      const updateData: any = {
-        sent_at: new Date().toISOString(),
-        recipients_count: recipients.length,
-        status: 'sent',
-      };
-
-      // For 'all' mode, set last_sent_to to recipients_count
-      updateData.last_sent_to = recipients.length;
-
-      const { error: updateError } = await supabase
-        .from('newsletters')
-        .update(updateData)
-        .eq('id', newsletterId);
-
-      if (updateError) {
-        console.error(`Edge Function: Update error: ${updateError.message}`);
-        // Continue anyway as this is not critical
-      } else {
-        console.log('Edge Function: Newsletter marked as sent successfully');
-      }
+      console.log('Edge Function: Will mark newsletter as sent after successful Sendy campaign');
     }
 
     // Send emails to all subscribers with rate limiting
@@ -816,7 +766,40 @@ serve(async (req: Request) => {
           replyTo,
         });
 
-        successfulSends = recipients.length;
+        // Sendy handles sending to all subscribers in the list
+        // We don't know the exact count without querying Sendy API
+        // For 'all' mode, we'll use a placeholder count (Sendy will send to all in list)
+        // For 'single' mode, we know it's 1
+        if (sendMode === 'single') {
+          successfulSends = 1;
+        } else {
+          // For 'all' mode, we can't determine exact count without Sendy API call
+          // Set to 0 and let the frontend handle display
+          successfulSends = 0;
+        }
+
+        // Update newsletter as sent after successful Sendy campaign creation
+        if (sendMode !== 'single') {
+          console.log('Edge Function: Marking newsletter as sent');
+          const updateData: any = {
+            sent_at: new Date().toISOString(),
+            status: 'sent',
+            // recipients_count will be null since we don't have exact count from Sendy
+            recipients_count: null,
+          };
+
+          const { error: updateError } = await supabase
+            .from('newsletters')
+            .update(updateData)
+            .eq('id', newsletterId);
+
+          if (updateError) {
+            console.error(`Edge Function: Update error: ${updateError.message}`);
+            // Continue anyway as this is not critical
+          } else {
+            console.log('Edge Function: Newsletter marked as sent successfully');
+          }
+        }
       } catch (error) {
         const errorMsg = `Failed to create Sendy campaign: ${error.message}`;
         console.error(errorMsg);

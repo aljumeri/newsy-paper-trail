@@ -61,43 +61,8 @@ const NewslettersTable = ({
   const handleSendNewsletter = async (id: string) => {
     setSendingId(id);
     try {
-      // First, get the newsletter content
-      const { data: newsletter, error: newsletterError } = await supabase
-        .from("newsletters")
-        .select("main_title, content")
-        .eq("id", id)
-        .single();
-
-      if (newsletterError) throw newsletterError;
-      if (!newsletter) throw new Error("Newsletter not found");
-
-      // Get all subscribers
-      const { data: subscribers, error: subscribersError } = await supabase
-        .from("subscribers")
-        .select("email");
-
-      if (subscribersError) throw subscribersError;
-      if (!subscribers || subscribers.length === 0) {
-        toast({
-          title: "لا يوجد مشتركين",
-          description: "لم يتم العثور على أي مشتركين في النشرة الإخبارية",
-        });
-        return;
-      }
-
-      // Update newsletter as sent
-      const { error: updateError } = await supabase
-        .from("newsletters")
-        .update({
-          sent_at: new Date().toISOString(),
-          recipients_count: subscribers.length,
-          status: "sent",
-        })
-        .eq("id", id);
-
-      if (updateError) throw updateError;
-
-      // Call the send-newsletter edge function
+      // Call the send-newsletter edge function directly
+      // The edge function handles fetching newsletter content and managing subscribers via Sendy
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-newsletter`,
         {
@@ -108,17 +73,21 @@ const NewslettersTable = ({
           },
           body: JSON.stringify({
             newsletterId: id,
+            mode: 'all',
           }),
         }
       );
 
       if (!response.ok) {
-        throw new Error("Failed to send newsletter");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to send newsletter");
       }
 
+      const result = await response.json();
+      
       toast({
         title: "تم الإرسال",
-        description: `تم إرسال النشرة الإخبارية إلى ${subscribers.length} مشترك`,
+        description: `تم إرسال النشرة الإخبارية إلى ${result.subscribers || 0} مشترك`,
       });
 
       if (onRefresh) await onRefresh();

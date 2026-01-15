@@ -101,10 +101,10 @@ const AdminControlPanel: React.FC = () => {
   // Fetch data from Sendy and Supabase
   const fetchData = async () => {
     try {
-      // Fetch newsletters from Supabase
+      // Fetch newsletters from Supabase - EXCLUDE content field to reduce data transfer
       const { data: news, error: newsErr } = await supabase
         .from('newsletters')
-        .select('*')
+        .select('id, main_title, sub_title, created_at, sent_at, status, recipients_count, date, created_by, updated_at, updated_by')
         .order('created_at', { ascending: false });
       if (newsErr) throw newsErr;
       setNewsletters(news || []);

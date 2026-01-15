@@ -8,7 +8,6 @@ import { Link } from 'react-router-dom';
 interface Newsletter {
   id: string;
   main_title: string;
-  content: any; // Changed from string to any to handle Json type
   created_at: string;
   created_by: string | null;
   sent_at: string | null;
@@ -22,9 +21,11 @@ const Archives = () => {
   useEffect(() => {
     const fetchNewsletters = async () => {
       try {
+        // Fetch newsletters WITHOUT content field to reduce data transfer
+        // Content will be fetched only when user clicks to view a specific newsletter
         const { data, error } = await supabase
           .from('newsletters')
-          .select('id, main_title, content, created_at, created_by, sent_at')
+          .select('id, main_title, created_at, created_by, sent_at')
           .not('sent_at', 'is', null)
           .order('sent_at', { ascending: false });
 
@@ -54,60 +55,10 @@ const Archives = () => {
     }
   };
 
-  // Function to extract text preview from newsletter JSON content
-  const extractContentPreview = (content: any, maxLength: number = 200): string => {
-    try {
-      let sections;
-      // Handle both string and already parsed content
-      if (typeof content === 'string') {
-        sections = JSON.parse(content);
-      } else {
-        sections = content;
-      }
-      
-      if (Array.isArray(sections)) {
-        // Extract text from sections
-        let preview = '';
-        for (const section of sections) {
-          if (section.title) {
-            preview += section.title + ' ';
-          }
-          if (section.content) {
-            preview += section.content + ' ';
-          }
-          // Also check subsections
-          if (section.subsections && Array.isArray(section.subsections)) {
-            for (const subsection of section.subsections) {
-              if (subsection.title) {
-                preview += subsection.title + ' ';
-              }
-              if (subsection.content) {
-                preview += subsection.content + ' ';
-              }
-            }
-          }
-          // If we have enough content, break
-          if (preview.length > maxLength) break;
-        }
-        
-        // Clean up and truncate
-        preview = preview.replace(/\*\*/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1'); // Remove markdown
-        if (preview.length > maxLength) {
-          preview = preview.substring(0, maxLength) + '...';
-        }
-        return preview.trim() || 'محتوى النشرة الإخبارية';
-      }
-    } catch (e) {
-      // If not JSON or parsing fails, return the content as is (truncated)
-      const contentStr = typeof content === 'string' ? content : JSON.stringify(content);
-      if (contentStr && contentStr.length > maxLength) {
-        return contentStr.substring(0, maxLength) + '...';
-      }
-      return contentStr || 'محتوى النشرة الإخبارية';
-    }
-    
-    const contentStr = typeof content === 'string' ? content : JSON.stringify(content);
-    return contentStr || 'محتوى النشرة الإخبارية';
+  // Simple preview text - content is not fetched to reduce data transfer
+  // Users can click to view full newsletter content
+  const getPreviewText = (): string => {
+    return 'انقر لقراءة النشرة الإخبارية الكاملة';
   };
 
   return (
@@ -143,7 +94,7 @@ const Archives = () => {
                     </CardHeader>
                     <CardContent className="py-2">
                       <div className="text-neutral-600 line-clamp-3">
-                        {extractContentPreview(newsletter.content)}
+                        {getPreviewText()}
                       </div>
                       <div className="mt-4">
                         <Link to={`/newsletter/${newsletter.id}`} className="text-purple-600 hover:text-purple-700 font-medium">

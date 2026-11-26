@@ -1,35 +1,97 @@
-
-import React from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { supabase } from '@/integrations/supabase/client';
+import { buildIssuePreview } from '@/lib/latestIssuePreview';
 import { Link } from 'react-router-dom';
 
-// بيانات الإصدارات السابقة
-const newsletterIssues = [
-  {
-    id: 1,
-    title: "مستقبل الذكاء الاصطناعي في الصناعات الإبداعية",
-    excerpt: "كيف يُغير الذكاء الاصطناعي إنشاء المحتوى والتصميم وطريقة تفكيرنا في الإبداع.",
-    date: "25 أبريل 2025",
-    imageUrl: "https://images.unsplash.com/photo-1655635643532-fa9ba2648cbe?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2232&q=80",
-  },
-  {
-    id: 2,
-    title: "التقنية المستدامة: ما وراء الكلمات الرنانة",
-    excerpt: "نظرة متعمقة حول كيفية معالجة شركات التكنولوجيا للمخاوف البيئية في عام 2025.",
-    date: "18 أبريل 2025",
-    imageUrl: "https://images.unsplash.com/photo-1618044733300-9472054094ee?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2071&q=80",
-  },
-  {
-    id: 3,
-    title: "ثورة العمل عن بُعد: بعد 5 سنوات",
-    excerpt: "دراسة التأثير المستمر لتبني العمل عن بُعد عالميًا على الشركات والإنتاجية وثقافة العمل.",
-    date: "11 أبريل 2025",
-    imageUrl: "https://images.unsplash.com/photo-1521898284481-a5ec348cb555?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1974&q=80",
+const LATEST_COUNT = 3;
+const LOGO_SRC = '/lovable-uploads/b40e2534-e282-4e60-9ca0-91070f9c6ad7.png';
+
+interface SentNewsletter {
+  id: string;
+  main_title: string | null;
+  sub_title: string | null;
+  date: string | null;
+  content: unknown;
+  created_at: string;
+  sent_at: string | null;
+}
+
+const formatIssueDate = (newsletter: SentNewsletter) => {
+  const editorialDate = newsletter.date?.trim();
+  if (editorialDate) return editorialDate;
+
+  const raw = newsletter.sent_at || newsletter.created_at;
+  try {
+    return new Intl.DateTimeFormat('ar-SA', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    }).format(new Date(raw));
+  } catch {
+    return raw;
   }
-];
+};
+
+const IssueImage = ({
+  src,
+  alt,
+}: {
+  src: string | null;
+  alt: string;
+}) => {
+  const [failed, setFailed] = useState(false);
+  const showPhoto = Boolean(src) && !failed;
+
+  return (
+    <div className="aspect-[16/9] overflow-hidden bg-gradient-to-br from-purple-100 via-white to-blue-50">
+      {showPhoto ? (
+        <img
+          src={src ?? undefined}
+          alt={alt}
+          className="w-full h-full object-cover transition-transform hover:scale-105 duration-500"
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <div className="w-full h-full flex flex-col items-center justify-center gap-3 px-6 text-center">
+          <img src={LOGO_SRC} alt="" className="h-14 w-auto opacity-90" />
+          <span className="text-sm text-purple-700/80 font-serif">نشرة سولو</span>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const FeaturedSection = () => {
+  const [newsletters, setNewsletters] = useState<SentNewsletter[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchLatestIssues = async () => {
+      try {
+        const { data, error: fetchError } = await supabase
+          .from('newsletters')
+          .select('id, main_title, sub_title, date, content, created_at, sent_at')
+          .not('sent_at', 'is', null)
+          .order('sent_at', { ascending: false })
+          .limit(LATEST_COUNT);
+
+        if (fetchError) throw fetchError;
+        setNewsletters((data as SentNewsletter[]) || []);
+      } catch (err) {
+        console.error('Error fetching latest newsletters:', err);
+        setError('تعذر تحميل آخر الإصدارات');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLatestIssues();
+  }, []);
+
   return (
     <section className="section bg-white">
       <div className="container">
@@ -39,39 +101,82 @@ const FeaturedSection = () => {
             تذوق الرؤى التي نقدمها أسبوعياً. تصفح بعض نشراتنا الإخبارية الأخيرة.
           </p>
         </div>
-        
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {newsletterIssues.map((issue) => (
-            <Card key={issue.id} className="overflow-hidden hover:shadow-lg transition-shadow animate-slide-up">
-              <div className="aspect-[16/9] overflow-hidden">
-                <img 
-                  src={issue.imageUrl} 
-                  alt={issue.title} 
-                  className="w-full h-full object-cover transition-transform hover:scale-105 duration-500"
-                />
-              </div>
-              <CardHeader className="pt-5 pb-2">
-                <div className="text-sm text-neutral-500 mb-1">{issue.date}</div>
-                <h3 className="text-xl font-semibold font-serif leading-tight">{issue.title}</h3>
-              </CardHeader>
-              <CardContent className="py-2">
-                <p className="text-neutral-600">{issue.excerpt}</p>
-              </CardContent>
-              <CardFooter className="pt-2 pb-5">
-                <Button 
-                  variant="outline" 
-                  className="hover:bg-blue-50 border-blue-200 text-blue-700 hover:text-blue-800"
-                  asChild
+
+        {loading ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {Array.from({ length: LATEST_COUNT }).map((_, index) => (
+              <Card key={index} className="overflow-hidden">
+                <Skeleton className="aspect-[16/9] w-full rounded-none" />
+                <CardHeader className="pt-5 pb-2">
+                  <Skeleton className="h-4 w-28" />
+                  <Skeleton className="h-6 w-full" />
+                </CardHeader>
+                <CardContent className="py-2 space-y-2">
+                  <Skeleton className="h-5 w-3/4" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-5/6" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : error ? (
+          <p className="text-center text-neutral-600 py-8">{error}</p>
+        ) : newsletters.length === 0 ? (
+          <p className="text-center text-neutral-600 py-8">لا توجد إصدارات منشورة حالياً</p>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {newsletters.map((newsletter) => {
+              const preview = buildIssuePreview(newsletter.content);
+              const title =
+                newsletter.main_title?.trim() ||
+                newsletter.sub_title?.trim() ||
+                'نشرة سولو';
+              const dateLabel = formatIssueDate(newsletter);
+              const issuePath = `/newsletter/${newsletter.id}`;
+
+              return (
+                <Card
+                  key={newsletter.id}
+                  className="overflow-hidden hover:shadow-lg transition-shadow animate-slide-up flex flex-col h-full min-w-0"
                 >
-                  <Link to={`/newsletter/${issue.id}`}>
-                    قراءة العدد
+                  <Link to={issuePath} className="block">
+                    <IssueImage src={preview.imageUrl} alt={title} />
                   </Link>
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-        
+                  <CardHeader className="pt-5 pb-2">
+                    <div className="text-sm text-neutral-500 mb-1">{dateLabel}</div>
+                    <h3 className="text-xl font-semibold font-serif leading-tight">
+                      <Link to={issuePath} className="hover:text-purple-600 transition-colors">
+                        {title}
+                      </Link>
+                    </h3>
+                  </CardHeader>
+                  <CardContent className="py-2 flex-1">
+                    {preview.leadHeading && (
+                      <p className="font-semibold text-neutral-800 leading-snug line-clamp-2">
+                        {preview.leadHeading}
+                      </p>
+                    )}
+                    {preview.excerpt && (
+                      <p className="text-neutral-600 leading-relaxed line-clamp-2 mt-2">
+                        {preview.excerpt}
+                      </p>
+                    )}
+                  </CardContent>
+                  <CardFooter className="pt-2 pb-5 mt-auto">
+                    <Button
+                      variant="outline"
+                      className="hover:bg-blue-50 border-blue-200 text-blue-700 hover:text-blue-800"
+                      asChild
+                    >
+                      <Link to={issuePath}>قراءة العدد</Link>
+                    </Button>
+                  </CardFooter>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+
         <div className="text-center mt-12">
           <Button variant="link" className="text-blue-600 hover:text-blue-700 text-lg" asChild>
             <Link to="/archives">عرض كل الأرشيف ←</Link>
